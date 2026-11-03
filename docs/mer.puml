@@ -1,0 +1,755 @@
+@startuml moneda-segura-er
+' ============================================================================
+'  Moneda Segura — Entity-relationship diagram
+'  Engine: PostgreSQL 15+ (Supabase: Auth, Realtime, RLS)
+'  Notation: crow's foot (IE).  PK = primary key · FK = foreign key
+'            UQ = unique · GEN = generated column
+'  Scope: single role (analyst). No review periods, no admin, fixed taxonomy.
+' ============================================================================
+
+hide circle
+hide empty members
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.1
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam package {
+  BorderColor #94A3B8
+  FontColor #0F172A
+  FontSize 15
+  FontStyle bold
+}
+skinparam class {
+  BorderColor #334155
+  HeaderBackgroundColor #E2E8F0
+  BackgroundColor #FFFFFF
+  FontStyle bold
+  AttributeFontSize 11
+}
+skinparam class<<auth>> {
+  HeaderBackgroundColor #FDE68A
+}
+skinparam class<<catalog>> {
+  HeaderBackgroundColor #E0F2FE
+}
+skinparam class<<banking>> {
+  HeaderBackgroundColor #DCFCE7
+}
+skinparam class<<labeling>> {
+  HeaderBackgroundColor #FCE7F3
+}
+skinparam class<<ai>> {
+  HeaderBackgroundColor #EDE9FE
+}
+skinparam class<<platform>> {
+  HeaderBackgroundColor #FFEDD5
+}
+skinparam class<<private>> {
+  HeaderBackgroundColor #F1F5F9
+  BorderColor #94A3B8
+  BorderStyle dashed
+}
+skinparam note {
+  BackgroundColor #FFFBEB
+  BorderColor #D97706
+  FontSize 11
+}
+
+title Moneda Segura — Entity-relationship model (PostgreSQL / Supabase)
+
+' ============================================================================
+'  ENUM TYPES (CREATE TYPE ... AS ENUM)
+' ============================================================================
+package "Enum types" as enums #FAFAFA {
+  enum alert_status {
+    pending
+    confirmed
+    rejected
+    reclassified
+  }
+  enum verdict {
+    fraud
+    not_fraud
+    uncertain
+  }
+  enum severity {
+    low
+    medium
+    high
+    critical
+  }
+  enum label_source {
+    manual
+    alert
+  }
+  enum document_type {
+    CC
+    CE
+    NIT
+    CURP
+    RFC
+    DNI
+    RUT
+    CPF
+    PASSPORT
+  }
+  enum customer_segment {
+    retail
+    retail_mid_income
+    premium
+    small_business
+    corporate
+  }
+  enum risk_level {
+    low
+    medium
+    high
+  }
+  enum account_type {
+    savings
+    checking
+    wallet
+    credit
+  }
+  enum product_status {
+    active
+    blocked
+    inactive
+    closed
+  }
+  enum card_type {
+    debit
+    credit
+  }
+  enum transaction_type {
+    debit
+    credit
+    transfer
+    withdrawal
+    payment
+    purchase
+  }
+  enum transaction_status {
+    approved
+    declined
+    pending
+    reversed
+  }
+  enum entry_direction {
+    debit
+    credit
+  }
+  enum security_event_type {
+    login
+    login_failed
+    login_new_device
+    password_change
+    phone_change
+    sim_change
+    email_change
+    logout
+  }
+  enum device_type {
+    mobile
+    tablet
+    desktop
+    atm
+    pos
+  }
+  enum dispute_type {
+    customer_claim
+    chargeback
+  }
+  enum dispute_status {
+    open
+    accepted
+    rejected
+  }
+  enum notification_type {
+    alert_new
+  }
+  enum audit_action {
+    create_label
+    update_label
+    confirm_alert
+    reject_alert
+    reclassify_alert
+  }
+}
+
+' ============================================================================
+'  SUPABASE AUTH (auth schema, managed by Supabase)
+' ============================================================================
+package "auth (Supabase)" as authpkg #FFFDF5 {
+  entity "auth.users" as auth_users <<auth>> {
+    * id : uuid <<PK>>
+    --
+    email : text
+    encrypted_password : text
+    last_sign_in_at : timestamptz
+    created_at : timestamptz
+  }
+}
+
+' ============================================================================
+'  CATALOGS (loaded by the seed, read-only from the app)
+' ============================================================================
+package "Catalogs" as catalogs #F8FCFF {
+  entity currencies <<catalog>> {
+    * code : char(3) <<PK>>  <color:#64748B><i>// COP, MXN, PEN, CLP, ARS, BRL</i></color>
+    --
+    * name : text
+    * symbol : text
+    * decimals : smallint  <color:#64748B><i>// CLP = 0</i></color>
+    * locale : text  <color:#64748B><i>// es-CO, es-MX, pt-BR...</i></color>
+  }
+
+  entity countries <<catalog>> {
+    * code : char(2) <<PK>>  <color:#64748B><i>// ISO 3166-1</i></color>
+    --
+    * name : text
+    * currency_code : char(3) <<FK>>
+    * primary_document_type : document_type
+    * phone_prefix : text
+  }
+
+  entity cities <<catalog>> {
+    * id : int <<PK>>
+    --
+    * country_code : char(2) <<FK>>
+    * name : text
+    region : text
+    * latitude : numeric(9,6)
+    * longitude : numeric(9,6)
+    --
+    UQ (country_code, name)
+  }
+
+  entity banks <<catalog>> {
+    * id : int <<PK>>
+    --
+    * name : text
+    * country_code : char(2) <<FK>>
+    swift_code : text <<UQ>>
+    * is_own : boolean  <color:#64748B><i>// true = Moneda Segura</i></color>
+  }
+
+  entity channels <<catalog>> {
+    * code : text <<PK>>  <color:#64748B><i>// APP, WEB, POS, ATM, PSE, SPEI, YAPE, PIX, INTERBANK, PAYROLL</i></color>
+    --
+    * name : text
+    country_code : char(2) <<FK>>  <color:#64748B><i>// NULL = all countries</i></color>
+    * is_digital : boolean
+  }
+
+  entity merchant_categories <<catalog>> {
+    * mcc : char(4) <<PK>>
+    --
+    * description : text
+    * is_high_risk : boolean
+  }
+
+  entity fraud_types <<catalog>> {
+    * id : smallint <<PK>>
+    --
+    * code : varchar(5) <<UQ>>  <color:#64748B><i>// ATO, PHI, CLO, MUL, LAV, SIN, SIM, CNR</i></color>
+    * name : text
+    * description : text
+    * color : char(7)  <color:#64748B><i>// #RRGGBB</i></color>
+    --
+    <color:#64748B><i>// fixed taxonomy: SELECT only from the app</i></color>
+  }
+
+  entity confidence_levels <<catalog>> {
+    * level : smallint <<PK>>  <color:#64748B><i>// 1..4</i></color>
+    --
+    * name : text  <color:#64748B><i>// Low, Medium, High, Very high</i></color>
+    * meaning : text
+    * criteria : text
+    * sample_weight : numeric(3,2)  <color:#64748B><i>// weight in the dataset</i></color>
+    * requires_justification : boolean
+  }
+
+  entity severity_levels <<catalog>> {
+    * level : severity <<PK>>
+    --
+    * sort_order : smallint
+    * name : text
+    * criteria : text
+  }
+
+  entity severity_thresholds <<catalog>> {
+    * currency_code : char(3) <<PK, FK>>
+    * level : severity <<PK, FK>>
+    --
+    * min_amount : numeric(18,2)  <color:#64748B><i>// set by the seed</i></color>
+  }
+
+  entity exchange_rates <<catalog>> {
+    * currency_code : char(3) <<PK, FK>>
+    --
+    * rate_to_cop : numeric(18,6)  <color:#64748B><i>// COP = 1; fixed, simulated</i></color>
+    * as_of : date
+    --
+    <color:#64748B><i>// committed amount in statistics, converted to COP</i></color>
+  }
+}
+
+' ============================================================================
+'  PLATFORM USERS (single role: analyst)
+' ============================================================================
+package "Users" as userspkg #FFFDF5 {
+  entity analysts <<platform>> {
+    * id : uuid <<PK, FK auth.users>>
+    --
+    * full_name : text
+    * email : citext <<UQ>>
+    last_seen_at : timestamptz
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+}
+
+' ============================================================================
+'  BANKING DATA (simulated)
+' ============================================================================
+package "Banking data (simulated)" as banking #F7FEF9 {
+  entity customers <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * document_type : document_type
+    * document_number : text
+    * first_names : text
+    * last_names : text
+    * birth_date : date
+    phone : text
+    email : text
+    * country_code : char(2) <<FK>>
+    * city_id : int <<FK>>
+    occupation : text
+    declared_income : numeric(18,2)
+    * income_currency : char(3) <<FK>>
+    * customer_since : date
+    * segment : customer_segment
+    * risk_level : risk_level
+    * created_at : timestamptz
+    --
+    UQ (country_code, document_type, document_number)
+    GEN search_vector : tsvector
+  }
+
+  entity accounts <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * number : text
+    * last4 : char(4) <<GEN>>
+    * type : account_type
+    * currency_code : char(3) <<FK>>
+    * bank_id : int <<FK>>
+    * is_external : boolean
+    customer_id : uuid <<FK>>  <color:#64748B><i>// NULL when external</i></color>
+    holder_name : text  <color:#64748B><i>// external accounts only</i></color>
+    balance : numeric(18,2)  <color:#64748B><i>// NULL when external</i></color>
+    credit_limit : numeric(18,2)  <color:#64748B><i>// credit type only</i></color>
+    * status : product_status
+    opened_on : date
+    closed_on : date
+    * created_at : timestamptz
+    --
+    UQ (bank_id, number)
+    CHECK is_external OR customer_id IS NOT NULL
+  }
+
+  entity cards <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * account_id : uuid <<FK>>
+    * customer_id : uuid <<FK>>
+    * type : card_type
+    * network : text  <color:#64748B><i>// Visa, Mastercard</i></color>
+    * bin : char(6)
+    * last4 : char(4)
+    * status : product_status
+    credit_limit : numeric(18,2)
+    * issued_on : date
+    * expires_on : date
+  }
+
+  entity devices <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * fingerprint : text <<UQ>>
+    * type : device_type
+    brand : text
+    model : text  <color:#64748B><i>// iPhone 13, Samsung A54</i></color>
+    os : text  <color:#64748B><i>// iOS, Android</i></color>
+    os_version : text
+    * created_at : timestamptz
+  }
+
+  entity customer_devices <<banking>> {
+    * customer_id : uuid <<PK, FK>>
+    * device_id : uuid <<PK, FK>>
+    --
+    * first_seen_at : timestamptz
+    * last_seen_at : timestamptz
+    * is_trusted : boolean
+  }
+
+  entity security_events <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * customer_id : uuid <<FK>>
+    * type : security_event_type
+    * occurred_at : timestamptz
+    device_id : uuid <<FK>>
+    channel_code : text <<FK>>
+    ip : inet
+    city_id : int <<FK>>
+    latitude : numeric(9,6)
+    longitude : numeric(9,6)
+    * succeeded : boolean
+    details : jsonb  <color:#64748B><i>// e.g. previous/new phone</i></color>
+  }
+
+  entity merchants <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * name : text
+    * mcc : char(4) <<FK>>
+    * country_code : char(2) <<FK>>
+    city_id : int <<FK>>
+    * is_online : boolean
+    latitude : numeric(9,6)
+    longitude : numeric(9,6)
+  }
+
+  entity transactions <<banking>> {
+    * id : bigint <<PK>> (identity)
+    --
+    * code : text <<UQ, GEN>>  <color:#64748B><i>// TX-48219</i></color>
+    * occurred_at : timestamptz
+    * type : transaction_type
+    * channel_code : text <<FK>>
+    * amount : numeric(18,2)  <color:#64748B><i>// CHECK > 0</i></color>
+    * currency_code : char(3) <<FK>>
+    source_account_id : uuid <<FK>>
+    destination_account_id : uuid <<FK>>
+    card_id : uuid <<FK>>
+    merchant_id : uuid <<FK>>
+    device_id : uuid <<FK>>
+    ip : inet
+    city_id : int <<FK>>
+    latitude : numeric(9,6)
+    longitude : numeric(9,6)
+    * status : transaction_status
+    description : text
+    reference : text
+    * is_labeled : boolean = false  <color:#64748B><i>// kept by trigger on labels</i></color>
+    * created_at : timestamptz
+    --
+    CHECK source_account_id IS NOT NULL OR destination_account_id IS NOT NULL
+    CHECK type <> 'transfer' OR (source AND destination)
+    CHECK type <> 'purchase' OR merchant_id IS NOT NULL
+  }
+
+  entity ledger_entries <<banking>> {
+    * id : bigint <<PK>> (identity)
+    --
+    * transaction_id : bigint <<FK>>
+    * account_id : uuid <<FK>>  <color:#64748B><i>// internal accounts only</i></color>
+    * direction : entry_direction
+    * amount : numeric(18,2)
+    * balance_after : numeric(18,2)
+    * occurred_at : timestamptz
+    --
+    UQ (transaction_id, account_id)
+  }
+
+  entity disputes <<banking>> {
+    * id : uuid <<PK>>
+    --
+    * transaction_id : bigint <<FK>>
+    * type : dispute_type
+    * status : dispute_status
+    * filed_at : timestamptz
+    resolved_at : timestamptz
+    description : text
+  }
+}
+
+' ============================================================================
+'  LABELING (one current label per transaction)
+' ============================================================================
+package "Labeling" as labeling #FFF7FB {
+  entity labels <<labeling>> {
+    * id : uuid <<PK>>
+    --
+    * transaction_id : bigint <<FK, UQ>>
+    * source : label_source
+    alert_id : uuid <<FK>>
+    * verdict : verdict
+    * confidence : smallint <<FK>>
+    severity : severity <<FK>>
+    justification : text
+    * analyst_id : uuid <<FK>>  <color:#64748B><i>// last analyst who saved it</i></color>
+    * created_at : timestamptz
+    * updated_at : timestamptz
+    * version : int = 1  <color:#64748B><i>// "edited N times"</i></color>
+    --
+    CHECK source='alert' = (alert_id IS NOT NULL)
+    CHECK verdict<>'not_fraud' OR severity IS NULL
+    CHECK verdict<>'fraud' OR severity IS NOT NULL
+    CHECK (verdict<>'uncertain' AND confidence>1)
+      OR length(justification) > 0
+  }
+
+  entity label_fraud_types <<labeling>> {
+    * label_id : uuid <<PK, FK>>
+    * fraud_type_id : smallint <<PK, FK>>
+    --
+    <color:#64748B><i>// trigger: if verdict = fraud, at least 1 type</i></color>
+  }
+}
+
+' ============================================================================
+'  AI ALERTS (simulated, shared inbox)
+' ============================================================================
+package "AI alerts" as aipkg #FAF8FF {
+  entity ai_alerts <<ai>> {
+    * id : uuid <<PK>>
+    --
+    * code : text <<UQ, GEN>>  <color:#64748B><i>// AL-1042</i></color>
+    * customer_id : uuid <<FK>>
+    account_id : uuid <<FK>>
+    * score : smallint  <color:#64748B><i>// CHECK 0..100</i></color>
+    * suggested_type_id : smallint <<FK>>
+    * summary : text
+    * model_version : text
+    * generated_at : timestamptz
+    * status : alert_status = 'pending'
+    resolved_by : uuid <<FK>>
+    resolved_at : timestamptz
+    final_type_id : smallint <<FK>>  <color:#64748B><i>// NULL when rejected</i></color>
+    --
+    CHECK (status='pending') = (resolved_by IS NULL AND resolved_at IS NULL)
+    CHECK status<>'confirmed' OR final_type_id = suggested_type_id
+    CHECK status<>'reclassified' OR final_type_id <> suggested_type_id
+    CHECK status<>'rejected' OR final_type_id IS NULL
+  }
+
+  entity ai_alert_transactions <<ai>> {
+    * alert_id : uuid <<PK, FK>>
+    * transaction_id : bigint <<PK, FK>>
+    --
+    * is_primary : boolean
+  }
+
+  entity ai_alert_reasons <<ai>> {
+    * id : uuid <<PK>>
+    --
+    * alert_id : uuid <<FK>>
+    * position : smallint
+    * weight : numeric(4,3)
+    * title : text  <color:#64748B><i>// "Amount 8.2x the 90-day average"</i></color>
+    * evidence : text  <color:#64748B><i>// "$ 125,500 MXN vs. average $ 15,300"</i></color>
+    metric : jsonb  <color:#64748B><i>// {observed, baseline, unit}</i></color>
+    --
+    UQ (alert_id, position)
+  }
+}
+
+' ============================================================================
+'  PLATFORM: notifications, audit
+' ============================================================================
+package "Platform" as platform #FFFAF5 {
+  entity notifications <<platform>> {
+    * id : uuid <<PK>>
+    --
+    * analyst_id : uuid <<FK>>
+    * type : notification_type
+    * alert_id : uuid <<FK>>
+    * title : text  <color:#64748B><i>// includes the score</i></color>
+    body : text
+    * created_at : timestamptz
+    read_at : timestamptz
+    --
+    UQ (analyst_id, alert_id)
+  }
+
+  entity audit_log <<platform>> {
+    * id : bigint <<PK>> (identity)
+    --
+    * analyst_id : uuid <<FK>>
+    * action : audit_action
+    * entity : text  <color:#64748B><i>// labels | ai_alerts</i></color>
+    * entity_id : text
+    transaction_id : bigint <<FK>>  <color:#64748B><i>// label history per transaction</i></color>
+    old_value : jsonb
+    new_value : jsonb
+    * created_at : timestamptz
+    --
+    <color:#64748B><i>// INSERT only (trigger); no UPDATE/DELETE</i></color>
+  }
+}
+
+' ============================================================================
+'  PRIVATE SEED SCHEMA (not exposed through the API or RLS)
+' ============================================================================
+package "seed (private)" as seedpkg #FBFBFB {
+  entity "seed.injected_patterns" as patterns <<private>> {
+    * id : uuid <<PK>>
+    --
+    * fraud_type_id : smallint <<FK>>
+    * customer_id : uuid <<FK>>
+    * description : text  <color:#64748B><i>// e.g. burst after password change</i></color>
+    * is_false_positive : boolean  <color:#64748B><i>// alert that should be rejected</i></color>
+    * random_seed : int
+    * created_at : timestamptz
+  }
+
+  entity "seed.injected_pattern_transactions" as pattern_tx <<private>> {
+    * pattern_id : uuid <<PK, FK>>
+    * transaction_id : bigint <<PK, FK>>
+  }
+}
+
+' ============================================================================
+'  RELATIONSHIPS
+' ============================================================================
+
+' --- Auth and users
+auth_users ||--|| analysts : "profile"
+
+' --- Catalogs
+currencies ||--o{ countries
+countries ||--o{ cities
+countries ||--o{ banks
+countries |o--o{ channels
+currencies ||--o{ severity_thresholds
+currencies ||--o| exchange_rates
+severity_levels ||--o{ severity_thresholds
+
+' --- Banking
+countries ||--o{ customers
+cities ||--o{ customers
+currencies ||--o{ customers : "income_currency"
+customers |o--o{ accounts : "holder (internal)"
+banks ||--o{ accounts
+currencies ||--o{ accounts
+accounts ||--o{ cards
+customers ||--o{ cards
+customers ||--o{ customer_devices
+devices ||--o{ customer_devices
+customers ||--o{ security_events
+devices |o--o{ security_events
+cities |o--o{ security_events
+channels |o--o{ security_events
+merchant_categories ||--o{ merchants
+countries ||--o{ merchants
+cities |o--o{ merchants
+
+accounts |o--o{ transactions : "source"
+accounts |o--o{ transactions : "destination"
+cards |o--o{ transactions
+merchants |o--o{ transactions
+devices |o--o{ transactions
+channels ||--o{ transactions
+currencies ||--o{ transactions
+cities |o--o{ transactions
+transactions ||--|{ ledger_entries : "entries"
+accounts ||--o{ ledger_entries
+transactions ||--o{ disputes
+
+' --- Labeling
+transactions ||--o| labels : "current label"
+ai_alerts |o--o{ labels : "created from"
+analysts ||--o{ labels : "analyst"
+confidence_levels ||--o{ labels
+severity_levels |o--o{ labels
+labels ||--o{ label_fraud_types
+fraud_types ||--o{ label_fraud_types
+
+' --- AI alerts
+customers ||--o{ ai_alerts
+accounts |o--o{ ai_alerts
+fraud_types ||--o{ ai_alerts : "suggested_type"
+fraud_types |o--o{ ai_alerts : "final_type"
+analysts |o--o{ ai_alerts : "resolved_by"
+ai_alerts ||--o{ ai_alert_transactions
+transactions ||--o{ ai_alert_transactions
+ai_alerts ||--|{ ai_alert_reasons
+
+' --- Platform
+analysts ||--o{ notifications
+ai_alerts ||--o{ notifications
+analysts ||--o{ audit_log
+transactions |o--o{ audit_log
+
+' --- Private seed
+fraud_types ||--o{ patterns
+customers ||--o{ patterns
+patterns ||--|{ pattern_tx
+transactions ||--o{ pattern_tx
+
+' ============================================================================
+'  IMPLEMENTATION NOTES
+' ============================================================================
+note as N_rules
+  <b>Business rules enforced in the database</b>
+  • <b>Single role:</b> every authenticated user is an analyst (row in <i>analysts</i>,
+    created by trigger on auth.users). No admin, no user management.
+  • <b>No review periods:</b> analysts work on the global transaction list or on the
+    customer view (transactions of all the customer's accounts in a date range).
+  • <b>One current label per transaction</b> (unique transaction_id). Any analyst can
+    create or edit it; last write wins (<i>version</i> is incremented). The full history
+    lives in <i>audit_log</i> (entity = 'labels', transaction_id).
+  • <b>Labeling status:</b> <i>transactions.is_labeled</i> is maintained by a trigger on
+    labels, so the "Unlabeled / Labeled" filter and progress counters are cheap.
+  • <b>Single label:</b> RPC <i>save_label(transaction_id, ...)</i> upserts the label and its
+    fraud types atomically; analyst_id and updated_at are set by the database.
+  • <b>Bulk labeling:</b> RPC <i>label_transactions(ids[], ...)</i> applies one label to
+    many transactions in a single transaction and returns how many were overwritten.
+  • <b>Shared alert inbox:</b> RPC <i>resolve_alert(alert_id, action, ...)</i> locks the row
+    (<i>SELECT ... FOR UPDATE</i>) and fails if status <> 'pending', so the first analyst
+    wins. It creates/replaces the label of each alert transaction (source = 'alert'):
+    confirm → fraud + suggested type; reject → not_fraud; reclassify → fraud + other type.
+  • <b>Fixed taxonomy:</b> fraud_types, confidence_levels, severity_levels,
+    severity_thresholds and exchange_rates are loaded by the seed; the app only reads them.
+  • <b>Audit:</b> AFTER INSERT/UPDATE triggers on labels and ai_alerts write to
+    audit_log. No UPDATE/DELETE grants for <i>authenticated</i>.
+  • <b>Notifications:</b> AFTER INSERT trigger on ai_alerts creates one
+    <i>alert_new</i> notification per analyst (per-analyst read state).
+end note
+
+note as N_supabase
+  <b>Supabase</b>
+  • <b>RLS</b> on every table in <i>public</i>: any authenticated analyst can read all
+    banking data, alerts and labels (no masking, no per-customer restriction).
+    Writes only on labels / label_fraud_types (and alerts through <i>resolve_alert()</i>);
+    notifications: analyst_id = auth.uid().
+  • <b>Realtime</b> enabled on: transactions (is_labeled), labels, ai_alerts,
+    notifications. Connection status shown in the app.
+  • <b>Read views</b>: v_transactions_list (with alert score and label status),
+    v_customer_label_progress, v_labeling_progress, v_fraud_stats (committed
+    amount converted to COP with exchange_rates), v_ai_performance (confusion
+    matrix suggested vs. final type, precision by type), v_account_balance_history.
+    Out of scope: v_transfer_edges (graph), precision by score range.
+  • <b>Global search</b>: RPC <i>global_search(q)</i> over customers.search_vector,
+    accounts.last4 and transactions.code.
+  • <b>PDF reports</b> are generated on the client and saved locally (no Storage).
+  • <b>Key indexes</b>: transactions(source_account_id, occurred_at),
+    transactions(destination_account_id, occurred_at), transactions(is_labeled, occurred_at),
+    ai_alerts(status, score DESC), security_events(customer_id, occurred_at),
+    audit_log(entity, entity_id), audit_log(transaction_id),
+    notifications(analyst_id) WHERE read_at IS NULL, pg_trgm on names.
+end note
+
+N_rules -[hidden]- N_supabase
+
+@enduml
