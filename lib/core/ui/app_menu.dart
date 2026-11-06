@@ -79,6 +79,26 @@ class AppMenu extends StatefulWidget {
 
   @override
   State<AppMenu> createState() => _AppMenuState();
+
+  /// Surface of every menu and popover of the kit: white, radius `md`, subtle border and
+  /// shadow. Use it in a `MenuAnchor` that needs custom content (e.g. the C-06
+  /// notifications panel) so it looks like an [AppMenu].
+  static MenuStyle menuStyle({double minWidth = AppSizes.menuMinWidth}) {
+    return MenuStyle(
+      backgroundColor: const WidgetStatePropertyAll(AppColors.bgSurface),
+      surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+      shadowColor: const WidgetStatePropertyAll(AppColors.gris900),
+      elevation: const WidgetStatePropertyAll(4),
+      padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.xs)),
+      minimumSize: WidgetStatePropertyAll(Size(minWidth, 0)),
+      shape: const WidgetStatePropertyAll(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
+          side: BorderSide(color: AppColors.borderSubtle),
+        ),
+      ),
+    );
+  }
 }
 
 /// Opens and closes an [AppMenu] from its trigger.
@@ -105,20 +125,7 @@ class _AppMenuState extends State<AppMenu> {
     return MenuAnchor(
       controller: _menuController,
       alignmentOffset: widget.alignmentOffset ?? const Offset(0, AppSpace.xs),
-      style: MenuStyle(
-        backgroundColor: const WidgetStatePropertyAll(AppColors.bgSurface),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-        shadowColor: const WidgetStatePropertyAll(AppColors.gris900),
-        elevation: const WidgetStatePropertyAll(4),
-        padding: const WidgetStatePropertyAll(EdgeInsets.all(AppSpace.xs)),
-        minimumSize: WidgetStatePropertyAll(Size(widget.minWidth, 0)),
-        shape: const WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
-            side: BorderSide(color: AppColors.borderSubtle),
-          ),
-        ),
-      ),
+      style: AppMenu.menuStyle(minWidth: widget.minWidth),
       menuChildren: [for (final entry in widget.entries) _buildEntry(entry)],
       builder: (context, controller, child) =>
           widget.builder(context, _controller),
