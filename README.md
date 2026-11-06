@@ -105,7 +105,7 @@ test/              mirrors lib/
 - [ ] Component kit in `core/ui` (`AppButton`, `StatusBadge`, `ScreenState`, `AppDataTable`…)
 - [x] Domain enums with labels, tones and icons (`core/domain`)
 - [ ] Catalog repository and providers (`core/catalogs`)
-- [ ] Money and date formatting (`core/formatting`)
+- [x] Money and date formatting (`core/formatting`)
 - [ ] Realtime service and connection status (`core/realtime`)
 
 ### Database
