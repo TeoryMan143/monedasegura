@@ -129,7 +129,9 @@ dart run build_runner watch -d          # while developing
 dart format lib test
 flutter analyze                         # must be clean, infos included
 flutter test
-flutter run -d linux \
+flutter run -d windows                  # prototype: fake repositories, no backend (USE_FAKE_DATA=true by default)
+flutter run -d windows -t lib/main_kit.dart   # dev gallery of the core/ui kit
+flutter run -d linux --dart-define=USE_FAKE_DATA=false \
   --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
   --dart-define=SUPABASE_ANON_KEY=<anon key from `supabase status`>   # -d windows / macos too
 

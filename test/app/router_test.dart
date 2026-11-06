@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/app/app.dart';
-import 'package:monedasegura/core/supabase/supabase_client_provider.dart';
+import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
+
+import '../helpers/shell_overrides.dart';
 
 Future<void> _pumpApp(WidgetTester tester, {required bool signedIn}) async {
   tester.view
@@ -12,7 +14,10 @@ Future<void> _pumpApp(WidgetTester tester, {required bool signedIn}) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [isSignedInProvider.overrideWithValue(signedIn)],
+      overrides: [
+        isSignedInProvider.overrideWithValue(signedIn),
+        ...shellOverrides(),
+      ],
       child: const MonedaSeguraApp(),
     ),
   );
@@ -23,7 +28,7 @@ void main() {
   testWidgets('without a session the app shows the login', (tester) async {
     await _pumpApp(tester, signedIn: false);
 
-    expect(find.textContaining('HU-01'), findsOneWidget);
+    expect(find.text('Ingresa con tu cuenta de analista.'), findsOneWidget);
     expect(find.text('Alertas IA'), findsNothing);
   });
 

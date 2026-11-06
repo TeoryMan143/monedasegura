@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/kit.dart';
 
-/// Side menu with the three destinations, in shell branch order.
+/// Side menu with the three destinations, in shell branch order (DESIGN.md · Layout).
 class SideMenu extends StatelessWidget {
   const SideMenu({
     required this.selectedIndex,
@@ -13,7 +14,11 @@ class SideMenu extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
 
-  static const _destinations = ['Transacciones', 'Alertas IA', 'Estadísticas'];
+  static const _destinations = [
+    ('Transacciones', AppIcons.list),
+    ('Alertas IA', AppIcons.ai),
+    ('Estadísticas', AppIcons.statistics),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +32,7 @@ class SideMenu extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            height: AppLayout.brandMarkSize,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Moneda Segura', style: AppText.h3),
-            ),
-          ),
+          const Align(alignment: Alignment.centerLeft, child: BrandMark()),
           const SizedBox(height: AppSpace.xxl),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
@@ -43,9 +42,10 @@ class SideMenu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpace.sm),
-          for (final (index, label) in _destinations.indexed)
+          for (final (index, (label, icon)) in _destinations.indexed)
             _NavItem(
               label: label,
+              icon: icon,
               selected: index == selectedIndex,
               onTap: () => onSelect(index),
             ),
@@ -63,11 +63,13 @@ class SideMenu extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
+    required this.icon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final AppIcons icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -75,25 +77,43 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.xs),
-      child: Material(
-        color: selected ? AppColors.bgSelected : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          onTap: onTap,
-          child: Container(
-            height: AppLayout.navItemHeight,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              label,
-              style: (selected ? AppText.bodyMSemiBold : AppText.bodyM)
-                  .copyWith(
-                    color: selected
-                        ? AppColors.textBrand
-                        : AppColors.textPrimary,
-                  ),
-            ),
+      child: Pressable(
+        onPressed: onTap,
+        selected: selected,
+        semanticLabel: label,
+        builder: (context, state) => AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          height: AppLayout.navItemHeight,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.bgSelected
+                : state.hovered
+                ? AppColors.bgRowHover
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              AppIcon(
+                icon,
+                color: selected ? AppColors.iconBrand : AppColors.iconPrimary,
+              ),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (selected ? AppText.bodyMSemiBold : AppText.bodyM)
+                      .copyWith(
+                        color: selected
+                            ? AppColors.textBrand
+                            : AppColors.textPrimary,
+                      ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -13,20 +13,22 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _setUpWindow();
 
-  final missingKeys = Env.missingKeys;
-  if (missingKeys.isNotEmpty) {
-    // ignore: riverpod_lint/missing_provider_scope
-    runApp(ConfigErrorApp(missingKeys: missingKeys));
-    return;
-  }
-
   Intl.defaultLocale = 'es';
   await initializeDateFormatting('es');
 
-  await Supabase.initialize(
-    url: Env.supabaseUrl,
-    publishableKey: Env.supabaseAnonKey,
-  );
+  // The prototype runs on fake repositories and needs no backend.
+  if (!Env.useFakeData) {
+    final missingKeys = Env.missingKeys;
+    if (missingKeys.isNotEmpty) {
+      // ignore: riverpod_lint/missing_provider_scope
+      runApp(ConfigErrorApp(missingKeys: missingKeys));
+      return;
+    }
+    await Supabase.initialize(
+      url: Env.supabaseUrl,
+      publishableKey: Env.supabaseAnonKey,
+    );
+  }
 
   runApp(const ProviderScope(child: MonedaSeguraApp()));
 }

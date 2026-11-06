@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/supabase/supabase_client_provider.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
+import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/statistics/presentation/statistics_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
@@ -17,6 +17,15 @@ abstract final class AppRoutes {
   static const statistics = '/statistics';
 
   static String statisticsTab(StatisticsTab tab) => '$statistics/${tab.name}';
+
+  /// A-02 customer view; [transactionId] opens the N-02 panel on that transaction.
+  static String customer(String customerId, {String? transactionId}) =>
+      transactionId == null
+      ? '/customers/$customerId'
+      : '/customers/$customerId?tx=$transactionId';
+
+  /// A-05 alert detail.
+  static String alert(String alertId) => '$alerts/$alertId';
 }
 
 /// The app router. Its `redirect` is the only auth guard.
