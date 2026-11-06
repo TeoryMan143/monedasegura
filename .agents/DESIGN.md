@@ -198,6 +198,11 @@ never the page.
 ## Component kit (`lib/core/ui`)
 
 Build these once and use them everywhere. Names in parentheses are the Figma components.
+Import the whole kit with `import '<…>/core/ui/kit.dart';`. Every component has a doc comment
+with its variants; see them all running with `flutter run -d windows -t lib/main_kit.dart`
+(dev-only gallery in `lib/dev/kit_gallery/`). Clickable pieces are built on `Pressable`
+(hover, pressed, keyboard focus ring, Enter / Space), so new components get the desktop
+behaviour for free.
 
 | Widget | Spec |
 | --- | --- |
@@ -210,7 +215,7 @@ Build these once and use them everywhere. Names in parentheses are the Figma com
 | `AppSegmented` (Control segmentado) | Exclusive choice between 2–4 always-visible options: verdict, confidence, severity, chart group-by, timeline zoom. `bgSurfaceSubtle` track, active segment white with `card` shadow. Under confidence and severity, show the selected level's description in `bodyS`. |
 | `StatusBadge` (Insignia) | Pill, tone background + tone text + 12 px icon + text. **M 22 px**, **S 18 px** tall. |
 | `TaxonomyChip` (Chip taxonomía) | 24 px, radius `sm`, `borderDefault`: a colour square from `fraud_types.color` + bold code + name ("ATO · Robo de cuenta"). Removable variant with ×. |
-| `FilterChip` (Chip de filtro) | 26 px pill, `brand` tone, "Etiqueta: **Todas**" + × to remove. Shown next to the "Filtros" button, plus a "Limpiar filtros" action when more than one is active. |
+| `AppFilterChip` (Chip de filtro; named so it does not clash with Material's `FilterChip`) | 26 px pill, `brand` tone, "Etiqueta: **Todas**" + × to remove. Shown next to the "Filtros" button, plus a "Limpiar filtros" action when more than one is active. |
 | `ScoreBadge` | Number on the solid tone of its range (white text, dark text on warning), radius `sm`. Table size about 40×28. Large variant (alert detail) 80×80, radius `lg`, "de 100" under the number. |
 | `ScoreMeter` (Barra de avance y score) | Four-segment 0–100 bar coloured by range + a `StatusBadge` with the range text ("Riesgo crítico (85–100)"). |
 | `ProgressBar` | Labeled progress: "42/60 etiquetadas" + "70 %" always visible as text, azul fill on gris-100, 240 px. |
@@ -256,6 +261,9 @@ Build these once and use them everywhere. Names in parentheses are the Figma com
   icon or tone tokens. Use 20 px in buttons and inputs, 16 px in badges.
 - Export them as SVG from the Figma *Iconografía* grid into `assets/icons/` and expose them
   through one `AppIcons` class + `AppIcon` widget. Do not mix in Material Icons or other sets.
+  `AppIcons` is an enum in `core/theme/app_icons.dart` (so `core/domain` can name icons) and
+  `AppIcon` renders it. The current SVGs were drawn following these rules; when the Figma
+  grid is exported, replace the files keeping the same names.
 - Set used by the app: Inicio, Calendario, IA, Estadísticas, Descargar, Auditoría, Bandeja,
   Buscar, Campana, Usuario, Salir, Menú, Chevrons (4), Cerrar, Check, Más, Filtro, Ordenar,
   Reloj, Ojo, Editar, Ubicación, Línea de tiempo, Documento, Info, Advertencia, Error, Escudo,
