@@ -14,6 +14,11 @@ abstract final class Env {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
+  /// Test mode of HU-16: the simulated realtime connection drops every minute for a few
+  /// seconds so the top bar shows «Reconectando…». Run with
+  /// `--dart-define=SIMULATE_RECONNECT=true`.
+  static const simulateReconnect = bool.fromEnvironment('SIMULATE_RECONNECT');
+
   /// Names of the required values that were not provided at build time.
   static List<String> get missingKeys => [
     if (supabaseUrl.isEmpty) 'SUPABASE_URL',
