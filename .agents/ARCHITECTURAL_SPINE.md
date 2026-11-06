@@ -11,9 +11,9 @@ and vocabulary. See [`DESIGN.md`](./DESIGN.md) for anything visual and
 | --- | --- |
 | Framework | Flutter (stable), Dart ^3.13, **desktop only**: Windows, macOS, Linux |
 | Backend | Supabase via `supabase_flutter`: Auth (email + password), Postgres (tables, views, RPCs), Realtime |
-| State | `flutter_riverpod` + `riverpod_annotation` / `riverpod_generator` (code generation, `@riverpod`) |
+| State | `flutter_riverpod` with hand-written providers (no `riverpod_annotation` / `riverpod_generator`) |
 | Models | `freezed` + `json_serializable` (immutable, `fromJson`, `copyWith`, unions) |
-| Code generation | `build_runner` (`dart run build_runner build -d`); generated `*.g.dart` / `*.freezed.dart` are committed |
+| Code generation | `build_runner` (`dart run build_runner build -d`) for models only; generated `*.g.dart` / `*.freezed.dart` are committed |
 | Navigation | `go_router`: `StatefulShellRoute.indexedStack`, one branch per side menu destination |
 | Formatting | `intl` (`NumberFormat.currency` with the locale and decimals of `currencies`, Spanish dates) |
 | Charts | `fl_chart` |
@@ -76,7 +76,7 @@ features/<feature>/
     <rule>.dart                   pure logic: validation, aggregation, chart transforms
   presentation/
     <name>_screen.dart            one widget per route
-    controllers/<name>_controller.dart   @riverpod providers / Notifiers holding the screen's state
+    controllers/<name>_controller.dart   providers / Notifiers holding the screen's state
     widgets/                      widgets owned by this feature
 ```
 
@@ -95,12 +95,13 @@ features/<feature>/
 ## Data flow
 
 ```text
-Supabase (RLS, views, RPCs) → Repository (data) → @riverpod provider / Notifier → Widget
+Supabase (RLS, views, RPCs) → Repository (data) → provider / Notifier → Widget
                                                   ↑ RealtimeService invalidates
 ```
 
 1. **Only repositories talk to Supabase.** A repository is a plain class that receives the
-   `SupabaseClient` and is exposed as `@Riverpod(keepAlive: true) XRepository xRepository(Ref ref)`.
+   `SupabaseClient` and is exposed as
+   `final xRepositoryProvider = Provider<XRepository>((ref) => XRepository(ref.watch(supabaseClientProvider)));`.
    Widgets and controllers never build queries.
 2. **Read from views, write through the narrowest path** (names in DATABASE.md):
    - Lists read `v_transactions_list` and the other views. Do not stitch joins on the client.
@@ -127,13 +128,27 @@ Supabase (RLS, views, RPCs) → Repository (data) → @riverpod provider / Notif
 
 ## State (Riverpod)
 
-- Use the generator for everything: `@riverpod` functions for derived and read-only data,
-  `@riverpod class X extends _$X` Notifiers for state with operations. Do not write providers
-  by hand.
-- Providers auto-dispose by default. `keepAlive: true` only for app-wide state: the auth
-  session, current analyst, catalogs, repositories, realtime service and connection status.
-- Parameters are family arguments (`transactionsPage(query)`, `customerView(customerId)`).
-  Query objects are `@freezed` so equality works.
+- **No code generation for Riverpod.** Providers are written by hand as top-level `final`
+  variables named `xxxProvider`, with explicit type arguments and a `name:`
+  ([why](../docs/migracion-riverpod-manual.md)):
+
+  | Need | Declare |
+  | --- | --- |
+  | Value / object (repository, router) | `Provider<T>((ref) => …)` |
+  | One-shot async read | `FutureProvider.autoDispose<T>((ref) async => …)` |
+  | Stream (auth, realtime) | `StreamProvider<T>((ref) => …)` |
+  | State with operations | `NotifierProvider.autoDispose<XNotifier, T>(XNotifier.new)` with `class XNotifier extends Notifier<T>` |
+  | Async state with operations | `AsyncNotifierProvider.autoDispose<XNotifier, T>(XNotifier.new)` with `class XNotifier extends AsyncNotifier<T>` |
+  | Parameter | add `.family`: `FutureProvider.autoDispose.family<T, Arg>((ref, arg) => …)`; a family Notifier receives the argument in its constructor |
+
+  Do not use `StateProvider`, `StateNotifierProvider` or `ChangeNotifierProvider` (legacy).
+- **Hand-written providers are kept alive by default**, the opposite of the generator. Write
+  `.autoDispose` on every screen and family provider. Leave it out only for app-wide state:
+  the auth session, current analyst, catalogs, repositories, router, realtime service and
+  connection status.
+- Parameters are family arguments (`transactionsPageProvider(query)`,
+  `customerViewProvider(customerId)`). Query objects are `@freezed` so equality works. A family
+  takes one argument: group several values in a `@freezed` record-like class.
 - Filter, sort and page state lives in a Notifier per list (`TransactionsQuery`,
   `AlertsQuery`). The page provider watches it. Changing a filter resets the page to 1.
 - Widgets read `AsyncValue` and render it through `ScreenState` (loading skeleton, error with

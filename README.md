@@ -17,7 +17,7 @@ RLS). The bank data and the AI are simulated by a seed script.
 
 ## Stack
 
-Flutter (stable, Dart ^3.13) · Riverpod with code generation · freezed / json_serializable ·
+Flutter (stable, Dart ^3.13) · Riverpod (hand-written providers) · freezed / json_serializable ·
 go_router · supabase_flutter · intl · fl_chart · flutter_map · pdf / printing · file_selector ·
 window_manager · flutter_svg · mocktail.
 
@@ -60,7 +60,7 @@ Passing the values one by one also works:
 | Command | What it does |
 | --- | --- |
 | `flutter pub get` | Install dependencies |
-| `dart run build_runner build -d` | Generate code after changing `@riverpod` / `@freezed` / `@JsonSerializable` |
+| `dart run build_runner build -d` | Generate code after changing `@freezed` / `@JsonSerializable` |
 | `dart run build_runner watch -d` | Same, continuously while developing |
 | `dart format lib test` | Format |
 | `flutter analyze` | Lints (must be clean, infos included) |
@@ -91,7 +91,8 @@ test/              mirrors lib/
 
 ### Project setup
 
-- [x] Dependencies, lints (`flutter_lints` + `riverpod_lint`) and code generation
+- [x] Dependencies, lints (`flutter_lints` + `riverpod_lint`) and code generation (freezed / json)
+- [x] Riverpod providers written by hand, without `riverpod_generator` ([why](docs/migracion-riverpod-manual.md))
 - [x] Env config from `--dart-define` with a missing-config screen
 - [x] Supabase initialisation and client / session providers
 - [x] Window: title and minimum size 1280×720

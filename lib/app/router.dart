@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/supabase/supabase_client_provider.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
@@ -8,8 +8,6 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/statistics/presentation/statistics_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
 import 'shell/app_shell.dart';
-
-part 'router.g.dart';
 
 /// Route paths. Routes are English, screens are Spanish.
 abstract final class AppRoutes {
@@ -22,8 +20,12 @@ abstract final class AppRoutes {
 }
 
 /// The app router. Its `redirect` is the only auth guard.
-@Riverpod(keepAlive: true)
-GoRouter router(Ref ref) {
+///
+/// Kept alive (manual providers are not auto-disposed unless declared with
+/// `.autoDispose`): the router lives as long as the app.
+final routerProvider = Provider<GoRouter>(_buildRouter, name: 'routerProvider');
+
+GoRouter _buildRouter(Ref ref) {
   final signedIn = ValueNotifier<bool>(false);
   ref
     ..listen(
