@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../domain/catalog_models.dart';
 import '../theme/app_theme.dart';
 import 'app_icon.dart';
 import 'pressable.dart';
@@ -20,6 +21,17 @@ class TaxonomyChip extends StatelessWidget {
     this.onRemove,
     super.key,
   });
+
+  /// The chip of a `fraud_types` row, from `fraudTypesProvider`.
+  TaxonomyChip.fromCatalog(
+    CatalogFraudType type, {
+    this.selected = false,
+    this.onTap,
+    this.onRemove,
+    super.key,
+  }) : code = type.code,
+       name = type.name,
+       color = type.color;
 
   /// Taxonomy code: ATO, PHI, CLO, MUL, LAV, SIN, SIM, CNR.
   final String code;

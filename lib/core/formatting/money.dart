@@ -4,9 +4,10 @@ import '../domain/currency.dart';
 
 /// [amount] in its [currency]: `$ 1.900.000,00 COP`, `R$ 12.400,50 BRL`, `$ 1.500 CLP`.
 ///
-/// The separators come from the currency's locale and the decimals from the catalog. The
+/// Pass a row of `currenciesProvider` when it is loaded: its locale and decimals are the
+/// ones that count. The `Currency` enum mirrors them for code without the catalog. The
 /// pattern keeps the symbol first in every locale, as DESIGN.md writes amounts.
-String formatMoney(num amount, Currency currency) {
+String formatMoney(num amount, MoneyCurrency currency) {
   final number = NumberFormat.currency(
     locale: currency.locale.replaceAll('-', '_'),
     symbol: currency.symbol,
@@ -19,7 +20,7 @@ String formatMoney(num amount, Currency currency) {
 /// [formatMoney] with an explicit `+` for credits and positive net totals.
 ///
 /// Negative amounts already carry their `-`, and zero takes no sign.
-String formatSignedMoney(num amount, Currency currency) {
+String formatSignedMoney(num amount, MoneyCurrency currency) {
   final money = formatMoney(amount, currency);
   return amount > 0 ? '+$money' : money;
 }

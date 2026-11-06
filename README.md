@@ -104,7 +104,7 @@ test/              mirrors lib/
 - [ ] Logos (`assets/images/`) and line icons (`assets/icons/`) exported from Figma, `AppIcons`
 - [ ] Component kit in `core/ui` (`AppButton`, `StatusBadge`, `ScreenState`, `AppDataTable`…)
 - [x] Domain enums with labels, tones and icons (`core/domain`)
-- [ ] Catalog repository and providers (`core/catalogs`)
+- [x] Catalog repository and providers (`core/catalogs`)
 - [x] Money and date formatting (`core/formatting`)
 - [ ] Realtime service and connection status (`core/realtime`)
 
