@@ -103,7 +103,7 @@ test/              mirrors lib/
 - [x] Supabase CLI config (`supabase/config.toml`, seed paths, public sign-up off)
 - [ ] Logos (`assets/images/`) and line icons (`assets/icons/`) exported from Figma, `AppIcons`
 - [ ] Component kit in `core/ui` (`AppButton`, `StatusBadge`, `ScreenState`, `AppDataTable`…)
-- [ ] Domain enums with labels, tones and icons (`core/domain`)
+- [x] Domain enums with labels, tones and icons (`core/domain`)
 - [ ] Catalog repository and providers (`core/catalogs`)
 - [ ] Money and date formatting (`core/formatting`)
 - [ ] Realtime service and connection status (`core/realtime`)
