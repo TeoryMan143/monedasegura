@@ -101,7 +101,8 @@ Design system in Figma: Fundamentos `3:2`, Componentes `4:3`.
 
 1. **Layers per feature:** `data` → `domain` → `presentation`. Widgets never import
    `supabase_flutter`, and every query runs in a repository.
-2. **One state solution:** Riverpod with code generation (`@riverpod`). No `setState` except
+2. **One state solution:** Riverpod with hand-written providers (`Provider`, `NotifierProvider`…,
+   no `@riverpod` code generation, see [`docs/migracion-riverpod-manual.md`](docs/migracion-riverpod-manual.md)). No `setState` except
    for purely local, ephemeral widget state (hover, a text controller, an animation).
 3. **The database decides.** Permissions, validation and the alert workflow live in RLS,
    CHECKs and RPCs. The client mirrors validation only to give feedback before sending.
@@ -123,7 +124,7 @@ Design system in Figma: Fundamentos `3:2`, Componentes `4:3`.
 
 ```bash
 flutter pub get
-dart run build_runner build -d          # after changing @riverpod / @freezed / @JsonSerializable code
+dart run build_runner build -d          # after changing @freezed / @JsonSerializable code
 dart run build_runner watch -d          # while developing
 dart format lib test
 flutter analyze                         # must be clean, infos included
