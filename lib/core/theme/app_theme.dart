@@ -5,6 +5,7 @@ import 'app_metrics.dart';
 import 'app_text.dart';
 
 export 'app_colors.dart';
+export 'app_icons.dart';
 export 'app_metrics.dart';
 export 'app_text.dart';
 export 'status_tone.dart';
@@ -77,6 +78,14 @@ abstract final class AppTheme {
       splashColor: Colors.transparent,
       splashFactory: NoSplash.splashFactory,
       visualDensity: VisualDensity.standard,
+      iconTheme: const IconThemeData(
+        color: AppColors.iconPrimary,
+        size: AppIconSize.lg,
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: AppColors.borderFocus,
+        selectionColor: AppColors.azul100,
+      ),
       dividerTheme: const DividerThemeData(
         color: AppColors.borderSubtle,
         thickness: 1,
@@ -88,7 +97,7 @@ abstract final class AppTheme {
           color: AppColors.gris900,
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.sm)),
         ),
-        constraints: const BoxConstraints(maxWidth: 260),
+        constraints: const BoxConstraints(maxWidth: AppSizes.tooltipMaxWidth),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpace.sm,
           vertical: AppSpace.xs,

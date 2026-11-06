@@ -54,6 +54,9 @@ abstract final class AppColors {
   static const textBrand = azul600;
   static const textLink = azul600;
   static const textOnBrand = gris0;
+
+  /// Supporting text on Azul Icesi (login hero eyebrow and description).
+  static const textOnBrandSecondary = azul100;
   static const textDisabled = gris300;
 
   // --- Semantic: icons ---

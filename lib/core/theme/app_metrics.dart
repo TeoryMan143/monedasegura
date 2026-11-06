@@ -26,6 +26,53 @@ abstract final class AppRadius {
   static const double full = 999;
 }
 
+/// Icon sizes (DESIGN.md · Icons): 20 px in buttons and inputs, 16 px in badges.
+abstract final class AppIconSize {
+  static const double xs = 12;
+  static const double sm = 16;
+  static const double md = 20;
+  static const double lg = 24;
+}
+
+/// Fixed sizes of the kit components (DESIGN.md · Component kit).
+abstract final class AppSizes {
+  /// Buttons and inputs in forms and bars (size M).
+  static const double controlM = 40;
+
+  /// Buttons and inputs in tables and filters (size S).
+  static const double controlS = 32;
+  static const double iconButton = 36;
+  static const double iconButtonS = 28;
+  static const double menuItem = 36;
+  static const double menuMinWidth = 200;
+  static const double checkbox = 20;
+  static const double badgeM = 22;
+  static const double badgeS = 18;
+  static const double chip = 26;
+  static const double taxonomyChip = 24;
+  static const double tableHeader = 40;
+  static const double tableRow = 48;
+  static const double tableCheckboxColumn = 48;
+  static const double tableAlertBorder = 3;
+  static const double paginationBar = 52;
+  static const double tabs = 42;
+  static const double tabIndicator = 2;
+  static const double segmented = 36;
+  static const double segmentedS = 28;
+  static const double progressBar = 240;
+  static const double progressTrack = 6;
+  static const double avatarM = 32;
+  static const double avatarS = 24;
+  static const double scoreBadgeWidth = 40;
+  static const double scoreBadgeHeight = 28;
+  static const double scoreBadgeLarge = 80;
+  static const double scoreMeterTrack = 8;
+  static const double kpiIconTile = 28;
+  static const double toastWidth = 380;
+  static const double tooltipMaxWidth = 260;
+  static const double skeletonLine = 12;
+}
+
 /// Fixed sizes of the app layout (DESIGN.md · Layout).
 abstract final class AppLayout {
   static const double sideMenuWidth = 240;
@@ -38,6 +85,8 @@ abstract final class AppLayout {
   static const double dialogM = 560;
   static const double dialogL = 800;
   static const double brandMarkSize = 32;
+  static const double searchFieldWidth = 440;
+  static const double loginCardWidth = 420;
 }
 
 /// Soft, neutral shadows. No Material elevation tints (DESIGN.md · Elevation).
