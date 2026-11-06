@@ -6,6 +6,8 @@ import 'package:monedasegura/core/ui/kit.dart';
 import 'package:monedasegura/features/auth/data/auth_repository.dart';
 import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
 
+import '../../../helpers/shell_overrides.dart';
+
 const _latency = Duration(milliseconds: 50);
 
 Future<void> _pumpApp(WidgetTester tester) async {
@@ -22,6 +24,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
           ref.onDispose(repository.dispose);
           return repository;
         }),
+        ...shellOverrides(),
       ],
       child: const MonedaSeguraApp(),
     ),

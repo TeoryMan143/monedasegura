@@ -17,6 +17,15 @@ abstract final class AppRoutes {
   static const statistics = '/statistics';
 
   static String statisticsTab(StatisticsTab tab) => '$statistics/${tab.name}';
+
+  /// A-02 customer view; [transactionId] opens the N-02 panel on that transaction.
+  static String customer(String customerId, {String? transactionId}) =>
+      transactionId == null
+      ? '/customers/$customerId'
+      : '/customers/$customerId?tx=$transactionId';
+
+  /// A-05 alert detail.
+  static String alert(String alertId) => '$alerts/$alertId';
 }
 
 /// The app router. Its `redirect` is the only auth guard.

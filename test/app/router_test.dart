@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/app/app.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 
+import '../helpers/shell_overrides.dart';
+
 Future<void> _pumpApp(WidgetTester tester, {required bool signedIn}) async {
   tester.view
     ..physicalSize = const Size(1280, 720)
@@ -12,7 +14,10 @@ Future<void> _pumpApp(WidgetTester tester, {required bool signedIn}) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [isSignedInProvider.overrideWithValue(signedIn)],
+      overrides: [
+        isSignedInProvider.overrideWithValue(signedIn),
+        ...shellOverrides(),
+      ],
       child: const MonedaSeguraApp(),
     ),
   );
