@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../features/auth/presentation/widgets/user_menu.dart';
 import 'side_menu.dart';
 
 /// C-04 · App shell: side menu + top bar + content (HU-16).
@@ -38,7 +39,8 @@ class AppShell extends StatelessWidget {
   }
 }
 
-/// Top bar placeholder. Search (HU-14), bell (HU-16) and user menu (HU-01) go here.
+/// Top bar: global search (HU-14) and the bell (HU-16) go on the left of the user menu
+/// (HU-01, C-15).
 class _TopBar extends StatelessWidget {
   const _TopBar();
 
@@ -46,10 +48,12 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: AppLayout.topBarHeight,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.xxl),
       decoration: const BoxDecoration(
         color: AppColors.bgSurface,
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
+      child: const Row(children: [Spacer(), UserMenu()]),
     );
   }
 }

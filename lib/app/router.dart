@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/supabase/supabase_client_provider.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
+import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/statistics/presentation/statistics_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
