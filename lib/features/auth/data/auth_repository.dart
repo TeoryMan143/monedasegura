@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/env.dart';
+import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/analyst.dart';
 import 'fake_auth_repository.dart';
+import 'supabase_auth_repository.dart';
 
 /// Sign in and out with email and password (HU-01).
 ///
@@ -19,12 +22,17 @@ abstract interface class AuthRepository {
   Future<void> signOut();
 }
 
-/// The auth repository of the app.
+/// The auth repository of the app: [SupabaseAuthRepository], real Supabase Auth.
 ///
-/// Prototype: [FakeAuthRepository], an in-memory session. In S4 this line returns a
-/// `SupabaseAuthRepository(ref.watch(supabaseClientProvider))`; nothing else changes.
+/// With `--dart-define=USE_FAKE_DATA=true` (no backend) it is [FakeAuthRepository], an
+/// in-memory session; tests override it the same way.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final repository = FakeAuthRepository();
+  if (Env.useFakeData) {
+    final repository = FakeAuthRepository();
+    ref.onDispose(repository.dispose);
+    return repository;
+  }
+  final repository = SupabaseAuthRepository(ref.watch(supabaseClientProvider));
   ref.onDispose(repository.dispose);
   return repository;
 }, name: 'authRepositoryProvider');

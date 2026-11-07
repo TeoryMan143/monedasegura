@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/app/app.dart';
+import 'package:monedasegura/features/auth/data/auth_repository.dart';
+import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 
 import '../helpers/shell_overrides.dart';
@@ -16,6 +18,7 @@ Future<void> _pumpApp(WidgetTester tester, {required bool signedIn}) async {
     ProviderScope(
       overrides: [
         isSignedInProvider.overrideWithValue(signedIn),
+        authRepositoryProvider.overrideWith((ref) => FakeAuthRepository()),
         ...shellOverrides(),
       ],
       child: const MonedaSeguraApp(),

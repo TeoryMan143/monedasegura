@@ -1,7 +1,7 @@
 /// The signed-in analyst (HU-01). Every user of the app is an analyst.
 ///
-/// A plain value class: it has three fields and no JSON yet. When the Supabase
-/// repository arrives (S4) it can become a `@freezed` model with `fromJson`.
+/// A plain value class with three fields, built by the auth repository from the
+/// Supabase user and `analysts.full_name`.
 class Analyst {
   const Analyst({
     required this.id,
@@ -14,6 +14,17 @@ class Analyst {
 
   /// Name shown in the top bar and the user menu, e.g. «Laura Gómez».
   final String fullName;
+
+  /// «laura.gomez@monedasegura.co» → «Laura Gomez». Falls back to «Analista».
+  static String nameFromEmail(String email) {
+    final local = email.split('@').first;
+    final words = local
+        .split(RegExp('[._-]+'))
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .toList();
+    return words.isEmpty ? 'Analista' : words.join(' ');
+  }
 
   @override
   bool operator ==(Object other) =>

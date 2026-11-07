@@ -127,26 +127,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               loading: loading,
               expand: true,
             ),
-            const SizedBox(height: AppSpace.lg),
-            Row(
-              children: [
-                const AppIcon(
-                  AppIcons.info,
-                  size: AppIconSize.sm,
-                  color: AppColors.iconSecondary,
-                ),
-                const SizedBox(width: AppSpace.xs),
-                Expanded(
-                  child: Text(
-                    'Prototipo con datos simulados: la sesión no se guarda en '
-                    'un servidor.',
-                    style: AppText.bodyS.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
