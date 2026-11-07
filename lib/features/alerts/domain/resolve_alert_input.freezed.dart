@@ -15,11 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ResolveAlertInput {
 
- String get alertId; ResolveAlertAction get action;/// Row id of `fraud_types`. Only a reclassification chooses one: confirming keeps the
-/// suggested type and rejecting has none.
- int? get finalTypeId; ConfidenceLevel? get confidence;/// Only for fraud (confirm or reclassify).
- Severity? get severity; String? get justification;/// Involved transactions the analyst unchecked: they keep their current label.
- List<int> get excludedTransactionIds;
+ String get alertId; ResolveAlertAction get action; int? get finalTypeId; ConfidenceLevel? get confidence; Severity? get severity; String? get justification; List<int> get excludedTransactionIds;
 /// Create a copy of ResolveAlertInput
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -227,16 +223,11 @@ class _ResolveAlertInput implements ResolveAlertInput {
 
 @override final  String alertId;
 @override final  ResolveAlertAction action;
-/// Row id of `fraud_types`. Only a reclassification chooses one: confirming keeps the
-/// suggested type and rejecting has none.
 @override final  int? finalTypeId;
 @override final  ConfidenceLevel? confidence;
-/// Only for fraud (confirm or reclassify).
 @override final  Severity? severity;
 @override final  String? justification;
-/// Involved transactions the analyst unchecked: they keep their current label.
  final  List<int> _excludedTransactionIds;
-/// Involved transactions the analyst unchecked: they keep their current label.
 @override@JsonKey() List<int> get excludedTransactionIds {
   if (_excludedTransactionIds is EqualUnmodifiableListView) return _excludedTransactionIds;
   // ignore: implicit_dynamic_type

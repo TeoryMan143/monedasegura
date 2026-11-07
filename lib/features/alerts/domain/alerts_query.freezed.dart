@@ -15,11 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AlertsQuery {
 
-/// Only alerts with this score or more. Null shows every score.
- int? get minScore;/// Only alerts of this suggested type. Null shows every type.
- FraudType? get suggestedType;/// The inbox shows the pending ones until the analyst says otherwise.
- AlertStatus get status;/// Starts at 1.
- int get page; int get pageSize;
+ int? get minScore; FraudType? get suggestedType; AlertStatus get status; int get page; int get pageSize;
 /// Create a copy of AlertsQuery
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -223,13 +219,9 @@ class _AlertsQuery extends AlertsQuery {
   const _AlertsQuery({this.minScore, this.suggestedType, this.status = AlertStatus.pending, this.page = 1, this.pageSize = 25}): super._();
   
 
-/// Only alerts with this score or more. Null shows every score.
 @override final  int? minScore;
-/// Only alerts of this suggested type. Null shows every type.
 @override final  FraudType? suggestedType;
-/// The inbox shows the pending ones until the analyst says otherwise.
 @override@JsonKey() final  AlertStatus status;
-/// Starts at 1.
 @override@JsonKey() final  int page;
 @override@JsonKey() final  int pageSize;
 

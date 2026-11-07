@@ -107,6 +107,13 @@ All RPCs:
 | `label_transactions(p_transaction_ids bigint[], …same fields)` | Applies one label to many transactions (HU-05). Returns `{updated, overwritten}`. | same |
 | `resolve_alert(p_alert_id, p_action, p_final_type_id, p_confidence, p_severity, p_justification, p_excluded_transaction_ids bigint[])` | Locks the alert (`SELECT … FOR UPDATE`) and fails if it is not `pending`, so the first analyst wins. Sets status, `resolved_by`, `resolved_at`, `final_type_id`, then creates or replaces the label of each involved transaction not excluded (`source = 'alert'`): confirm → fraud + suggested type; reject → not_fraud; reclassify → fraud + another type. Excluded transactions keep their current label. | `alert_already_resolved`, `invalid_action`, `final_type_must_differ`, plus the label keys |
 | `global_search(p_query text, p_limit int)` | Searches customers (`search_vector`, trigram on names, document number), accounts (`last4`) and transactions (`code`). Returns rows grouped by `kind` (customer, account, transaction). | — |
+| `fraud_stats_kpis(p_from date, p_to date, p_country text)` | Statistics "Fraude" cards: `total_transactions`, `labeled`, `fraud` and `committed_amount_cop` (one total, converted with `exchange_rates`). A fraud counts once, whatever its types. | — |
+| `fraud_over_time(p_from, p_to, p_country)` | Frauds per week: `period_start` (Monday, UTC) and `fraud_count`. A week without frauds has no row; the app fills it with 0. | — |
+| `fraud_grouped(p_by text, p_from, p_to, p_country)` | Frauds per `'type'`, `'channel'` or `'country'` as `key` (the code) and `count`. By type, a fraud with two types counts once in each. | `invalid_group_by` |
+| `ai_performance(p_from, p_to, p_country)` | Alerts per `suggested_type_code`, `status` and `final_type_code` (`NONE` when rejected, null while pending), for the alerts generated in the range, of customers of the country. Feeds the "IA" tab and the confusion matrix. | — |
+
+The four statistics functions are `security invoker` (RLS applies), take the same three
+filters and treat a null filter as "no filter". They return a few dozen rows at most.
 
 ## Views (read models)
 
@@ -116,14 +123,15 @@ The app reads lists and statistics from views, so it never joins on the client:
 | --- | --- |
 | `v_transactions_list` | A-01 and the customer view table: transaction + customer + masked account + country + channel + top pending/any alert score + label verdict and status |
 | `v_customer_label_progress` | Customer view header: labeled / total, pending alerts |
-| `v_labeling_progress` | Statistics KPI "Avance del etiquetado" |
-| `v_fraud_stats` | Statistics "Fraude": counts over time, by type / channel / country, and the **committed amount converted to COP** with `exchange_rates` |
-| `v_ai_performance` | Statistics "IA": % confirmed / rejected / reclassified, precision by type, confusion matrix (suggested × final) |
+| `v_labeling_progress` | Overall labeling progress. The statistics page uses `fraud_stats_kpis`, which filters |
+| `v_fraud_stats` | Frauds by type and currency, with amounts per currency. It has no date or country: the statistics page uses the functions above |
+| `v_ai_performance` | Alerts by suggested type, status, final type and score range, without date or country. The statistics page uses `ai_performance` |
+| `v_stats_transactions` | One row per transaction with date, channel, customer country, amount in COP (`amount * exchange_rates.rate_to_cop`) and label verdict. The base of `fraud_stats_kpis`, `fraud_over_time` and `fraud_grouped` |
 | `v_account_balance_history` | Report "Cuentas" and the summary activity chart |
 
 `v_transfer_edges` (transfer graph) and precision by score range are **out of scope**. Do not
-build them. Filters (date range, country) must be pushable into the views' `WHERE`, so add the
-columns the filters need.
+build them. Statistics filters (date range, country) go through the parameters of the
+statistics functions, which apply them in the `WHERE` on the server.
 
 ## Realtime
 
