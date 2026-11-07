@@ -736,10 +736,14 @@ note as N_supabase
   • <b>Realtime</b> enabled on: transactions (is_labeled), labels, ai_alerts,
     notifications. Connection status shown in the app.
   • <b>Read views</b>: v_transactions_list (with alert score and label status),
-    v_customer_label_progress, v_labeling_progress, v_fraud_stats (committed
-    amount converted to COP with exchange_rates), v_ai_performance (confusion
-    matrix suggested vs. final type, precision by type), v_account_balance_history.
+    v_customer_label_progress, v_labeling_progress, v_fraud_stats (by type and
+    currency), v_ai_performance (suggested vs. final type), v_stats_transactions
+    (date, channel, country and amount in COP per transaction),
+    v_account_balance_history.
     Out of scope: v_transfer_edges (graph), precision by score range.
+  • <b>Statistics</b>: RPCs <i>fraud_stats_kpis</i>, <i>fraud_over_time</i>,
+    <i>fraud_grouped(by)</i> and <i>ai_performance</i>, all filtered by date range and
+    country; the committed amount is converted to COP with exchange_rates.
   • <b>Global search</b>: RPC <i>global_search(q)</i> over customers.search_vector,
     accounts.last4 and transactions.code.
   • <b>PDF reports</b> are generated on the client and saved locally (no Storage).

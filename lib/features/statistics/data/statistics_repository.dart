@@ -11,18 +11,11 @@ import '../domain/statistics_filter.dart';
 import '../domain/stats_group_by.dart';
 import '../domain/time_series_point.dart';
 
-/// Statistics of HU-13, added up by the database.
-///
-/// Each method calls one function of `20261107190000_statistics_filters.sql`, which takes
-/// the date range and the country of the [StatisticsFilter] and returns a few dozen rows
-/// at most. Nothing is counted here, and what an analyst labels in the session
-/// (`LocalWritesStore`) is not included.
 class StatisticsRepository {
   StatisticsRepository(this._client);
 
   final SupabaseClient _client;
 
-  /// The three cards: labeling progress, frauds and the committed amount in COP.
   Future<FraudKpis> fraudKpis(StatisticsFilter filter) async {
     try {
       final row = await _client
@@ -39,8 +32,6 @@ class StatisticsRepository {
     }
   }
 
-  /// Frauds per week, oldest first. A week without frauds has no point: see
-  /// `fillWeeklyGaps`.
   Future<List<TimeSeriesPoint>> fraudOverTime(StatisticsFilter filter) async {
     try {
       final rows = await _client.rpc(
