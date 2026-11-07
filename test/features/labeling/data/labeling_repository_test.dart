@@ -8,6 +8,7 @@ import 'package:monedasegura/core/domain/severity.dart';
 import 'package:monedasegura/core/domain/transaction_type.dart';
 import 'package:monedasegura/core/domain/verdict.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
+import 'package:monedasegura/features/labeling/data/label_writer.dart';
 import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
 import 'package:monedasegura/features/labeling/domain/label_form.dart';
 
@@ -91,8 +92,7 @@ void main() {
         transactionRow,
         label: savedLabelFromRow(labelRow),
       );
-      await saveToLocalWrites(
-        store,
+      await LocalLabelWriter(store).save(
         transactionId: 69539,
         form: const LabelForm(
           verdict: Verdict.notFraud,
@@ -104,7 +104,7 @@ void main() {
         analystName: 'Laura Gómez',
       );
 
-      final merged = withLocalLabel(target, store);
+      final merged = withPendingLabel(target, LocalLabelWriter(store));
 
       expect(merged.label?.verdict, Verdict.notFraud);
       expect(merged.label?.analystName, 'Laura Gómez');

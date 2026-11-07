@@ -11,6 +11,7 @@ import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/features/auth/domain/analyst.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
+import 'package:monedasegura/features/labeling/data/label_writer.dart';
 import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
 import 'package:monedasegura/features/labeling/presentation/classification_panel.dart';
 
@@ -60,7 +61,7 @@ void main() {
       ProviderScope(
         overrides: [
           labelingRepositoryProvider.overrideWithValue(
-            FakeLabelingRepository(store),
+            FakeLabelingRepository(LocalLabelWriter(store)),
           ),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           sessionProvider.overrideWith(_SignedIn.new),

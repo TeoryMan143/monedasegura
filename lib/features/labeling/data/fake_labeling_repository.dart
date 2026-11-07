@@ -7,25 +7,26 @@ import '../../../core/domain/severity.dart';
 import '../../../core/domain/transaction_type.dart';
 import '../../../core/domain/verdict.dart';
 import '../../../core/errors/failure.dart';
-import '../../../core/local_writes/local_writes_store.dart';
 import '../domain/classification_target.dart';
 import '../domain/label_form.dart';
+import 'label_writer.dart';
 import 'labeling_repository.dart';
 
 /// [LabelingRepository] without a backend: the transactions of «Ana María Rojas», the
 /// customer of `FakeCustomerRepository`, so the panel opens on any row of its A-02.
+/// Labels go to the same [LabelWriter] as in the app.
 class FakeLabelingRepository implements LabelingRepository {
-  FakeLabelingRepository(this._localWrites, {DateTime? now})
+  FakeLabelingRepository(this._writer, {DateTime? now})
     : _now = now ?? DateTime.now();
 
-  final LocalWritesStore _localWrites;
+  final LabelWriter _writer;
   final DateTime _now;
 
   @override
   Future<ClassificationTarget> fetchTarget(int transactionId) async {
     final target = _targets(_now)[transactionId];
     if (target == null) throw const Failure.notFound();
-    return withLocalLabel(target, _localWrites);
+    return withPendingLabel(target, _writer);
   }
 
   @override
@@ -34,8 +35,7 @@ class FakeLabelingRepository implements LabelingRepository {
     required LabelForm form,
     required String analystId,
     required String analystName,
-  }) => saveToLocalWrites(
-    _localWrites,
+  }) => _writer.save(
     transactionId: transactionId,
     form: form,
     analystId: analystId,

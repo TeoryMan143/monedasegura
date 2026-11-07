@@ -13,28 +13,29 @@ import '../../../core/domain/verdict.dart';
 import '../../../core/errors/failure.dart';
 import '../../../core/errors/failure_mapper.dart';
 import '../../../core/local_writes/local_writes_models.dart';
-import '../../../core/local_writes/local_writes_provider.dart';
-import '../../../core/local_writes/local_writes_store.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/classification_target.dart';
 import '../domain/label_form.dart';
 import 'fake_labeling_repository.dart';
+import 'label_writer.dart';
 
-/// Reads the transaction of the N-02 panel and saves its label (HU-04).
+/// Reads the transaction of the N-02 panel from the database and saves its label
+/// through a [LabelWriter] (HU-04).
 ///
-/// The prototype does not write to the database: [saveLabel] goes to the
-/// [LocalWritesStore], which also keeps the session's audit entry. Reads merge that
-/// label over the one in the database.
+/// The repository does not know where labels go: [labelWriterProvider] decides it. A
+/// label the writer holds and the database does not have yet shows over the database's.
 class LabelingRepository {
-  LabelingRepository(this._client, this._localWrites);
+  LabelingRepository(this._client, this._writer);
 
   final SupabaseClient _client;
-  final LocalWritesStore _localWrites;
+  final LabelWriter _writer;
 
   static const _transactionColumns =
       'id, code, occurred_at, type, channel_code, amount, currency_code, '
       'merchant_name, account_last4, account_type';
-  static const _labelColumns =
+
+  /// A label with what [savedLabelFromRow] reads: its analyst and fraud types.
+  static const labelColumns =
       'verdict, confidence, severity, justification, updated_at, '
       'analysts(full_name), label_fraud_types(fraud_types(code))';
   static const _alertColumns =
@@ -51,7 +52,7 @@ class LabelingRepository {
             .maybeSingle(),
         _client
             .from('labels')
-            .select(_labelColumns)
+            .select(labelColumns)
             .eq('transaction_id', transactionId)
             .maybeSingle(),
         _client
@@ -63,27 +64,26 @@ class LabelingRepository {
       if (row == null) throw const Failure.notFound();
       final label = results[1] as Map<String, dynamic>?;
       final alerts = results[2]! as List<dynamic>;
-      return withLocalLabel(
+      return withPendingLabel(
         targetFromRow(
           row,
           label: label == null ? null : savedLabelFromRow(label),
           alert: strongestAlert(alerts),
         ),
-        _localWrites,
+        _writer,
       );
     } catch (error) {
       throw mapToFailure(error);
     }
   }
 
-  /// Saves [form], which must already pass `validateLabel`, as the current analyst.
+  /// Saves [form], which must already pass `validateLabel`, as the given analyst.
   Future<SavedLabel> saveLabel({
     required int transactionId,
     required LabelForm form,
     required String analystId,
     required String analystName,
-  }) => saveToLocalWrites(
-    _localWrites,
+  }) => _writer.save(
     transactionId: transactionId,
     form: form,
     analystId: analystId,
@@ -91,41 +91,12 @@ class LabelingRepository {
   );
 }
 
-/// Writes [form] in [localWrites] and returns it as the transaction's current label.
-Future<SavedLabel> saveToLocalWrites(
-  LocalWritesStore localWrites, {
-  required int transactionId,
-  required LabelForm form,
-  required String analystId,
-  required String analystName,
-}) async {
-  final verdict = form.verdict;
-  final confidence = form.confidence;
-  if (verdict == null || confidence == null) {
-    throw const Failure.validation(key: 'label_incomplete');
-  }
-  final justification = form.justification.trim();
-  final saved = await localWrites.saveLabel(
-    transactionId: transactionId,
-    values: LabelValues(
-      verdict: verdict,
-      confidence: confidence,
-      severity: verdict == Verdict.notFraud ? null : form.severity,
-      justification: justification.isEmpty ? null : justification,
-      fraudTypes: verdict == Verdict.notFraud ? const [] : form.fraudTypes,
-    ),
-    analystId: analystId,
-    analystName: analystName,
-  );
-  return savedLabelFromLocal(saved);
-}
-
-/// [target] with the label saved in this session, which the database does not have yet.
-ClassificationTarget withLocalLabel(
+/// [target] with the label [writer] holds, if the database does not have it yet.
+ClassificationTarget withPendingLabel(
   ClassificationTarget target,
-  LocalWritesStore localWrites,
-) => switch (localWrites.labelFor(target.id)) {
-  final local? => target.copyWith(label: savedLabelFromLocal(local)),
+  LabelWriter writer,
+) => switch (writer.pendingLabelFor(target.id)) {
+  final pending? => target.copyWith(label: pending),
   null => target,
 };
 
@@ -162,7 +133,7 @@ ClassificationTarget targetFromRow(
   );
 }
 
-/// A row of `labels` with its analyst and fraud types embedded.
+/// A row of `labels` with its analyst and fraud types embedded ([LabelingRepository.labelColumns]).
 SavedLabel savedLabelFromRow(Map<String, dynamic> row) {
   final severity = row['severity'] as String?;
   final analyst = row['analysts'] as Map<String, dynamic>?;
@@ -207,10 +178,10 @@ TargetAlert? strongestAlert(List<dynamic> rows) {
 }
 
 /// The labeling repository of the app. With `--dart-define=USE_FAKE_DATA=true` (no
-/// backend) it is [FakeLabelingRepository].
+/// backend) it is [FakeLabelingRepository]. Both save through [labelWriterProvider].
 final labelingRepositoryProvider = Provider<LabelingRepository>((ref) {
-  final localWrites = ref.watch(localWritesStoreProvider);
+  final writer = ref.watch(labelWriterProvider);
   return Env.useFakeData
-      ? FakeLabelingRepository(localWrites)
-      : LabelingRepository(ref.watch(supabaseClientProvider), localWrites);
+      ? FakeLabelingRepository(writer)
+      : LabelingRepository(ref.watch(supabaseClientProvider), writer);
 }, name: 'labelingRepositoryProvider');
