@@ -151,7 +151,8 @@ class LocalWritesStore {
     return resolution;
   }
 
-  /// Forgets everything. Called when the analyst of the session changes (HU-01).
+  /// Forgets everything. Signing out does not call it: the writes stay for every
+  /// analyst until the app closes, like labels in the shared database.
   void clear() {
     _session++;
     _labels.clear();
