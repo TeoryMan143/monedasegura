@@ -17,8 +17,10 @@ class NotificationsRepository {
     try {
       final rows = await _client
           .from('notifications')
-          .select('id, alert_id, title, body, created_at, read_at, '
-              'ai_alerts(code, score)')
+          .select(
+            'id, alert_id, title, body, created_at, read_at, '
+            'ai_alerts(code, score)',
+          )
           .order('created_at', ascending: false)
           .limit(limit);
       return [
@@ -45,8 +47,10 @@ class NotificationsRepository {
     try {
       final rows = await _client
           .from('ai_alerts')
-          .select('id, code, score, customers(first_names, last_names), '
-              'fraud_types!suggested_type_id(name)')
+          .select(
+            'id, code, score, customers(first_names, last_names), '
+            'fraud_types!suggested_type_id(name)',
+          )
           .eq('status', 'pending')
           .order('generated_at', ascending: false)
           .limit(1);
@@ -56,9 +60,10 @@ class NotificationsRepository {
       final customer = _map(row['customers']);
       final body = [
         row['code'],
-        [customer['first_names'], customer['last_names']]
-            .whereType<String>()
-            .join(' '),
+        [
+          customer['first_names'],
+          customer['last_names'],
+        ].whereType<String>().join(' '),
         _map(row['fraud_types'])['name'],
       ].whereType<String>().where((part) => part.isNotEmpty).join(' · ');
       return AppNotification(

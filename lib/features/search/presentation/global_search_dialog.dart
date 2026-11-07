@@ -12,8 +12,10 @@ import 'controllers/search_controller.dart';
 /// Opens the customer view of a result; [transactionId] selects that transaction.
 ///
 /// The shell passes it, so this feature does not depend on the router.
-typedef OpenSearchResult =
-    void Function(String customerId, {String? transactionId});
+typedef OpenSearchResult = void Function(
+  String customerId, {
+  String? transactionId,
+});
 
 /// Opens C-05 · global search (HU-14). Called from the top bar button and Ctrl/Cmd+K.
 Future<void> showGlobalSearch(
@@ -229,8 +231,7 @@ class _ResultRowState extends State<_ResultRow> {
       child: Pressable(
         onPressed: widget.onOpen,
         selected: widget.highlighted,
-        semanticLabel:
-            '${result.kind.groupLabel}: ${result.title}, $subtitle',
+        semanticLabel: '${result.kind.groupLabel}: ${result.title}, $subtitle',
         builder: (context, state) => Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.sm,

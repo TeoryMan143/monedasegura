@@ -66,8 +66,10 @@ class SearchRepository {
     if (digits == null) return const [];
     final base = _client
         .from('accounts')
-        .select('id, last4, type, currency_code, customer_id, '
-            'customers(first_names, last_names)')
+        .select(
+          'id, last4, type, currency_code, customer_id, '
+          'customers(first_names, last_names)',
+        )
         .eq('is_external', false);
     final filtered = digits.length <= 4
         ? base.ilike('last4', '%$digits')

@@ -121,7 +121,9 @@ class _ConnectionStatus extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(connectionStatusProvider);
     return ConnectionIndicator(
-      status: status.hasValue ? status.requireValue : ConnectionStatus.connected,
+      status: status.hasValue
+          ? status.requireValue
+          : ConnectionStatus.connected,
     );
   }
 }

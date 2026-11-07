@@ -115,7 +115,9 @@ class _ExportPdfDialogState extends ConsumerState<ExportPdfDialog> {
         AppButton(
           label: 'Cancelar',
           variant: AppButtonVariant.secondary,
-          onPressed: export.isLoading ? null : () => Navigator.of(context).pop(),
+          onPressed: export.isLoading
+              ? null
+              : () => Navigator.of(context).pop(),
         ),
         AppButton(
           label: 'Exportar PDF',
@@ -131,7 +133,8 @@ class _ExportPdfDialogState extends ConsumerState<ExportPdfDialog> {
             InlineBanner(
               tone: StatusTone.danger,
               title: failureMessage(export.error!).title,
-              message: 'No se pudo exportar el reporte. '
+              message:
+                  'No se pudo exportar el reporte. '
                   '${failureMessage(export.error!).message}',
             ),
             const SizedBox(height: AppSpace.lg),

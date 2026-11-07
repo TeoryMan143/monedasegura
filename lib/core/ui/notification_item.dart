@@ -35,7 +35,7 @@ class NotificationItem extends StatelessWidget {
       semanticLabel: [
         if (unread) 'Sin leer',
         title,
-        if (subtitle != null) subtitle!,
+        ?subtitle,
         timeLabel,
       ].join(', '),
       builder: (context, state) => Container(
@@ -56,7 +56,11 @@ class NotificationItem extends StatelessWidget {
                 color: tone.background,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: AppIcon(AppIcons.ai, size: AppIconSize.sm, color: tone.text),
+              child: AppIcon(
+                AppIcons.ai,
+                size: AppIconSize.sm,
+                color: tone.text,
+              ),
             ),
             const SizedBox(width: AppSpace.md),
             Expanded(
@@ -78,7 +82,9 @@ class NotificationItem extends StatelessWidget {
                     ),
                   Text(
                     timeLabel,
-                    style: AppText.bodyS.copyWith(color: AppColors.textTertiary),
+                    style: AppText.bodyS.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
               ),
