@@ -1,7 +1,8 @@
 # Cliente, cuenta y país en `v_transactions_list`
 
-**Fecha:** 2026-11-07 · **Historia:** HU-02 Lista de transacciones · **Migración:**
-`supabase/migrations/20261107131448_transactions_list_customer.sql`
+**Fecha:** 2026-11-07 · **Historia:** HU-02 Lista de transacciones · **Migraciones:**
+`supabase/migrations/20261107131448_transactions_list_customer.sql` y
+`supabase/migrations/20261107144846_transactions_list_account_type.sql` (sección 9)
 
 ## 1. Resumen
 
@@ -123,3 +124,38 @@ registra en un solo paso. Si se usa el SQL Editor, registrarla después como aqu
   hay transacciones en una moneda distinta a la del país del cliente. Es una decisión
   pendiente.
 - **Vista de cliente (HU-03).** Usa la misma vista, así que también se beneficia.
+
+## 9. Segunda migración: tipo de cuenta
+
+`20261107144846_transactions_list_account_type.sql` agrega una columna más al final:
+
+| Columna | Tipo | Qué contiene |
+| --- | --- | --- |
+| `account_type` | `account_type` (`savings`, `checking`, `wallet`, `credit`) | Tipo de la misma cuenta de `account_last4` |
+
+**Justificación.** El frame A-01 de Figma muestra el tipo antes de los dígitos en la celda
+«Cliente / cuenta»: «Ah •••• 4417 · CO» (ahorros), «Cte» (corriente), «Bil» (billetera). No
+es un requisito de HU-02 ni de `DESIGN.md`, pero ayuda al analista a distinguir las cuentas
+de un cliente, y las billeteras son frecuentes en patrones como las cuentas mula. Se decidió
+incluirlo para seguir el diseño.
+
+**Detalles.** Es la misma definición de la primera migración, copiada sin cambios, más
+`account_type` al final. Usa la misma regla que `account_last4` (la cuenta del cliente de
+`customer_id`), así que el tipo y los dígitos siempre son de la misma cuenta. Se comprobó con
+un `diff` que es la única diferencia.
+
+**Aplicación.** Igual que la primera: se ejecutó el 2026-11-07 en el SQL Editor y se registró
+en el historial (sección 7) con:
+
+```sql
+insert into supabase_migrations.schema_migrations (version, name)
+values ('20261107144846', 'transactions_list_account_type');
+```
+
+**Verificación** (solo lectura, cuenta `demo@monedasegura.test`): las 77.550 transacciones
+tienen `account_type`, ninguna queda en nulo. Hay 51.572 de ahorros (`savings`), 13.568
+corrientes (`checking`), 6.131 billeteras (`wallet`) y 6.279 de crédito (`credit`).
+
+**En la app.** `TransactionRow` leerá `account_type`, y la abreviatura en español (Ah, Cte,
+Bil…) se definirá una sola vez como enum en `core/domain`, como las demás etiquetas de
+dominio.
