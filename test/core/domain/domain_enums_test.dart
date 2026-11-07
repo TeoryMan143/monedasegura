@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/core/domain/alert_status.dart';
+import 'package:monedasegura/core/domain/audit_action.dart';
 import 'package:monedasegura/core/domain/channel.dart';
 import 'package:monedasegura/core/domain/confidence_level.dart';
 import 'package:monedasegura/core/domain/country.dart';
@@ -30,6 +31,11 @@ void main() {
       });
     }
 
+    check(
+      'AuditAction',
+      AuditAction.values,
+      (v) => AuditAction.fromDb(v.dbValue),
+    );
     check('Verdict', Verdict.values, (v) => Verdict.fromDb(v.dbValue));
     check('Severity', Severity.values, (v) => Severity.fromDb(v.dbValue));
     check(
@@ -135,6 +141,21 @@ void main() {
     expect(AlertStatus.confirmed.isResolved, isTrue);
     expect(AlertStatus.rejected.isResolved, isTrue);
     expect(AlertStatus.reclassified.isResolved, isTrue);
+  });
+
+  test('each resolved status has its audit action', () {
+    expect(
+      AuditAction.forResolution(AlertStatus.confirmed),
+      AuditAction.confirmAlert,
+    );
+    expect(
+      AuditAction.forResolution(AlertStatus.rejected),
+      AuditAction.rejectAlert,
+    );
+    expect(
+      AuditAction.forResolution(AlertStatus.reclassified),
+      AuditAction.reclassifyAlert,
+    );
   });
 
   test('CLP has no decimals and every country has its currency', () {

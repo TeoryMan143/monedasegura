@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/catalogs/catalog_providers.dart';
+import '../../../../core/local_writes/local_writes_provider.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/analyst.dart';
 
@@ -28,7 +29,10 @@ class SessionController extends Notifier<Analyst?> {
     final subscription = repository.authStateChanges().listen((analyst) {
       final analystChanged = analyst?.id != state?.id;
       state = analyst;
-      if (analystChanged) invalidateCatalogs(ref);
+      if (analystChanged) {
+        invalidateCatalogs(ref);
+        ref.read(localWritesStoreProvider).clear();
+      }
     });
     ref.onDispose(subscription.cancel);
     return repository.currentAnalyst;

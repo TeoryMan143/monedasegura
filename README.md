@@ -106,6 +106,7 @@ test/              mirrors lib/
 - [x] Domain enums with labels, tones and icons (`core/domain`)
 - [x] Catalog repository and providers (`core/catalogs`)
 - [x] Money and date formatting (`core/formatting`)
+- [x] In-memory prototype writes (`core/local_writes`)
 - [ ] Realtime service and connection status (`core/realtime`)
 
 ### Database
