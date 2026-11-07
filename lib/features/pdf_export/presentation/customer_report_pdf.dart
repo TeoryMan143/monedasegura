@@ -1,5 +1,4 @@
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
@@ -81,7 +80,9 @@ pw.Widget _header(CustomerReportDocument document) {
     margin: const pw.EdgeInsets.only(bottom: AppSpace.xxl),
     padding: const pw.EdgeInsets.only(bottom: AppSpace.md),
     decoration: pw.BoxDecoration(
-      border: pw.Border(bottom: pw.BorderSide(color: _pdf(AppColors.borderDefault))),
+      border: pw.Border(
+        bottom: pw.BorderSide(color: _pdf(AppColors.borderDefault)),
+      ),
     ),
     child: pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -137,7 +138,10 @@ pw.Widget _footer(pw.Context context) {
   );
 }
 
-List<pw.Widget> _section(ReportSection section, CustomerReportDocument document) {
+List<pw.Widget> _section(
+  ReportSection section,
+  CustomerReportDocument document,
+) {
   final title = pw.Padding(
     padding: const pw.EdgeInsets.only(top: AppSpace.lg, bottom: AppSpace.sm),
     child: pw.Text(section.label, style: _style(AppText.h2, bold: true)),
@@ -174,7 +178,13 @@ List<pw.Widget> _section(ReportSection section, CustomerReportDocument document)
       title,
       _note('Transacciones del rango en orden cronológico inverso.'),
       _table(
-        headers: const ['Fecha', 'Transacción', 'Tipo · canal', 'Monto', 'Etiqueta'],
+        headers: const [
+          'Fecha',
+          'Transacción',
+          'Tipo · canal',
+          'Monto',
+          'Etiqueta',
+        ],
         rows: document.transactionRows,
         numericColumn: 3,
         empty: 'No hay transacciones en el rango.',
@@ -194,7 +204,10 @@ List<pw.Widget> _section(ReportSection section, CustomerReportDocument document)
 
 pw.Widget _note(String text) => pw.Padding(
   padding: const pw.EdgeInsets.only(bottom: AppSpace.sm),
-  child: pw.Text(text, style: _style(AppText.bodyS, color: AppColors.textSecondary)),
+  child: pw.Text(
+    text,
+    style: _style(AppText.bodyS, color: AppColors.textSecondary),
+  ),
 );
 
 pw.Widget _cell(String text, {Color? color}) => pw.Padding(
@@ -217,10 +230,12 @@ pw.Widget _table({
     cellStyle: _style(AppText.bodyS),
     headerDecoration: pw.BoxDecoration(color: _pdf(AppColors.bgSurfaceSubtle)),
     rowDecoration: pw.BoxDecoration(
-      border: pw.Border(bottom: pw.BorderSide(color: _pdf(AppColors.borderSubtle))),
+      border: pw.Border(
+        bottom: pw.BorderSide(color: _pdf(AppColors.borderSubtle)),
+      ),
     ),
     cellAlignments: {
-      if (numericColumn != null) numericColumn: pw.Alignment.centerRight,
+      ?numericColumn: pw.Alignment.centerRight,
     },
     cellPadding: const pw.EdgeInsets.symmetric(
       horizontal: AppSpace.xs,

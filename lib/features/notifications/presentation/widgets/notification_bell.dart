@@ -152,6 +152,9 @@ class _Panel extends StatelessWidget {
   final VoidCallback onMarkAllRead;
   final VoidCallback onRetry;
 
+  // Leaves the title at least about 110 px of the 356 px header.
+  static const _markAllMaxWidth = AppSizes.menuMinWidth + AppSpace.x4l;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -170,11 +173,17 @@ class _Panel extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(child: Text('Notificaciones', style: AppText.h3)),
-                AppButton(
-                  label: 'Marcar todas como leídas',
-                  size: AppButtonSize.s,
-                  variant: AppButtonVariant.tertiary,
-                  onPressed: unread == 0 ? null : onMarkAllRead,
+                const SizedBox(width: AppSpace.sm),
+                // Capped so a wider font (or the test font) shortens the label with «…»
+                // instead of overflowing the 380 px panel.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _markAllMaxWidth),
+                  child: AppButton(
+                    label: 'Marcar todas como leídas',
+                    size: AppButtonSize.s,
+                    variant: AppButtonVariant.tertiary,
+                    onPressed: unread == 0 ? null : onMarkAllRead,
+                  ),
                 ),
               ],
             ),
@@ -182,7 +191,8 @@ class _Panel extends StatelessWidget {
           const Divider(),
           Padding(
             // The list keeps a small inset; loading, empty and error get room to breathe.
-            padding: notifications.hasValue &&
+            padding:
+                notifications.hasValue &&
                     !notifications.hasError &&
                     notifications.requireValue.isNotEmpty
                 ? const EdgeInsets.all(AppSpace.sm)
@@ -191,38 +201,39 @@ class _Panel extends StatelessWidget {
                     vertical: AppSpace.xxl,
                   ),
             child: ScreenState<List<AppNotification>>(
-            value: notifications,
-            onRetry: onRetry,
-            errorTitle: 'No pudimos cargar las notificaciones',
-            errorMessage: 'Revisa tu conexión e inténtalo de nuevo.',
-            loading: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SkeletonBox(width: AppSizes.progressBar),
-                SizedBox(height: AppSpace.sm),
-                SkeletonBox(width: AppSizes.menuMinWidth),
-              ],
+              value: notifications,
+              onRetry: onRetry,
+              errorTitle: 'No pudimos cargar las notificaciones',
+              errorMessage: 'Revisa tu conexión e inténtalo de nuevo.',
+              loading: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonBox(width: AppSizes.progressBar),
+                  SizedBox(height: AppSpace.sm),
+                  SkeletonBox(width: AppSizes.menuMinWidth),
+                ],
+              ),
+              isEmpty: (items) => items.isEmpty,
+              empty: const EmptyState(
+                icon: AppIcons.bell,
+                title: 'Sin notificaciones',
+                message:
+                    'Te avisaremos aquí cuando la IA genere alertas nuevas.',
+              ),
+              builder: (context, items) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final item in items)
+                    NotificationItem(
+                      title: item.title,
+                      subtitle: item.body,
+                      timeLabel: formatRelative(item.createdAt),
+                      unread: !item.read,
+                      onTap: () => onOpen(item),
+                    ),
+                ],
+              ),
             ),
-            isEmpty: (items) => items.isEmpty,
-            empty: const EmptyState(
-              icon: AppIcons.bell,
-              title: 'Sin notificaciones',
-              message: 'Te avisaremos aquí cuando la IA genere alertas nuevas.',
-            ),
-            builder: (context, items) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final item in items)
-                  NotificationItem(
-                    title: item.title,
-                    subtitle: item.body,
-                    timeLabel: formatRelative(item.createdAt),
-                    unread: !item.read,
-                    onTap: () => onOpen(item),
-                  ),
-              ],
-            ),
-          ),
           ),
         ],
       ),
