@@ -1,6 +1,8 @@
+import '../../../core/domain/account_type.dart';
 import '../../../core/domain/catalog_models.dart';
 import '../../../core/domain/channel.dart';
 import '../../../core/domain/currency.dart';
+import '../../../core/domain/label_status.dart';
 import '../../../core/domain/page_result.dart';
 import '../../../core/domain/transaction_type.dart';
 import '../../../core/domain/verdict.dart';
@@ -25,13 +27,8 @@ class FakeTransactionsRepository implements TransactionsRepository {
     TransactionsQuery query, {
     required List<CatalogCountry> countries,
   }) async {
-    final countryCode = query.countryCode;
-    final currencyCode = countryCode == null
-        ? null
-        : currencyOfCountry(countryCode, countries);
-    if (countryCode != null && currencyCode == null) {
-      return const PageResult(items: [], total: 0);
-    }
+    final (:known, :currencyCode) = currencyFilter(query, countries);
+    if (!known) return const PageResult(items: [], total: 0);
     final matching =
         _rows.where((row) => _matches(row, query, currencyCode)).toList()
           ..sort((a, b) => _compare(a, b, query));
@@ -40,6 +37,18 @@ class FakeTransactionsRepository implements TransactionsRepository {
       items: withLocalLabels(withCountries(items, countries), _localWrites),
       total: matching.length,
     );
+  }
+
+  @override
+  Future<int> countUnlabeled(
+    TransactionsQuery query, {
+    required List<CatalogCountry> countries,
+  }) async {
+    if (query.labelStatus == LabelStatus.labeled) return 0;
+    final (:known, :currencyCode) = currencyFilter(query, countries);
+    if (!known) return 0;
+    final unlabeled = query.copyWith(labelStatus: LabelStatus.unlabeled);
+    return _rows.where((row) => _matches(row, unlabeled, currencyCode)).length;
   }
 
   static bool _matches(
@@ -54,8 +63,8 @@ class FakeTransactionsRepository implements TransactionsRepository {
         (dateTo == null ||
             row.occurredAt.isBefore(dateTo.add(const Duration(days: 1)))) &&
         (currencyCode == null || row.currency.code == currencyCode) &&
-        (query.channelCode == null ||
-            row.channel.dbValue == query.channelCode) &&
+        (query.channelCodes.isEmpty ||
+            query.channelCodes.contains(row.channel.dbValue)) &&
         (query.labelStatus == null || row.labelStatus == query.labelStatus) &&
         (!query.withAiAlert || row.hasAiAlert);
   }
@@ -106,6 +115,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000001',
     customerName: 'Ana María Rojas',
     accountLast4: '4417',
+    accountType: AccountType.savings,
     sourceAccountId: '00000000-0000-4000-9000-000000000001',
     destinationAccountId: '00000000-0000-4000-9000-000000000101',
     type: TransactionType.transfer,
@@ -122,6 +132,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000002',
     customerName: 'Diego Hernández',
     accountLast4: '2051',
+    accountType: AccountType.checking,
     sourceAccountId: '00000000-0000-4000-9000-000000000002',
     type: TransactionType.purchase,
     channel: Channel.pos,
@@ -138,6 +149,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000003',
     customerName: 'Lucía Quispe',
     accountLast4: '8830',
+    accountType: AccountType.wallet,
     sourceAccountId: '00000000-0000-4000-9000-000000000003',
     destinationAccountId: '00000000-0000-4000-9000-000000000103',
     type: TransactionType.transfer,
@@ -154,6 +166,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000004',
     customerName: 'Camila Soto',
     accountLast4: '1164',
+    accountType: AccountType.checking,
     sourceAccountId: '00000000-0000-4000-9000-000000000004',
     type: TransactionType.withdrawal,
     channel: Channel.atm,
@@ -169,6 +182,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000005',
     customerName: 'Martín Acosta',
     accountLast4: '7702',
+    accountType: AccountType.savings,
     sourceAccountId: '00000000-0000-4000-9000-000000000005',
     type: TransactionType.payment,
     channel: Channel.web,
@@ -183,6 +197,7 @@ final _prototypeRows = [
     customerId: '00000000-0000-4000-8000-000000000006',
     customerName: 'Beatriz Lima',
     accountLast4: '3395',
+    accountType: AccountType.wallet,
     destinationAccountId: '00000000-0000-4000-9000-000000000006',
     type: TransactionType.credit,
     channel: Channel.pix,

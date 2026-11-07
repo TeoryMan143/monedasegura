@@ -42,8 +42,8 @@ abstract class TransactionsQuery with _$TransactionsQuery {
     /// A `countries.code`.
     String? countryCode,
 
-    /// A `channels.code`.
-    String? channelCode,
+    /// `channels.code` values: a transaction matches any of them. Empty means all.
+    @Default(<String>{}) Set<String> channelCodes,
     LabelStatus? labelStatus,
 
     /// True shows only the transactions with an AI alert.
@@ -70,17 +70,26 @@ abstract class TransactionsQuery with _$TransactionsQuery {
     if (search.trim().isNotEmpty) TransactionsFilter.search,
     if (dateFrom != null || dateTo != null) TransactionsFilter.dateRange,
     if (countryCode != null) TransactionsFilter.country,
-    if (channelCode != null) TransactionsFilter.channel,
+    if (channelCodes.isNotEmpty) TransactionsFilter.channel,
     if (labelStatus != null) TransactionsFilter.labelStatus,
     if (withAiAlert) TransactionsFilter.aiAlert,
   ];
+
+  /// The search and filters only, with the default sort and page: the key of values
+  /// that depend on what matches, not on how it is shown (e.g. the unlabeled count).
+  TransactionsQuery get filtersOnly => copyWith(
+    sort: TransactionsSort.date,
+    ascending: false,
+    page: 1,
+    pageSize: 25,
+  );
 
   /// This query without [filter]. Keeps the page: the caller decides where to go.
   TransactionsQuery without(TransactionsFilter filter) => switch (filter) {
     TransactionsFilter.search => copyWith(search: ''),
     TransactionsFilter.dateRange => copyWith(dateFrom: null, dateTo: null),
     TransactionsFilter.country => copyWith(countryCode: null),
-    TransactionsFilter.channel => copyWith(channelCode: null),
+    TransactionsFilter.channel => copyWith(channelCodes: const {}),
     TransactionsFilter.labelStatus => copyWith(labelStatus: null),
     TransactionsFilter.aiAlert => copyWith(withAiAlert: false),
   };

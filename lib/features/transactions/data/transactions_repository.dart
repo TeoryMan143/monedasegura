@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/domain/catalog_models.dart';
+import '../../../core/domain/label_status.dart';
 import '../../../core/domain/page_result.dart';
 import '../../../core/errors/failure_mapper.dart';
 import '../../../core/local_writes/local_writes_provider.dart';
@@ -27,23 +28,18 @@ class TransactionsRepository {
   static const _view = 'v_transactions_list';
   static const _columns =
       'id, code, occurred_at, customer_id, customer_name, account_last4, '
-      'source_account_id, destination_account_id, type, channel_code, amount, '
-      'currency_code, alert_score, is_labeled, verdict';
+      'account_type, source_account_id, destination_account_id, type, '
+      'channel_code, amount, currency_code, alert_score, is_labeled, verdict';
 
   Future<PageResult<TransactionRow>> fetchPage(
     TransactionsQuery query, {
     required List<CatalogCountry> countries,
   }) async {
-    final countryCode = query.countryCode;
-    final currencyCode = countryCode == null
-        ? null
-        : currencyOfCountry(countryCode, countries);
-    // A country the catalog does not know has no transactions.
-    if (countryCode != null && currencyCode == null) {
-      return const PageResult(items: [], total: 0);
-    }
+    final (:known, :currencyCode) = currencyFilter(query, countries);
+    if (!known) return const PageResult(items: [], total: 0);
     try {
-      final response = await _filtered(query, currencyCode: currencyCode)
+      final request = _client.from(_view).select(_columns);
+      final response = await _applyFilters(request, query, currencyCode)
           .order(
             _sortColumn(query.sort),
             ascending: query.ascending,
@@ -65,11 +61,32 @@ class TransactionsRepository {
     }
   }
 
-  PostgrestFilterBuilder<PostgrestList> _filtered(
+  /// Transactions without a label that match the filters of [query]: the «3.906 sin
+  /// etiquetar» of the toolbar. Asks only for the count (a `HEAD` request), never rows.
+  Future<int> countUnlabeled(
     TransactionsQuery query, {
-    required String? currencyCode,
-  }) {
-    var request = _client.from(_view).select(_columns);
+    required List<CatalogCountry> countries,
+  }) async {
+    if (query.labelStatus == LabelStatus.labeled) return 0;
+    final (:known, :currencyCode) = currencyFilter(query, countries);
+    if (!known) return 0;
+    try {
+      final request = _client.from(_view).count(CountOption.exact);
+      return await _applyFilters(
+        request,
+        query.copyWith(labelStatus: LabelStatus.unlabeled),
+        currencyCode,
+      );
+    } catch (error) {
+      throw mapToFailure(error);
+    }
+  }
+
+  PostgrestFilterBuilder<T> _applyFilters<T>(
+    PostgrestFilterBuilder<T> request,
+    TransactionsQuery query,
+    String? currencyCode,
+  ) {
     // Every word must match the customer, the account digits or the transaction ID.
     for (final word in _searchWords(query.search)) {
       request = request.or(
@@ -88,8 +105,9 @@ class TransactionsRepository {
     if (currencyCode != null) {
       request = request.eq('currency_code', currencyCode);
     }
-    final channelCode = query.channelCode;
-    if (channelCode != null) request = request.eq('channel_code', channelCode);
+    if (query.channelCodes.isNotEmpty) {
+      request = request.inFilter('channel_code', query.channelCodes.toList());
+    }
     final labelStatus = query.labelStatus;
     if (labelStatus != null) {
       request = request.eq('is_labeled', labelStatus.dbValue);
@@ -119,6 +137,18 @@ class TransactionsRepository {
 
   static String _startOfNextDay(DateTime day) =>
       DateTime(day.year, day.month, day.day + 1).toUtc().toIso8601String();
+}
+
+/// The currency the country filter of [query] becomes. [known] is false when the catalog
+/// does not have that country, so nothing can match.
+({bool known, String? currencyCode}) currencyFilter(
+  TransactionsQuery query,
+  List<CatalogCountry> countries,
+) {
+  final countryCode = query.countryCode;
+  if (countryCode == null) return (known: true, currencyCode: null);
+  final currencyCode = currencyOfCountry(countryCode, countries);
+  return (known: currencyCode != null, currencyCode: currencyCode);
 }
 
 /// [rows] with the labels saved in this session, which the database does not have yet.

@@ -21,3 +21,18 @@ final transactionsPageProvider = FutureProvider.autoDispose
       retry: _noAutoRetry,
       name: 'transactionsPageProvider',
     );
+
+/// Unlabeled transactions that match the filters, for «3.906 sin etiquetar» (HU-02).
+///
+/// Watch it with [TransactionsQuery.filtersOnly]: page and sort do not change the count,
+/// so moving between pages does not ask for it again.
+final transactionsUnlabeledCountProvider = FutureProvider.autoDispose
+    .family<int, TransactionsQuery>(
+      (ref, query) async {
+        final repository = ref.watch(transactionsRepositoryProvider);
+        final countries = await ref.watch(countriesProvider.future);
+        return repository.countUnlabeled(query, countries: countries);
+      },
+      retry: _noAutoRetry,
+      name: 'transactionsUnlabeledCountProvider',
+    );
