@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
+import '../../labeling/presentation/classification_panel.dart';
 import 'controllers/customer_range_controller.dart';
 import 'controllers/customer_view_controller.dart';
 import 'widgets/customer_header.dart';
@@ -60,6 +61,57 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
     // The screen owns the range while it is open: it must survive the moment before the
     // table is built, e.g. when `?tx=` moves it while the customer still loads.
     ref.listen(customerDateRangeProvider(id), (_, _) {});
+    final selected = _selected;
+    return Stack(
+      children: [
+        _content(id),
+        // N-02 opens over the table on the selected row (HU-04).
+        if (selected != null) ...[
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _closePanel,
+              child: const ColoredBox(color: AppColors.bgOverlay),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: AppLayout.sidePanelWidth,
+            child: ClassificationPanel(
+              key: ValueKey(selected),
+              transactionId: selected,
+              onClose: _closePanel,
+              onNext: () => _openNext(selected),
+              onSaved: () => ref
+                ..invalidate(customerTransactionsPageProvider(id))
+                ..invalidate(customerLabelProgressProvider(id)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _closePanel() => setState(() => _selected = null);
+
+  /// «Siguiente»: the next row of the current page, or closes after the last one.
+  void _openNext(int current) {
+    final rows =
+        ref
+            .read(customerTransactionsPageProvider(widget.customerId))
+            .value
+            ?.items ??
+        const [];
+    final index = rows.indexWhere((row) => row.id == current);
+    setState(
+      () => _selected = index >= 0 && index + 1 < rows.length
+          ? rows[index + 1].id
+          : null,
+    );
+  }
+
+  Widget _content(String id) {
     return Padding(
       padding: const EdgeInsets.all(AppLayout.contentPadding),
       child: ScreenState(
