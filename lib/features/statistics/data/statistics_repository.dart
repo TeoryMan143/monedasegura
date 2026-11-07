@@ -44,7 +44,6 @@ class StatisticsRepository {
     }
   }
 
-  /// Frauds per type, channel or country, in no particular order: see `sortedDescending`.
   Future<List<GroupedCount>> fraudGrouped(
     StatisticsFilter filter,
     StatsGroupBy by,
@@ -60,11 +59,9 @@ class StatisticsRepository {
     }
   }
 
-  /// Confirmed, rejected and reclassified alerts, and the precision of each type.
   Future<AiPerformance> aiPerformance(StatisticsFilter filter) async =>
       aiPerformanceFrom(await _aiOutcomes(filter));
 
-  /// Suggested type against final type, for N-04.
   Future<ConfusionMatrix> confusionMatrix(StatisticsFilter filter) async =>
       confusionMatrixFrom(await _aiOutcomes(filter));
 
@@ -89,8 +86,6 @@ class StatisticsRepository {
   }
 }
 
-/// The `p_from`, `p_to` and `p_country` of the functions. A filter that is not set is
-/// left out, and the function reads it as "no filter".
 @visibleForTesting
 Map<String, dynamic> statisticsRpcParams(StatisticsFilter filter) => {
   if (filter.fromDate != null) 'p_from': _date(filter.fromDate!),
@@ -98,7 +93,6 @@ Map<String, dynamic> statisticsRpcParams(StatisticsFilter filter) => {
   if (filter.countryCode != null) 'p_country': filter.countryCode,
 };
 
-/// `2026-03-02`: the day, without time or zone, as the functions' `date` parameters read.
 String _date(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-'
     '${date.month.toString().padLeft(2, '0')}-'

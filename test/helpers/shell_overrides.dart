@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:monedasegura/core/realtime/realtime_service.dart';
 import 'package:monedasegura/features/notifications/data/notifications_repository.dart';
 import 'package:monedasegura/features/notifications/domain/app_notification.dart';
