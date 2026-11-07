@@ -9,18 +9,26 @@ as `docs/mer.svg`). This file says how to implement and change it. App-side acce
 
 ```text
 supabase/
-  config.toml                 supabase init; seed paths point at seed/*.sql
+  config.toml                 supabase init; seed runs catalogs.sql, generator.sql, reset.sql
   migrations/                 <timestamp>_<what>.sql, applied in order, never edited once merged
   seed/
-    catalogs.sql              currencies, countries, cities, banks, channels, MCCs, fraud_types,
-                              confidence_levels, severity_levels, severity_thresholds, exchange_rates
-    generator/                Python + Faker script that writes data.sql (customers, accounts,
-                              transactions, alerts, sample labels)
-    data.sql                  generated, git-ignored (too large to commit)
+    README.md                 how to reset, analyst accounts, volumes, injected patterns
+    catalogs.sql              seed.load_catalogs(): currencies, countries, cities, banks, channels,
+                              MCCs, fraud_types, confidence_levels, severity_levels,
+                              severity_thresholds, exchange_rates
+    generator.sql             installs seed.reset_demo_data() in the private seed schema (pure SQL,
+                              deterministic: customers, accounts, transactions, alerts, labels…)
+    reset.sql                 select seed.reset_demo_data();
+    reset.sh / reset.ps1      run the three files with psql against $SUPABASE_DB_URL
   tests/                      pgTAP tests (supabase test db)
 ```
 
-Suggested first migrations, one concern each:
+The baseline `20261103000100`–`20261103001400` follows the list below and reproduces the
+schema first built by hand in the hosted project. Those versions are recorded as applied in
+the hosted migration history, so `supabase db push` only sends what comes after them. The
+baseline is applied, so treat it like any merged migration and never edit it.
+
+Baseline migrations, one concern each:
 
 1. extensions (`citext`, `pg_trgm`)
 2. enums
@@ -141,8 +149,9 @@ Add an index for every new filter or sort the UI offers, and check it with
 
 ## Seed
 
-- **Reproducible:** a fixed random seed. `supabase db reset` rebuilds the same data every
-  time.
+- **Reproducible:** values come from `seed.h(key)` (md5 of a stable key), never `random()`.
+  `select seed.reset_demo_data();` (or `supabase db reset` locally) rebuilds the same rows and
+  ids every time. How to run it and what it produces: [`supabase/seed/README.md`](../supabase/seed/README.md).
 - **Target volumes:** about 2,000 customers, 3,500 accounts, 50,000+ transactions over several
   months, and 1,500 AI alerts.
 - **Countries and data:**
@@ -165,8 +174,8 @@ Add an index for every new filter or sort the UI offers, and check it with
   respalda"), in Spanish, e.g. "Monto 8,2× mayor al promedio de 90 días".
 - **Labels:** pre-label a share of transactions so progress, statistics and history are not
   empty, with several analysts and edits.
-- **Analysts:** one local user per team member plus a demo user, created through the Auth admin
-  API from the script. Local passwords only.
+- **Analysts:** one user per team member plus a demo user (`*@monedasegura.test`), inserted
+  into `auth.users` / `auth.identities` by the generator. Demo password only.
 - **Severity thresholds per currency:** an open point in the stories. Define them in
   `catalogs.sql` and keep them consistent with the injected amounts.
 - **Exchange rates:** fixed `rate_to_cop` per currency in `catalogs.sql`, dated with

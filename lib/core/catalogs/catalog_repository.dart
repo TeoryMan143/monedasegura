@@ -71,8 +71,8 @@ class CatalogRepository {
   }
 }
 
-/// The catalog repository of the app. The prototype has no Supabase session, and the
-/// catalogs need one, so it reads [FakeCatalogRepository].
+/// The catalog repository of the app. It reads Supabase with the analyst's session, or
+/// [FakeCatalogRepository] when the app runs with `USE_FAKE_DATA`.
 final catalogRepositoryProvider = Provider<CatalogRepository>(
   (ref) => Env.useFakeData
       ? FakeCatalogRepository()
