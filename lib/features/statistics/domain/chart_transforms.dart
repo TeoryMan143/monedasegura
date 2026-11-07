@@ -33,7 +33,6 @@ List<GroupedCount> sortedDescending(List<GroupedCount> groups) {
   return [for (final (_, group) in indexed) group];
 }
 
-
 List<TimeSeriesPoint> fillWeeklyGaps(
   List<TimeSeriesPoint> points,
   DateTime from,
@@ -47,7 +46,7 @@ List<TimeSeriesPoint> fillWeeklyGaps(
 
   final last = _mondayOf(to);
   final filled = <TimeSeriesPoint>[];
- 
+
   for (
     var week = _mondayOf(from);
     !week.isAfter(last);
@@ -65,7 +64,6 @@ double? percentChange(num current, num previous) {
   return (current - previous) / previous.abs() * 100;
 }
 
-
 List<TypePrecision> precisionByType(ConfusionMatrix matrix) {
   return [
     for (var row = 0; row < matrix.rows.length; row++)
@@ -77,7 +75,6 @@ List<TypePrecision> precisionByType(ConfusionMatrix matrix) {
         ),
   ];
 }
-
 
 double cellIntensity(int count, ConfusionMatrix matrix) {
   final max = matrix.maxCount;
