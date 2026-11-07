@@ -31,6 +31,14 @@ void main() {
         expect(formatMoney(0.5, currency), startsWith(currency.symbol));
       }
     });
+
+    test('the code can be left out for tables', () {
+      expect(
+        formatMoney(1900000, Currency.cop, withCode: false),
+        r'$ 1.900.000,00',
+      );
+      expect(formatMoney(1500, Currency.clp, withCode: false), r'$ 1.500');
+    });
   });
 
   group('formatSignedMoney', () {
@@ -41,6 +49,13 @@ void main() {
     test('negative totals show a minus and zero shows no sign', () {
       expect(formatSignedMoney(-1500, Currency.clp), r'-$ 1.500 CLP');
       expect(formatSignedMoney(0, Currency.clp), r'$ 0 CLP');
+    });
+
+    test('the code can be left out for tables', () {
+      expect(
+        formatSignedMoney(6200000, Currency.cop, withCode: false),
+        r'+$ 6.200.000,00',
+      );
     });
   });
 }

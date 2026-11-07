@@ -16,6 +16,29 @@ String formatTime(DateTime date) =>
 String formatDateTime(DateTime date) =>
     '${formatDate(date)} · ${formatTime(date)}';
 
+/// «19 mar»: the short date of tables, with [formatTime] below it.
+String formatShortDate(DateTime date) =>
+    DateFormat('d MMM', _locale).format(date.toLocal());
+
+/// A range of calendar days, as filter chips and the date field show it.
+///
+/// - Same month: «1–20 mar 2026».
+/// - Same year: «28 feb – 3 mar 2026».
+/// - Different years: «20 dic 2025 – 5 ene 2026».
+/// - Open ends: «Desde 1 mar 2026», «Hasta 20 mar 2026».
+String formatDateRange(DateTime? from, DateTime? to) {
+  final full = DateFormat('d MMM yyyy', _locale);
+  if (from == null && to == null) return '';
+  if (to == null) return 'Desde ${full.format(from!)}';
+  if (from == null) return 'Hasta ${full.format(to)}';
+  if (from.year != to.year) return '${full.format(from)} – ${full.format(to)}';
+  if (from.month != to.month) {
+    return '${DateFormat('d MMM', _locale).format(from)} – ${full.format(to)}';
+  }
+  if (from.day == to.day) return full.format(from);
+  return '${from.day}–${full.format(to)}';
+}
+
 /// «ahora», «hace 5 min», «hace 3 h», «ayer», «hace 2 d», then [formatDate].
 ///
 /// [now] defaults to the clock and exists so the result can be tested. Future dates read

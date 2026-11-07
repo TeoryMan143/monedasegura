@@ -25,6 +25,41 @@ void main() {
     expect(formatDateTime(date.toUtc()), '06 nov 2026 · 14:32');
   });
 
+  test('tables use the short date', () {
+    expect(formatShortDate(date), '6 nov');
+    expect(formatShortDate(DateTime(2026, 3, 19)), '19 mar');
+  });
+
+  group('formatDateRange', () {
+    test('a range in one month writes the month once', () {
+      expect(
+        formatDateRange(DateTime(2026, 3), DateTime(2026, 3, 20)),
+        '1–20 mar 2026',
+      );
+    });
+
+    test('a range across months or years writes both ends', () {
+      expect(
+        formatDateRange(DateTime(2026, 2, 28), DateTime(2026, 3, 3)),
+        '28 feb – 3 mar 2026',
+      );
+      expect(
+        formatDateRange(DateTime(2025, 12, 20), DateTime(2026, 1, 5)),
+        '20 dic 2025 – 5 ene 2026',
+      );
+    });
+
+    test('a single day and open ends', () {
+      expect(
+        formatDateRange(DateTime(2026, 3, 5), DateTime(2026, 3, 5)),
+        '5 mar 2026',
+      );
+      expect(formatDateRange(DateTime(2026, 3), null), 'Desde 1 mar 2026');
+      expect(formatDateRange(null, DateTime(2026, 3, 20)), 'Hasta 20 mar 2026');
+      expect(formatDateRange(null, null), '');
+    });
+  });
+
   group('formatRelative', () {
     final now = DateTime(2026, 11, 6, 14, 32);
 
