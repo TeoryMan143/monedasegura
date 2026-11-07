@@ -24,6 +24,12 @@ abstract class TransactionRow with _$TransactionRow {
     /// The customer to open on a click. Null when no account of the bank takes part.
     String? customerId,
 
+    /// First and last names of [customerId].
+    String? customerName,
+
+    /// Last four digits of the account of [customerId] in this transaction.
+    String? accountLast4,
+
     /// The account the money leaves. Null for a deposit.
     String? sourceAccountId,
 

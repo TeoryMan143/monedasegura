@@ -18,7 +18,9 @@ mixin _$TransactionRow {
 
  int get id;/// The readable code, e.g. `TX-48219`.
  String get code; DateTime get occurredAt;/// The customer to open on a click. Null when no account of the bank takes part.
- String? get customerId;/// The account the money leaves. Null for a deposit.
+ String? get customerId;/// First and last names of [customerId].
+ String? get customerName;/// Last four digits of the account of [customerId] in this transaction.
+ String? get accountLast4;/// The account the money leaves. Null for a deposit.
  String? get sourceAccountId;/// The account the money reaches. Null for a withdrawal or a purchase.
  String? get destinationAccountId;@JsonKey(fromJson: TransactionType.fromDb) TransactionType get type;@JsonKey(name: 'channel_code', fromJson: Channel.fromDb) Channel get channel; num get amount;@JsonKey(name: 'currency_code', fromJson: Currency.fromDb) Currency get currency;/// Not in the view: the repository reads it from the `countries` catalog, through
 /// the currency (see `transaction_country.dart`).
@@ -36,20 +38,20 @@ $TransactionRowCopyWith<TransactionRow> get copyWith => _$TransactionRowCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as TransactionRow;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionRow&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.occurredAt, _this.occurredAt) || other.occurredAt == _this.occurredAt)&&(identical(other.customerId, _this.customerId) || other.customerId == _this.customerId)&&(identical(other.sourceAccountId, _this.sourceAccountId) || other.sourceAccountId == _this.sourceAccountId)&&(identical(other.destinationAccountId, _this.destinationAccountId) || other.destinationAccountId == _this.destinationAccountId)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.channel, _this.channel) || other.channel == _this.channel)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.currency, _this.currency) || other.currency == _this.currency)&&(identical(other.country, _this.country) || other.country == _this.country)&&(identical(other.alertScore, _this.alertScore) || other.alertScore == _this.alertScore)&&(identical(other.isLabeled, _this.isLabeled) || other.isLabeled == _this.isLabeled)&&(identical(other.verdict, _this.verdict) || other.verdict == _this.verdict));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionRow&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.occurredAt, _this.occurredAt) || other.occurredAt == _this.occurredAt)&&(identical(other.customerId, _this.customerId) || other.customerId == _this.customerId)&&(identical(other.customerName, _this.customerName) || other.customerName == _this.customerName)&&(identical(other.accountLast4, _this.accountLast4) || other.accountLast4 == _this.accountLast4)&&(identical(other.sourceAccountId, _this.sourceAccountId) || other.sourceAccountId == _this.sourceAccountId)&&(identical(other.destinationAccountId, _this.destinationAccountId) || other.destinationAccountId == _this.destinationAccountId)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.channel, _this.channel) || other.channel == _this.channel)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.currency, _this.currency) || other.currency == _this.currency)&&(identical(other.country, _this.country) || other.country == _this.country)&&(identical(other.alertScore, _this.alertScore) || other.alertScore == _this.alertScore)&&(identical(other.isLabeled, _this.isLabeled) || other.isLabeled == _this.isLabeled)&&(identical(other.verdict, _this.verdict) || other.verdict == _this.verdict));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as TransactionRow;
-  return Object.hash(runtimeType,_this.id,_this.code,_this.occurredAt,_this.customerId,_this.sourceAccountId,_this.destinationAccountId,_this.type,_this.channel,_this.amount,_this.currency,_this.country,_this.alertScore,_this.isLabeled,_this.verdict);
+  return Object.hash(runtimeType,_this.id,_this.code,_this.occurredAt,_this.customerId,_this.customerName,_this.accountLast4,_this.sourceAccountId,_this.destinationAccountId,_this.type,_this.channel,_this.amount,_this.currency,_this.country,_this.alertScore,_this.isLabeled,_this.verdict);
 }
 
 @override
 String toString() {
   final _this = this as TransactionRow;
-  return 'TransactionRow(id: ${_this.id}, code: ${_this.code}, occurredAt: ${_this.occurredAt}, customerId: ${_this.customerId}, sourceAccountId: ${_this.sourceAccountId}, destinationAccountId: ${_this.destinationAccountId}, type: ${_this.type}, channel: ${_this.channel}, amount: ${_this.amount}, currency: ${_this.currency}, country: ${_this.country}, alertScore: ${_this.alertScore}, isLabeled: ${_this.isLabeled}, verdict: ${_this.verdict})';
+  return 'TransactionRow(id: ${_this.id}, code: ${_this.code}, occurredAt: ${_this.occurredAt}, customerId: ${_this.customerId}, customerName: ${_this.customerName}, accountLast4: ${_this.accountLast4}, sourceAccountId: ${_this.sourceAccountId}, destinationAccountId: ${_this.destinationAccountId}, type: ${_this.type}, channel: ${_this.channel}, amount: ${_this.amount}, currency: ${_this.currency}, country: ${_this.country}, alertScore: ${_this.alertScore}, isLabeled: ${_this.isLabeled}, verdict: ${_this.verdict})';
 }
 
 
@@ -60,7 +62,7 @@ abstract mixin class $TransactionRowCopyWith<$Res>  {
   factory $TransactionRowCopyWith(TransactionRow value, $Res Function(TransactionRow) _then) = _$TransactionRowCopyWithImpl;
 @useResult
 $Res call({
- int id, String code, DateTime occurredAt, String? customerId, String? sourceAccountId, String? destinationAccountId,@JsonKey(fromJson: TransactionType.fromDb) TransactionType type,@JsonKey(name: 'channel_code', fromJson: Channel.fromDb) Channel channel, num amount,@JsonKey(name: 'currency_code', fromJson: Currency.fromDb) Currency currency,@JsonKey(includeFromJson: false, includeToJson: false) Country? country, int? alertScore, bool isLabeled,@JsonKey(fromJson: _verdictOrNull) Verdict? verdict
+ int id, String code, DateTime occurredAt, String? customerId, String? customerName, String? accountLast4, String? sourceAccountId, String? destinationAccountId,@JsonKey(fromJson: TransactionType.fromDb) TransactionType type,@JsonKey(name: 'channel_code', fromJson: Channel.fromDb) Channel channel, num amount,@JsonKey(name: 'currency_code', fromJson: Currency.fromDb) Currency currency,@JsonKey(includeFromJson: false, includeToJson: false) Country? country, int? alertScore, bool isLabeled,@JsonKey(fromJson: _verdictOrNull) Verdict? verdict
 });
 
 
@@ -77,12 +79,14 @@ class _$TransactionRowCopyWithImpl<$Res>
 
 /// Create a copy of TransactionRow
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? code = null,Object? occurredAt = null,Object? customerId = freezed,Object? sourceAccountId = freezed,Object? destinationAccountId = freezed,Object? type = null,Object? channel = null,Object? amount = null,Object? currency = null,Object? country = freezed,Object? alertScore = freezed,Object? isLabeled = null,Object? verdict = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? code = null,Object? occurredAt = null,Object? customerId = freezed,Object? customerName = freezed,Object? accountLast4 = freezed,Object? sourceAccountId = freezed,Object? destinationAccountId = freezed,Object? type = null,Object? channel = null,Object? amount = null,Object? currency = null,Object? country = freezed,Object? alertScore = freezed,Object? isLabeled = null,Object? verdict = freezed,}) {
   return _then(TransactionRow(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,occurredAt: null == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,customerId: freezed == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
+as String?,customerName: freezed == customerName ? _self.customerName : customerName // ignore: cast_nullable_to_non_nullable
+as String?,accountLast4: freezed == accountLast4 ? _self.accountLast4 : accountLast4 // ignore: cast_nullable_to_non_nullable
 as String?,sourceAccountId: freezed == sourceAccountId ? _self.sourceAccountId : sourceAccountId // ignore: cast_nullable_to_non_nullable
 as String?,destinationAccountId: freezed == destinationAccountId ? _self.destinationAccountId : destinationAccountId // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -178,10 +182,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? customerName,  String? accountLast4,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransactionRow() when $default != null:
-return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
+return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.customerName,_that.accountLast4,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
   return orElse();
 
 }
@@ -199,10 +203,10 @@ return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sour
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? customerName,  String? accountLast4,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)  $default,) {final _that = this;
 switch (_that) {
 case _TransactionRow():
-return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
+return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.customerName,_that.accountLast4,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -219,10 +223,10 @@ return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sour
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String code,  DateTime occurredAt,  String? customerId,  String? customerName,  String? accountLast4,  String? sourceAccountId,  String? destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb)  TransactionType type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb)  Channel channel,  num amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb)  Currency currency, @JsonKey(includeFromJson: false, includeToJson: false)  Country? country,  int? alertScore,  bool isLabeled, @JsonKey(fromJson: _verdictOrNull)  Verdict? verdict)?  $default,) {final _that = this;
 switch (_that) {
 case _TransactionRow() when $default != null:
-return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
+return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.customerName,_that.accountLast4,_that.sourceAccountId,_that.destinationAccountId,_that.type,_that.channel,_that.amount,_that.currency,_that.country,_that.alertScore,_that.isLabeled,_that.verdict);case _:
   return null;
 
 }
@@ -234,7 +238,7 @@ return $default(_that.id,_that.code,_that.occurredAt,_that.customerId,_that.sour
 
 @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
 class _TransactionRow extends TransactionRow {
-  const _TransactionRow({required this.id, required this.code, required this.occurredAt, this.customerId, this.sourceAccountId, this.destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb) required this.type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb) required this.channel, required this.amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb) required this.currency, @JsonKey(includeFromJson: false, includeToJson: false) this.country, this.alertScore, required this.isLabeled, @JsonKey(fromJson: _verdictOrNull) this.verdict}): super._();
+  const _TransactionRow({required this.id, required this.code, required this.occurredAt, this.customerId, this.customerName, this.accountLast4, this.sourceAccountId, this.destinationAccountId, @JsonKey(fromJson: TransactionType.fromDb) required this.type, @JsonKey(name: 'channel_code', fromJson: Channel.fromDb) required this.channel, required this.amount, @JsonKey(name: 'currency_code', fromJson: Currency.fromDb) required this.currency, @JsonKey(includeFromJson: false, includeToJson: false) this.country, this.alertScore, required this.isLabeled, @JsonKey(fromJson: _verdictOrNull) this.verdict}): super._();
   factory _TransactionRow.fromJson(Map<String, dynamic> json) => _$TransactionRowFromJson(json);
 
 @override final  int id;
@@ -243,6 +247,10 @@ class _TransactionRow extends TransactionRow {
 @override final  DateTime occurredAt;
 /// The customer to open on a click. Null when no account of the bank takes part.
 @override final  String? customerId;
+/// First and last names of [customerId].
+@override final  String? customerName;
+/// Last four digits of the account of [customerId] in this transaction.
+@override final  String? accountLast4;
 /// The account the money leaves. Null for a deposit.
 @override final  String? sourceAccountId;
 /// The account the money reaches. Null for a withdrawal or a purchase.
@@ -270,18 +278,18 @@ _$TransactionRowCopyWith<_TransactionRow> get copyWith => __$TransactionRowCopyW
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionRow&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.sourceAccountId, sourceAccountId) || other.sourceAccountId == sourceAccountId)&&(identical(other.destinationAccountId, destinationAccountId) || other.destinationAccountId == destinationAccountId)&&(identical(other.type, type) || other.type == type)&&(identical(other.channel, channel) || other.channel == channel)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.country, country) || other.country == country)&&(identical(other.alertScore, alertScore) || other.alertScore == alertScore)&&(identical(other.isLabeled, isLabeled) || other.isLabeled == isLabeled)&&(identical(other.verdict, verdict) || other.verdict == verdict));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionRow&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.customerName, customerName) || other.customerName == customerName)&&(identical(other.accountLast4, accountLast4) || other.accountLast4 == accountLast4)&&(identical(other.sourceAccountId, sourceAccountId) || other.sourceAccountId == sourceAccountId)&&(identical(other.destinationAccountId, destinationAccountId) || other.destinationAccountId == destinationAccountId)&&(identical(other.type, type) || other.type == type)&&(identical(other.channel, channel) || other.channel == channel)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.country, country) || other.country == country)&&(identical(other.alertScore, alertScore) || other.alertScore == alertScore)&&(identical(other.isLabeled, isLabeled) || other.isLabeled == isLabeled)&&(identical(other.verdict, verdict) || other.verdict == verdict));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,code,occurredAt,customerId,sourceAccountId,destinationAccountId,type,channel,amount,currency,country,alertScore,isLabeled,verdict);
+    return Object.hash(runtimeType,id,code,occurredAt,customerId,customerName,accountLast4,sourceAccountId,destinationAccountId,type,channel,amount,currency,country,alertScore,isLabeled,verdict);
 }
 
 @override
 String toString() {
-    return 'TransactionRow(id: $id, code: $code, occurredAt: $occurredAt, customerId: $customerId, sourceAccountId: $sourceAccountId, destinationAccountId: $destinationAccountId, type: $type, channel: $channel, amount: $amount, currency: $currency, country: $country, alertScore: $alertScore, isLabeled: $isLabeled, verdict: $verdict)';
+    return 'TransactionRow(id: $id, code: $code, occurredAt: $occurredAt, customerId: $customerId, customerName: $customerName, accountLast4: $accountLast4, sourceAccountId: $sourceAccountId, destinationAccountId: $destinationAccountId, type: $type, channel: $channel, amount: $amount, currency: $currency, country: $country, alertScore: $alertScore, isLabeled: $isLabeled, verdict: $verdict)';
 }
 
 
@@ -292,7 +300,7 @@ abstract mixin class _$TransactionRowCopyWith<$Res> implements $TransactionRowCo
   factory _$TransactionRowCopyWith(_TransactionRow value, $Res Function(_TransactionRow) _then) = __$TransactionRowCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String code, DateTime occurredAt, String? customerId, String? sourceAccountId, String? destinationAccountId,@JsonKey(fromJson: TransactionType.fromDb) TransactionType type,@JsonKey(name: 'channel_code', fromJson: Channel.fromDb) Channel channel, num amount,@JsonKey(name: 'currency_code', fromJson: Currency.fromDb) Currency currency,@JsonKey(includeFromJson: false, includeToJson: false) Country? country, int? alertScore, bool isLabeled,@JsonKey(fromJson: _verdictOrNull) Verdict? verdict
+ int id, String code, DateTime occurredAt, String? customerId, String? customerName, String? accountLast4, String? sourceAccountId, String? destinationAccountId,@JsonKey(fromJson: TransactionType.fromDb) TransactionType type,@JsonKey(name: 'channel_code', fromJson: Channel.fromDb) Channel channel, num amount,@JsonKey(name: 'currency_code', fromJson: Currency.fromDb) Currency currency,@JsonKey(includeFromJson: false, includeToJson: false) Country? country, int? alertScore, bool isLabeled,@JsonKey(fromJson: _verdictOrNull) Verdict? verdict
 });
 
 
@@ -309,12 +317,14 @@ class __$TransactionRowCopyWithImpl<$Res>
 
 /// Create a copy of TransactionRow
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? code = null,Object? occurredAt = null,Object? customerId = freezed,Object? sourceAccountId = freezed,Object? destinationAccountId = freezed,Object? type = null,Object? channel = null,Object? amount = null,Object? currency = null,Object? country = freezed,Object? alertScore = freezed,Object? isLabeled = null,Object? verdict = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? code = null,Object? occurredAt = null,Object? customerId = freezed,Object? customerName = freezed,Object? accountLast4 = freezed,Object? sourceAccountId = freezed,Object? destinationAccountId = freezed,Object? type = null,Object? channel = null,Object? amount = null,Object? currency = null,Object? country = freezed,Object? alertScore = freezed,Object? isLabeled = null,Object? verdict = freezed,}) {
   return _then(_TransactionRow(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,occurredAt: null == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,customerId: freezed == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
+as String?,customerName: freezed == customerName ? _self.customerName : customerName // ignore: cast_nullable_to_non_nullable
+as String?,accountLast4: freezed == accountLast4 ? _self.accountLast4 : accountLast4 // ignore: cast_nullable_to_non_nullable
 as String?,sourceAccountId: freezed == sourceAccountId ? _self.sourceAccountId : sourceAccountId // ignore: cast_nullable_to_non_nullable
 as String?,destinationAccountId: freezed == destinationAccountId ? _self.destinationAccountId : destinationAccountId // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable

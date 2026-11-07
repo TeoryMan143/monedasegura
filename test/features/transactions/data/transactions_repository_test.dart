@@ -22,6 +22,8 @@ const _row = {
   'code': 'TX-48219',
   'occurred_at': '2026-03-19T22:41:00Z',
   'customer_id': '00000000-0000-4000-8000-000000000001',
+  'customer_name': 'Ana María Rojas',
+  'account_last4': '4417',
   'source_account_id': '00000000-0000-4000-9000-000000000001',
   'destination_account_id': '00000000-0000-4000-9000-000000000101',
   'type': 'transfer',
@@ -187,28 +189,44 @@ void main() {
     ]);
   });
 
-  test('the search looks in the transaction ID', () async {
-    await fetch(const TransactionsQuery(search: 'TX-482'));
+  test('the search looks in customer, account digits and ID', () async {
+    await fetch(const TransactionsQuery(search: 'rojas'));
 
-    expect(allOf('code'), ['ilike.%TX-482%']);
+    expect(
+      params()['or'],
+      '(customer_name.ilike.*rojas*,account_last4.ilike.*rojas*,'
+      'code.ilike.*rojas*)',
+    );
   });
 
   test('every word of the search must match', () async {
-    await fetch(const TransactionsQuery(search: 'tx 482'));
+    await fetch(const TransactionsQuery(search: 'ana 4417'));
 
-    expect(allOf('code'), ['ilike.%tx%', 'ilike.%482%']);
+    expect(allOf('or'), hasLength(2));
+    expect(allOf('or').last, contains('account_last4.ilike.*4417*'));
   });
 
   test('the search cannot change the filter', () async {
     await fetch(const TransactionsQuery(search: 'a,b.c(d)*%:"'));
 
-    expect(allOf('code'), ['ilike.%a%', 'ilike.%b%', 'ilike.%c%', 'ilike.%d%']);
+    expect(allOf('or'), hasLength(4));
+    for (final filter in allOf('or')) {
+      expect(filter, isNot(contains(',b')));
+      expect(filter, isNot(contains('(d')));
+    }
   });
 
   test('a blank search sends no filter', () async {
     await fetch(const TransactionsQuery(search: '  ,  '));
 
-    expect(params(), isNot(contains('code')));
+    expect(params(), isNot(contains('or')));
+  });
+
+  test('the row carries the customer and the account digits', () async {
+    final page = await fetch(const TransactionsQuery());
+
+    expect(page.items.single.customerName, 'Ana María Rojas');
+    expect(page.items.single.accountLast4, '4417');
   });
 
   test('a label saved in this session replaces the one of the view', () async {

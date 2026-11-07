@@ -26,9 +26,9 @@ class TransactionsRepository {
 
   static const _view = 'v_transactions_list';
   static const _columns =
-      'id, code, occurred_at, customer_id, source_account_id, '
-      'destination_account_id, type, channel_code, amount, currency_code, '
-      'alert_score, is_labeled, verdict';
+      'id, code, occurred_at, customer_id, customer_name, account_last4, '
+      'source_account_id, destination_account_id, type, channel_code, amount, '
+      'currency_code, alert_score, is_labeled, verdict';
 
   Future<PageResult<TransactionRow>> fetchPage(
     TransactionsQuery query, {
@@ -70,9 +70,12 @@ class TransactionsRepository {
     required String? currencyCode,
   }) {
     var request = _client.from(_view).select(_columns);
-    // The view has the transaction ID only: customer and account are not searchable yet.
+    // Every word must match the customer, the account digits or the transaction ID.
     for (final word in _searchWords(query.search)) {
-      request = request.ilike('code', '%$word%');
+      request = request.or(
+        'customer_name.ilike.*$word*,account_last4.ilike.*$word*,'
+        'code.ilike.*$word*',
+      );
     }
     final dateFrom = query.dateFrom;
     if (dateFrom != null) {

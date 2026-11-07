@@ -12,6 +12,8 @@ _TransactionRow _$TransactionRowFromJson(Map<String, dynamic> json) =>
       code: json['code'] as String,
       occurredAt: DateTime.parse(json['occurred_at'] as String),
       customerId: json['customer_id'] as String?,
+      customerName: json['customer_name'] as String?,
+      accountLast4: json['account_last4'] as String?,
       sourceAccountId: json['source_account_id'] as String?,
       destinationAccountId: json['destination_account_id'] as String?,
       type: TransactionType.fromDb(json['type'] as String),

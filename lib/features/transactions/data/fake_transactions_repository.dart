@@ -47,10 +47,9 @@ class FakeTransactionsRepository implements TransactionsRepository {
     TransactionsQuery query,
     String? currencyCode,
   ) {
-    final search = query.search.trim().toLowerCase();
     final dateFrom = query.dateFrom;
     final dateTo = query.dateTo;
-    return (search.isEmpty || row.code.toLowerCase().contains(search)) &&
+    return _matchesSearch(row, query.search) &&
         (dateFrom == null || !row.occurredAt.isBefore(dateFrom)) &&
         (dateTo == null ||
             row.occurredAt.isBefore(dateTo.add(const Duration(days: 1)))) &&
@@ -59,6 +58,20 @@ class FakeTransactionsRepository implements TransactionsRepository {
             row.channel.dbValue == query.channelCode) &&
         (query.labelStatus == null || row.labelStatus == query.labelStatus) &&
         (!query.withAiAlert || row.hasAiAlert);
+  }
+
+  /// Every word must be in the customer, the account digits or the transaction ID.
+  static bool _matchesSearch(TransactionRow row, String search) {
+    final fields = [
+      row.customerName ?? '',
+      row.accountLast4 ?? '',
+      row.code,
+    ].map((field) => field.toLowerCase());
+    return search
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .every((word) => fields.any((field) => field.contains(word)));
   }
 
   static int _compare(
@@ -91,6 +104,8 @@ final _prototypeRows = [
     code: 'TX-48219',
     occurredAt: DateTime(2026, 3, 19, 22, 41),
     customerId: '00000000-0000-4000-8000-000000000001',
+    customerName: 'Ana María Rojas',
+    accountLast4: '4417',
     sourceAccountId: '00000000-0000-4000-9000-000000000001',
     destinationAccountId: '00000000-0000-4000-9000-000000000101',
     type: TransactionType.transfer,
@@ -105,6 +120,8 @@ final _prototypeRows = [
     code: 'TX-48220',
     occurredAt: DateTime(2026, 3, 19, 18, 5),
     customerId: '00000000-0000-4000-8000-000000000002',
+    customerName: 'Diego Hernández',
+    accountLast4: '2051',
     sourceAccountId: '00000000-0000-4000-9000-000000000002',
     type: TransactionType.purchase,
     channel: Channel.pos,
@@ -119,6 +136,8 @@ final _prototypeRows = [
     code: 'TX-48221',
     occurredAt: DateTime(2026, 3, 18, 9, 30),
     customerId: '00000000-0000-4000-8000-000000000003',
+    customerName: 'Lucía Quispe',
+    accountLast4: '8830',
     sourceAccountId: '00000000-0000-4000-9000-000000000003',
     destinationAccountId: '00000000-0000-4000-9000-000000000103',
     type: TransactionType.transfer,
@@ -133,6 +152,8 @@ final _prototypeRows = [
     code: 'TX-48222',
     occurredAt: DateTime(2026, 3, 17, 15, 12),
     customerId: '00000000-0000-4000-8000-000000000004',
+    customerName: 'Camila Soto',
+    accountLast4: '1164',
     sourceAccountId: '00000000-0000-4000-9000-000000000004',
     type: TransactionType.withdrawal,
     channel: Channel.atm,
@@ -146,6 +167,8 @@ final _prototypeRows = [
     code: 'TX-48223',
     occurredAt: DateTime(2026, 3, 16, 11, 48),
     customerId: '00000000-0000-4000-8000-000000000005',
+    customerName: 'Martín Acosta',
+    accountLast4: '7702',
     sourceAccountId: '00000000-0000-4000-9000-000000000005',
     type: TransactionType.payment,
     channel: Channel.web,
@@ -158,6 +181,8 @@ final _prototypeRows = [
     code: 'TX-48224',
     occurredAt: DateTime(2026, 3, 15, 20, 17),
     customerId: '00000000-0000-4000-8000-000000000006',
+    customerName: 'Beatriz Lima',
+    accountLast4: '3395',
     destinationAccountId: '00000000-0000-4000-9000-000000000006',
     type: TransactionType.credit,
     channel: Channel.pix,

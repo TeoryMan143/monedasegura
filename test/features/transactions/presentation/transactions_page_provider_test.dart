@@ -71,6 +71,17 @@ void main() {
     );
   });
 
+  test('the search finds by customer, account digits or ID', () async {
+    expect(await codes(const TransactionsQuery(search: 'quispe')), [
+      'TX-48221',
+    ]);
+    expect(await codes(const TransactionsQuery(search: '1164')), ['TX-48222']);
+    expect(await codes(const TransactionsQuery(search: 'TX-48224')), [
+      'TX-48224',
+    ]);
+    expect(await codes(const TransactionsQuery(search: 'ana 9999')), isEmpty);
+  });
+
   test('a country outside the catalog has no transactions', () async {
     expect(await codes(const TransactionsQuery(countryCode: 'US')), isEmpty);
   });
