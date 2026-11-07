@@ -55,7 +55,7 @@ void main() {
     expect(catalogs.currencyLoads, 2);
   });
 
-  test('signing out clears the local writes', () async {
+  test('signing out keeps the local writes for the next analyst', () async {
     await signIn();
     final store = container.read(localWritesStoreProvider);
     await store.saveLabel(
@@ -71,8 +71,10 @@ void main() {
     await container.read(sessionProvider.notifier).signOut();
     await container.pump();
 
-    expect(store.labelFor(1), isNull);
-    expect(store.auditFor(1), isEmpty);
+    await signIn();
+
+    expect(store.labelFor(1)?.analystName, 'Laura');
+    expect(store.auditFor(1), hasLength(1));
   });
 
   test('a catalog that failed in the old session reloads on sign in', () async {
