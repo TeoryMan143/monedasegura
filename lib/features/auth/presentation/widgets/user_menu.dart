@@ -19,6 +19,7 @@ class UserMenu extends ConsumerWidget {
 
     return AppMenu(
       minWidth: AppSizes.menuMinWidth + AppSpace.x4l,
+      alignEnd: true,
       entries: [
         AppMenuHeader(
           Row(
@@ -29,10 +30,17 @@ class UserMenu extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: AppText.bodyMSemiBold),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.bodyMSemiBold,
+                    ),
                     if (analyst != null)
                       Text(
                         analyst.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppText.bodyS.copyWith(
                           color: AppColors.textTertiary,
                         ),
