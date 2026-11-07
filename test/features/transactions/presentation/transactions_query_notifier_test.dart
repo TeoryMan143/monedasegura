@@ -75,7 +75,7 @@ void main() {
       dateFrom: DateTime(2026, 3),
       dateTo: DateTime(2026, 3, 31),
       countryCode: 'CO',
-      channelCode: 'PSE',
+      channelCodes: {'PSE', 'APP'},
       labelStatus: LabelStatus.labeled,
       withAiAlert: true,
     );
@@ -95,7 +95,7 @@ void main() {
         dateFrom: DateTime(2026, 3),
         dateTo: DateTime(2026, 3, 31),
         countryCode: 'CO',
-        channelCode: 'PSE',
+        channelCodes: {'PSE', 'APP'},
         labelStatus: LabelStatus.labeled,
         withAiAlert: true,
       ),

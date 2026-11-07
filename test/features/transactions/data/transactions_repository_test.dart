@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
+import 'package:monedasegura/core/domain/account_type.dart';
 import 'package:monedasegura/core/domain/catalog_models.dart';
 import 'package:monedasegura/core/domain/confidence_level.dart';
 import 'package:monedasegura/core/domain/country.dart';
@@ -24,6 +25,7 @@ const _row = {
   'customer_id': '00000000-0000-4000-8000-000000000001',
   'customer_name': 'Ana María Rojas',
   'account_last4': '4417',
+  'account_type': 'savings',
   'source_account_id': '00000000-0000-4000-9000-000000000001',
   'destination_account_id': '00000000-0000-4000-9000-000000000101',
   'type': 'transfer',
@@ -45,6 +47,7 @@ void main() {
   late List<CatalogCountry> countries;
   late Uri? request;
   late Map<String, String> requestHeaders;
+  late String requestMethod;
   var status = HttpStatus.partialContent;
   var body = jsonEncode([_row]);
 
@@ -56,6 +59,7 @@ void main() {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((incoming) {
       request = incoming.uri;
+      requestMethod = incoming.method;
       requestHeaders = {
         'prefer': incoming.headers.value('prefer') ?? '',
         'range': incoming.headers.value('range') ?? '',
@@ -127,13 +131,13 @@ void main() {
     await fetch(
       const TransactionsQuery(
         countryCode: 'CO',
-        channelCode: 'PSE',
+        channelCodes: {'PSE', 'APP'},
         labelStatus: LabelStatus.unlabeled,
         withAiAlert: true,
       ),
     );
 
-    expect(params()['channel_code'], 'eq.PSE');
+    expect(params()['channel_code'], 'in.("PSE","APP")');
     expect(params()['is_labeled'], 'eq.false');
     expect(params()['alert_score'], 'not.is.null');
   });
@@ -244,6 +248,49 @@ void main() {
 
     expect(page.items.single.labelStatus, LabelStatus.labeled);
     expect(page.items.single.verdict, Verdict.notFraud);
+  });
+
+  test('the row carries the type of its account', () async {
+    final page = await fetch(const TransactionsQuery());
+
+    expect(page.items.single.accountType, AccountType.savings);
+  });
+
+  group('unlabeled count', () {
+    test('asks only for the count, with the filters and unlabeled', () async {
+      final count = await repository.countUnlabeled(
+        const TransactionsQuery(countryCode: 'CO', withAiAlert: true, page: 3),
+        countries: countries,
+      );
+
+      expect(count, 50312);
+      expect(requestMethod, 'HEAD');
+      expect(requestHeaders['prefer'], contains('count=exact'));
+      expect(params()['currency_code'], 'eq.COP');
+      expect(params()['alert_score'], 'not.is.null');
+      expect(params()['is_labeled'], 'eq.false');
+      expect(params(), isNot(contains('offset')));
+    });
+
+    test('the labeled filter has none, without asking', () async {
+      final count = await repository.countUnlabeled(
+        const TransactionsQuery(labelStatus: LabelStatus.labeled),
+        countries: countries,
+      );
+
+      expect(count, 0);
+      expect(request, isNull);
+    });
+
+    test('a country outside the catalog has none, without asking', () async {
+      final count = await repository.countUnlabeled(
+        const TransactionsQuery(countryCode: 'US'),
+        countries: countries,
+      );
+
+      expect(count, 0);
+      expect(request, isNull);
+    });
   });
 
   test('a rejected request becomes a Failure', () async {

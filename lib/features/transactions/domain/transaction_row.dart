@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../core/domain/account_type.dart';
 import '../../../core/domain/channel.dart';
 import '../../../core/domain/country.dart';
 import '../../../core/domain/currency.dart';
@@ -29,6 +30,9 @@ abstract class TransactionRow with _$TransactionRow {
 
     /// Last four digits of the account of [customerId] in this transaction.
     String? accountLast4,
+
+    /// Type of that same account.
+    @JsonKey(fromJson: _accountTypeOrNull) AccountType? accountType,
 
     /// The account the money leaves. Null for a deposit.
     String? sourceAccountId,
@@ -63,6 +67,9 @@ abstract class TransactionRow with _$TransactionRow {
 
   bool get hasAiAlert => alertScore != null;
 }
+
+AccountType? _accountTypeOrNull(String? value) =>
+    value == null ? null : AccountType.fromDb(value);
 
 Verdict? _verdictOrNull(String? value) =>
     value == null ? null : Verdict.fromDb(value);

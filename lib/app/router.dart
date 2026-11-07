@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
 import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/customer/presentation/customer_screen.dart';
 import '../features/statistics/presentation/statistics_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
 import 'shell/app_shell.dart';
@@ -17,6 +18,9 @@ abstract final class AppRoutes {
   static const statistics = '/statistics';
 
   static String statisticsTab(StatisticsTab tab) => '$statistics/${tab.name}';
+
+  /// Route pattern of [customer], in the Transacciones branch.
+  static const customerPattern = '/customers/:customerId';
 
   /// A-02 customer view; [transactionId] opens the N-02 panel on that transaction.
   static String customer(String customerId, {String? transactionId}) =>
@@ -65,7 +69,23 @@ GoRouter _buildRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.transactions,
-                builder: (context, state) => const TransactionsScreen(),
+                builder: (context, state) => TransactionsScreen(
+                  // push, not go: the list stays below the customer view, so going
+                  // back keeps its filters and page.
+                  onOpen: (customerId, transactionId) => context.push(
+                    AppRoutes.customer(
+                      customerId,
+                      transactionId: '$transactionId',
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: AppRoutes.customerPattern,
+                builder: (context, state) => CustomerScreen(
+                  customerId: state.pathParameters['customerId']!,
+                  transactionId: state.uri.queryParameters['tx'],
+                ),
               ),
             ],
           ),

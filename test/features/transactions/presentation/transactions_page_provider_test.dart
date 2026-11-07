@@ -82,6 +82,31 @@ void main() {
     expect(await codes(const TransactionsQuery(search: 'ana 9999')), isEmpty);
   });
 
+  test('several channels match any of them', () async {
+    expect(await codes(const TransactionsQuery(channelCodes: {'PSE', 'PIX'})), [
+      'TX-48219',
+      'TX-48224',
+    ]);
+  });
+
+  test('the unlabeled count follows the filters', () async {
+    Future<int> count(TransactionsQuery query) {
+      final subscription = container.listen(
+        transactionsUnlabeledCountProvider(query).future,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+      return subscription.read();
+    }
+
+    expect(await count(const TransactionsQuery()), 3);
+    expect(await count(const TransactionsQuery(withAiAlert: true)), 2);
+    expect(
+      await count(const TransactionsQuery(labelStatus: LabelStatus.labeled)),
+      0,
+    );
+  });
+
   test('a country outside the catalog has no transactions', () async {
     expect(await codes(const TransactionsQuery(countryCode: 'US')), isEmpty);
   });
