@@ -64,6 +64,7 @@ class AppMenu extends StatefulWidget {
     required this.builder,
     this.minWidth = AppSizes.menuMinWidth,
     this.alignmentOffset,
+    this.alignEnd = false,
     super.key,
   });
 
@@ -77,14 +78,34 @@ class AppMenu extends StatefulWidget {
   /// Offset from the trigger's bottom left corner.
   final Offset? alignmentOffset;
 
+  /// Aligns the menu's right edge with the trigger's right edge, for triggers at the
+  /// right end of the window (user menu, bell). The menu is then exactly [minWidth].
+  final bool alignEnd;
+
   @override
   State<AppMenu> createState() => _AppMenuState();
+
+  /// Offset that puts a [menuStyle] `alignEnd` menu of [width] under its trigger, right
+  /// edges aligned.
+  static Offset alignEndOffset(double width) => Offset(-width, AppSpace.xs);
 
   /// Surface of every menu and popover of the kit: white, radius `md`, subtle border and
   /// shadow. Use it in a `MenuAnchor` that needs custom content (e.g. the C-06
   /// notifications panel) so it looks like an [AppMenu].
-  static MenuStyle menuStyle({double minWidth = AppSizes.menuMinWidth}) {
+  ///
+  /// With [alignEnd] the menu is exactly [minWidth] wide and hangs from the trigger's
+  /// bottom right corner; pair it with [alignEndOffset].
+  static MenuStyle menuStyle({
+    double minWidth = AppSizes.menuMinWidth,
+    bool alignEnd = false,
+  }) {
     return MenuStyle(
+      alignment: alignEnd
+          ? AlignmentDirectional.bottomEnd
+          : AlignmentDirectional.bottomStart,
+      maximumSize: alignEnd
+          ? WidgetStatePropertyAll(Size(minWidth, double.infinity))
+          : null,
       backgroundColor: const WidgetStatePropertyAll(AppColors.bgSurface),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
       shadowColor: const WidgetStatePropertyAll(AppColors.gris900),
@@ -124,8 +145,15 @@ class _AppMenuState extends State<AppMenu> {
   Widget build(BuildContext context) {
     return MenuAnchor(
       controller: _menuController,
-      alignmentOffset: widget.alignmentOffset ?? const Offset(0, AppSpace.xs),
-      style: AppMenu.menuStyle(minWidth: widget.minWidth),
+      alignmentOffset:
+          widget.alignmentOffset ??
+          (widget.alignEnd
+              ? AppMenu.alignEndOffset(widget.minWidth)
+              : const Offset(0, AppSpace.xs)),
+      style: AppMenu.menuStyle(
+        minWidth: widget.minWidth,
+        alignEnd: widget.alignEnd,
+      ),
       menuChildren: [for (final entry in widget.entries) _buildEntry(entry)],
       builder: (context, controller, child) =>
           widget.builder(context, _controller),

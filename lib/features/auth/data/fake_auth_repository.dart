@@ -74,14 +74,6 @@ class FakeAuthRepository implements AuthRepository {
   /// Closes the stream. Called when the provider is disposed.
   void dispose() => _changes.close();
 
-  /// «laura.gomez@monedasegura.co» → «Laura Gomez». Falls back to «Analista».
-  static String nameFromEmail(String email) {
-    final local = email.split('@').first;
-    final words = local
-        .split(RegExp('[._-]+'))
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .toList();
-    return words.isEmpty ? 'Analista' : words.join(' ');
-  }
+  /// «laura.gomez@monedasegura.co» → «Laura Gomez». See [Analyst.nameFromEmail].
+  static String nameFromEmail(String email) => Analyst.nameFromEmail(email);
 }

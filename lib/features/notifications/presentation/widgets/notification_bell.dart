@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../../../core/formatting/date_time.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
 import '../../domain/app_notification.dart';
@@ -25,6 +25,9 @@ class NotificationBell extends ConsumerStatefulWidget {
 
 class _NotificationBellState extends ConsumerState<NotificationBell> {
   final _menu = MenuController();
+
+  // The 380 px panel plus the menu padding on both sides.
+  static const _menuWidth = AppSizes.toastWidth + AppSpace.xs * 2;
 
   void _open(AppNotification notification) {
     ref.read(notificationsProvider.notifier).markAsRead(notification.id);
@@ -69,8 +72,8 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
 
     return MenuAnchor(
       controller: _menu,
-      alignmentOffset: const Offset(0, AppSpace.xs),
-      style: AppMenu.menuStyle(minWidth: AppSizes.toastWidth),
+      alignmentOffset: AppMenu.alignEndOffset(_menuWidth),
+      style: AppMenu.menuStyle(minWidth: _menuWidth, alignEnd: true),
       menuChildren: [
         _Panel(
           notifications: notifications,
@@ -159,10 +162,10 @@ class _Panel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg,
               AppSpace.md,
               AppSpace.sm,
-              AppSpace.xs,
-              AppSpace.sm,
+              AppSpace.md,
             ),
             child: Row(
               children: [
@@ -177,28 +180,34 @@ class _Panel extends StatelessWidget {
             ),
           ),
           const Divider(),
-          ScreenState<List<AppNotification>>(
+          Padding(
+            // The list keeps a small inset; loading, empty and error get room to breathe.
+            padding: notifications.hasValue &&
+                    !notifications.hasError &&
+                    notifications.requireValue.isNotEmpty
+                ? const EdgeInsets.all(AppSpace.sm)
+                : const EdgeInsets.symmetric(
+                    horizontal: AppSpace.xxl,
+                    vertical: AppSpace.xxl,
+                  ),
+            child: ScreenState<List<AppNotification>>(
             value: notifications,
             onRetry: onRetry,
-            loading: const Padding(
-              padding: EdgeInsets.all(AppSpace.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SkeletonBox(width: AppSizes.progressBar),
-                  SizedBox(height: AppSpace.sm),
-                  SkeletonBox(width: AppSizes.menuMinWidth),
-                ],
-              ),
+            errorTitle: 'No pudimos cargar las notificaciones',
+            errorMessage: 'Revisa tu conexión e inténtalo de nuevo.',
+            loading: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: AppSizes.progressBar),
+                SizedBox(height: AppSpace.sm),
+                SkeletonBox(width: AppSizes.menuMinWidth),
+              ],
             ),
             isEmpty: (items) => items.isEmpty,
-            empty: const Padding(
-              padding: EdgeInsets.all(AppSpace.lg),
-              child: EmptyState(
-                icon: AppIcons.bell,
-                title: 'Sin notificaciones',
-                message: 'Te avisaremos aquí cuando la IA genere alertas nuevas.',
-              ),
+            empty: const EmptyState(
+              icon: AppIcons.bell,
+              title: 'Sin notificaciones',
+              message: 'Te avisaremos aquí cuando la IA genere alertas nuevas.',
             ),
             builder: (context, items) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -207,27 +216,16 @@ class _Panel extends StatelessWidget {
                   NotificationItem(
                     title: item.title,
                     subtitle: item.body,
-                    timeLabel: _relativeTime(item.createdAt),
+                    timeLabel: formatRelative(item.createdAt),
                     unread: !item.read,
                     onTap: () => onOpen(item),
                   ),
               ],
             ),
           ),
+          ),
         ],
       ),
     );
   }
-}
-
-/// «ahora», «hace 5 min», «hace 3 h», «hace 2 d», then the date.
-///
-/// Swap for the relative time of `core/formatting` once it is merged.
-String _relativeTime(DateTime date) {
-  final elapsed = DateTime.now().difference(date);
-  if (elapsed.inMinutes < 1) return 'ahora';
-  if (elapsed.inHours < 1) return 'hace ${elapsed.inMinutes} min';
-  if (elapsed.inDays < 1) return 'hace ${elapsed.inHours} h';
-  if (elapsed.inDays < 7) return 'hace ${elapsed.inDays} d';
-  return DateFormat('d MMM yyyy', 'es').format(date);
 }

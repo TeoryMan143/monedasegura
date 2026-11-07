@@ -187,10 +187,15 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
         decoration: InputDecoration(
           hintText: widget.hint,
-          constraints: BoxConstraints.tightFor(
-            height: widget.small ? AppSizes.controlS : AppSizes.controlM,
+          isDense: true,
+          // 20 px line + vertical padding = 40 px (M) or 32 px (S). A fixed
+          // `constraints` height left the border wrapped tight around the text.
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: widget.small
+                ? (AppSizes.controlS - _lineHeight) / 2
+                : (AppSizes.controlM - _lineHeight) / 2,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
           fillColor: widget.enabled
               ? AppColors.bgSurface
               : AppColors.bgDisabled,
@@ -207,9 +212,13 @@ class _AppTextFieldState extends State<AppTextField> {
                     color: iconColor,
                   ),
                 ),
-          prefixIconConstraints: const BoxConstraints(),
+          prefixIconConstraints: BoxConstraints(
+            minHeight: widget.small ? AppSizes.controlS : AppSizes.controlM,
+          ),
           suffixIcon: _buildSuffix(isPassword, iconColor),
-          suffixIconConstraints: const BoxConstraints(),
+          suffixIconConstraints: BoxConstraints(
+            minHeight: widget.small ? AppSizes.controlS : AppSizes.controlM,
+          ),
           enabledBorder: hasError ? _errorBorder : null,
           focusedBorder: hasError ? _focusedErrorBorder : null,
         ),
@@ -266,6 +275,9 @@ class _AppTextFieldState extends State<AppTextField> {
       child: icon,
     );
   }
+
+  /// Line height of `bodyM` / `tableData`, the text styles of the field.
+  static const _lineHeight = 20.0;
 
   static const _errorBorder = OutlineInputBorder(
     borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
