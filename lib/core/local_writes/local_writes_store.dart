@@ -41,6 +41,11 @@ class LocalWritesStore {
   /// Who resolved [alertId] and how, or null if this session did not resolve it.
   AlertResolution? alertResolutionFor(String alertId) => _alerts[alertId];
 
+  /// Every alert this session resolved, by alert ID. The database still has them pending,
+  /// so the inbox uses it to hide them there and to show them in their new status.
+  Map<String, AlertResolution> get alertResolutions =>
+      UnmodifiableMapView(_alerts);
+
   /// The changes to the label of [transactionId], newest first.
   List<AuditEntry> auditFor(int transactionId) =>
       _newestFirst((entry) => entry.transactionId == transactionId);

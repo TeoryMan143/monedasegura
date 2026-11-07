@@ -4,7 +4,6 @@ import '../../../../core/domain/alert_status.dart';
 import '../../../../core/domain/fraud_type.dart';
 import '../../domain/alerts_query.dart';
 
-
 final alertsQueryProvider = NotifierProvider<AlertsQueryNotifier, AlertsQuery>(
   AlertsQueryNotifier.new,
   name: 'alertsQueryProvider',
