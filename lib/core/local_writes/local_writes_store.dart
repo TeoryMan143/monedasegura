@@ -1,13 +1,13 @@
 import 'dart:collection';
 
+import '../demo/demo_cases.dart';
 import '../domain/alert_status.dart';
 import '../domain/audit_action.dart';
 import '../errors/failure.dart';
 import 'local_writes_models.dart';
 
-/// Transactions that fail to save on purpose, to show E-03 (HU-04). The real ID arrives
-/// with the demo cases.
-const Set<int> demoFailingTransactionIds = {};
+/// Transactions that fail to save on purpose, to show E-03 (HU-04).
+const Set<int> demoFailingTransactionIds = {DemoCases.failingTransactionId};
 
 /// The prototype's writes, kept in memory because nothing writes to the database yet.
 ///
