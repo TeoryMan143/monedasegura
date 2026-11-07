@@ -85,6 +85,12 @@ GoRouter _buildRouter(Ref ref) {
                 builder: (context, state) => CustomerScreen(
                   customerId: state.pathParameters['customerId']!,
                   transactionId: state.uri.queryParameters['tx'],
+                  // Back to the list it came from, keeping its filters and page.
+                  onBack: () => context.canPop()
+                      ? context.pop()
+                      : context.go(AppRoutes.transactions),
+                  // onOpenReport: the customer report route (HU-09) passes it here
+                  // when it exists: «Ver perfil» → summary, «Reportes» → timeline.
                 ),
               ),
             ],
