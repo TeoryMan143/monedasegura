@@ -71,8 +71,8 @@ transacción y los identificadores (`customer_id`, `source_account_id`,
 
 ## 6. Aplicación y verificación
 
-La migración se aplicó en el proyecto de Supabase el 2026-11-07. Se verificó en solo lectura
-con la cuenta `demo@monedasegura.test` del seed:
+La migración se aplicó en el proyecto de Supabase el 2026-11-07, desde el SQL Editor del
+panel. Se verificó en solo lectura con la cuenta `demo@monedasegura.test` del seed:
 
 | Comprobación | Resultado |
 | --- | --- |
@@ -86,18 +86,32 @@ moneda coincide con el país del cliente.
 
 ## 7. Historial de migraciones de Supabase
 
-Si la migración se aplicó desde el SQL Editor, el proyecto no la tiene registrada como
-aplicada. Para registrarla sin volver a ejecutarla:
+El SQL Editor ejecuta el SQL pero no registra la migración, así que el proyecto no la tenía
+como aplicada. Se registró a mano el 2026-11-07, también desde el SQL Editor y sin volver a
+ejecutarla:
 
-```bash
-npx supabase login
-npx supabase link --project-ref nmaaedzboxwkmzmmtdfs
-npx supabase migration repair --status applied 20261107131448
-npx supabase migration list
+```sql
+insert into supabase_migrations.schema_migrations (version, name)
+values ('20261107131448', 'transactions_list_customer');
 ```
 
-`migration list` debe mostrarla como aplicada tanto en local como en remoto. Si se aplicó con
-`supabase db push`, ya quedó registrada y no hace falta este paso.
+Con eso, el historial remoto coincide con `supabase/migrations/`, y un `supabase db push`
+posterior no la vuelve a enviar.
+
+Para comprobarlo:
+
+```sql
+select version, name
+from supabase_migrations.schema_migrations
+order by version desc
+limit 5;
+```
+
+Con la CLI, `npx supabase migration list` debe mostrarla como aplicada en local y en remoto.
+
+**Para la próxima migración:** aplicarla con `npx supabase db push`, que la ejecuta y la
+registra en un solo paso. Si se usa el SQL Editor, registrarla después como aquí, o con
+`npx supabase migration repair --status applied <versión>`.
 
 ## 8. Impacto en la app y pendientes
 
