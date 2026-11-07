@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/errors/failure.dart';
 import '../../../core/errors/failure_mapper.dart';
 import '../domain/ai_aggregation.dart';
 import '../domain/ai_performance.dart';
@@ -11,94 +11,59 @@ import '../domain/statistics_filter.dart';
 import '../domain/stats_group_by.dart';
 import '../domain/time_series_point.dart';
 
-/// Statistics of HU-13, read already aggregated from the views of the database.
+/// Statistics of HU-13, added up by the database.
 ///
-/// Nothing is counted here: the views return a few dozen rows, and the app only adds up
-/// the groups it needs. Prototype limits, until Juan Camilo publishes the migration:
-///
-/// - No view has a date or a country, so the `filter` is accepted but not applied yet.
-/// - [fraudOverTime] and [fraudGrouped] by channel or country have no view to read.
-///
-/// What an analyst labels in the session (`LocalWritesStore`) is not counted either.
+/// Each method calls one function of `20261107190000_statistics_filters.sql`, which takes
+/// the date range and the country of the [StatisticsFilter] and returns a few dozen rows
+/// at most. Nothing is counted here, and what an analyst labels in the session
+/// (`LocalWritesStore`) is not included.
 class StatisticsRepository {
   StatisticsRepository(this._client);
 
   final SupabaseClient _client;
 
   /// The three cards: labeling progress, frauds and the committed amount in COP.
-  ///
-  /// `v_fraud_stats` groups by type and currency, so the amount is converted with the
-  /// small `exchange_rates` table. A fraud with two types counts once per type there.
   Future<FraudKpis> fraudKpis(StatisticsFilter filter) async {
     try {
-      final (progress, stats, rates) = await (
-        _client
-            .from('v_labeling_progress')
-            .select('labeled, total_transactions, fraud')
-            .single(),
-        _client.from('v_fraud_stats').select('currency_code, total_amount'),
-        _client.from('exchange_rates').select('currency_code, rate_to_cop'),
-      ).wait;
-
-      final rateToCop = {
-        for (final rate in rates)
-          rate['currency_code'] as String: (rate['rate_to_cop'] as num)
-              .toDouble(),
-      };
-      var committed = 0.0;
-      for (final row in stats) {
-        final currency = row['currency_code'] as String;
-        committed +=
-            (row['total_amount'] as num).toDouble() *
-            (rateToCop[currency] ?? 0);
-      }
-
+      final row = await _client
+          .rpc('fraud_stats_kpis', params: statisticsRpcParams(filter))
+          .single();
       return FraudKpis(
-        labeledCount: (progress['labeled'] as num).toInt(),
-        totalCount: (progress['total_transactions'] as num).toInt(),
-        fraudCount: (progress['fraud'] as num).toInt(),
-        committedAmountCop: committed,
+        labeledCount: (row['labeled'] as num).toInt(),
+        totalCount: (row['total_transactions'] as num).toInt(),
+        fraudCount: (row['fraud'] as num).toInt(),
+        committedAmountCop: (row['committed_amount_cop'] as num).toDouble(),
       );
     } catch (error) {
       throw mapToFailure(error);
     }
   }
 
-  /// Frauds per week. Needs a view with a date column.
+  /// Frauds per week, oldest first. A week without frauds has no point: see
+  /// `fillWeeklyGaps`.
   Future<List<TimeSeriesPoint>> fraudOverTime(StatisticsFilter filter) async {
-    throw const Failure.unknown(
-      message:
-          'fraudOverTime needs a view with period_start (pending migration)',
-    );
+    try {
+      final rows = await _client.rpc(
+        'fraud_over_time',
+        params: statisticsRpcParams(filter),
+      );
+      return [for (final row in _rowsOf(rows)) TimeSeriesPoint.fromJson(row)];
+    } catch (error) {
+      throw mapToFailure(error);
+    }
   }
 
-  /// Frauds per type, channel or country, as unordered groups.
+  /// Frauds per type, channel or country, in no particular order: see `sortedDescending`.
   Future<List<GroupedCount>> fraudGrouped(
     StatisticsFilter filter,
     StatsGroupBy by,
   ) async {
-    if (by != StatsGroupBy.type) {
-      throw Failure.unknown(
-        message:
-            'fraudGrouped by ${by.name} needs a new view (pending migration)',
-      );
-    }
     try {
-      final rows = await _client
-          .from('v_fraud_stats')
-          .select('fraud_type_code, labeled_transactions');
-      // One row per type and currency: add the currencies of each type.
-      final countByType = <String, int>{};
-      for (final row in rows) {
-        final code = row['fraud_type_code'] as String;
-        countByType[code] =
-            (countByType[code] ?? 0) +
-            (row['labeled_transactions'] as num).toInt();
-      }
-      return [
-        for (final entry in countByType.entries)
-          GroupedCount(key: entry.key, count: entry.value),
-      ];
+      final rows = await _client.rpc(
+        'fraud_grouped',
+        params: {'p_by': by.name, ...statisticsRpcParams(filter)},
+      );
+      return [for (final row in _rowsOf(rows)) GroupedCount.fromJson(row)];
     } catch (error) {
       throw mapToFailure(error);
     }
@@ -106,19 +71,20 @@ class StatisticsRepository {
 
   /// Confirmed, rejected and reclassified alerts, and the precision of each type.
   Future<AiPerformance> aiPerformance(StatisticsFilter filter) async =>
-      aiPerformanceFrom(await _aiOutcomes());
+      aiPerformanceFrom(await _aiOutcomes(filter));
 
   /// Suggested type against final type, for N-04.
   Future<ConfusionMatrix> confusionMatrix(StatisticsFilter filter) async =>
-      confusionMatrixFrom(await _aiOutcomes());
+      confusionMatrixFrom(await _aiOutcomes(filter));
 
-  Future<List<AiOutcomeRow>> _aiOutcomes() async {
+  Future<List<AiOutcomeRow>> _aiOutcomes(StatisticsFilter filter) async {
     try {
-      final rows = await _client
-          .from('v_ai_performance')
-          .select('suggested_type_code, status, final_type_code, alerts');
+      final rows = await _client.rpc(
+        'ai_performance',
+        params: statisticsRpcParams(filter),
+      );
       return [
-        for (final row in rows)
+        for (final row in _rowsOf(rows))
           (
             suggested: row['suggested_type_code'] as String,
             status: row['status'] as String,
@@ -131,3 +97,22 @@ class StatisticsRepository {
     }
   }
 }
+
+/// The `p_from`, `p_to` and `p_country` of the functions. A filter that is not set is
+/// left out, and the function reads it as "no filter".
+@visibleForTesting
+Map<String, dynamic> statisticsRpcParams(StatisticsFilter filter) => {
+  if (filter.fromDate != null) 'p_from': _date(filter.fromDate!),
+  if (filter.toDate != null) 'p_to': _date(filter.toDate!),
+  if (filter.countryCode != null) 'p_country': filter.countryCode,
+};
+
+/// `2026-03-02`: the day, without time or zone, as the functions' `date` parameters read.
+String _date(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-'
+    '${date.month.toString().padLeft(2, '0')}-'
+    '${date.day.toString().padLeft(2, '0')}';
+
+/// The rows an RPC returns, typed: `rpc` gives back `dynamic`.
+List<Map<String, dynamic>> _rowsOf(Object? data) =>
+    (data! as List<dynamic>).cast<Map<String, dynamic>>();
