@@ -8,7 +8,6 @@ part 'alerts_query.freezed.dart';
 @freezed
 abstract class AlertsQuery with _$AlertsQuery {
   const factory AlertsQuery({
-
     int? minScore,
 
     FraudType? suggestedType,

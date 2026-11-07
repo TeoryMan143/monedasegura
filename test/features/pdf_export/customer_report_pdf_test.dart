@@ -73,7 +73,9 @@ void main() {
   });
 
   test('CLP amounts have no decimals', () {
-    final amount = _document({ReportSection.timeline}).transactionRows.single[3];
+    final amount = _document({ReportSection.timeline})
+        .transactionRows
+        .single[3];
 
     expect(amount, endsWith('CLP'));
     expect(amount, isNot(contains(',00')));
