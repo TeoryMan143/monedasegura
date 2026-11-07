@@ -234,9 +234,7 @@ pw.Widget _table({
         bottom: pw.BorderSide(color: _pdf(AppColors.borderSubtle)),
       ),
     ),
-    cellAlignments: {
-      ?numericColumn: pw.Alignment.centerRight,
-    },
+    cellAlignments: {?numericColumn: pw.Alignment.centerRight},
     cellPadding: const pw.EdgeInsets.symmetric(
       horizontal: AppSpace.xs,
       vertical: AppSpace.xs,

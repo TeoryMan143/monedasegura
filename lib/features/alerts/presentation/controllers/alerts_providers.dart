@@ -12,6 +12,9 @@ import '../../domain/alert_detail.dart';
 import '../../domain/alerts_query.dart';
 import '../../domain/resolve_alert_input.dart';
 
+/// A failed request shows «Reintentar» at once instead of a long skeleton.
+Duration? _noAutoRetry(int retryCount, Object error) => null;
+
 /// The alerts repository of the app (HU-06, HU-07, HU-08).
 final alertsRepositoryProvider = Provider<AlertsRepository>(
   (ref) => AlertsRepository(
@@ -26,6 +29,7 @@ final alertsRepositoryProvider = Provider<AlertsRepository>(
 final alertsPageProvider = FutureProvider.autoDispose
     .family<PageResult<AiAlert>, AlertsQuery>(
       (ref, query) => ref.watch(alertsRepositoryProvider).list(query),
+      retry: _noAutoRetry,
       name: 'alertsPageProvider',
     );
 
@@ -33,6 +37,7 @@ final alertsPageProvider = FutureProvider.autoDispose
 final alertDetailProvider = FutureProvider.autoDispose
     .family<AlertDetail, String>(
       (ref, alertId) => ref.watch(alertsRepositoryProvider).getById(alertId),
+      retry: _noAutoRetry,
       name: 'alertDetailProvider',
     );
 
