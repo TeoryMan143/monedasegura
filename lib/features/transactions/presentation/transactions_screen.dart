@@ -31,12 +31,12 @@ class TransactionsScreen extends StatelessWidget {
             style: AppText.bodyM.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppLayout.blockGap),
-          const Row(
-            children: [
-              TransactionsSearchField(),
-              SizedBox(width: AppSpace.xxl),
-              TransactionsSortDropdown(),
-            ],
+          // Wraps instead of overflowing if the window is narrower than designed.
+          const Wrap(
+            spacing: AppSpace.xxl,
+            runSpacing: AppSpace.sm,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [TransactionsSearchField(), TransactionsSortDropdown()],
           ),
           const SizedBox(height: AppSpace.lg),
           Expanded(

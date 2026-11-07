@@ -1,22 +1,94 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/ui/placeholder_view.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/kit.dart';
+import 'controllers/customer_range_controller.dart';
+import 'controllers/customer_view_controller.dart';
+import 'widgets/customer_header.dart';
+import 'widgets/customer_transactions_table.dart';
 
-/// A-02 · Customer view (HU-03). [transactionId] (`?tx=`) is the transaction to open in
-/// the N-02 panel.
+export 'widgets/customer_header.dart'
+    show CustomerReportTab, OpenCustomerReport;
+
+/// A-02 · Customer view (HU-03): the transactions of all the customer's accounts in a
+/// date range, to classify them with context.
 ///
-/// Placeholder until HU-03 is built: the A-01 rows already open this route.
-class CustomerScreen extends StatelessWidget {
+/// [transactionId] (`?tx=`) is the selected transaction: the range moves to show it if
+/// needed. [onBack] goes back to the list, and [onOpenReport] opens the customer report,
+/// or is null while that route does not exist. The router passes both, so this feature
+/// does not depend on the app's routes.
+class CustomerScreen extends ConsumerStatefulWidget {
   const CustomerScreen({
     required this.customerId,
+    required this.onBack,
     this.transactionId,
+    this.onOpenReport,
     super.key,
   });
 
   final String customerId;
   final String? transactionId;
+  final VoidCallback onBack;
+  final OpenCustomerReport? onOpenReport;
 
   @override
-  Widget build(BuildContext context) =>
-      const PlaceholderView(title: 'Vista de cliente', story: 'HU-03');
+  ConsumerState<CustomerScreen> createState() => _CustomerScreenState();
+}
+
+class _CustomerScreenState extends ConsumerState<CustomerScreen> {
+  int? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final transactionId = int.tryParse(widget.transactionId ?? '');
+    _selected = transactionId;
+    if (transactionId == null) return;
+    ref.listenManual(customerTransactionDateProvider(transactionId), (_, next) {
+      final date = next.value;
+      if (date == null) return;
+      ref
+          .read(customerDateRangeProvider(widget.customerId).notifier)
+          .show(date);
+    }, fireImmediately: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final id = widget.customerId;
+    // The screen owns the range while it is open: it must survive the moment before the
+    // table is built, e.g. when `?tx=` moves it while the customer still loads.
+    ref.listen(customerDateRangeProvider(id), (_, _) {});
+    return Padding(
+      padding: const EdgeInsets.all(AppLayout.contentPadding),
+      child: ScreenState(
+        value: ref.watch(customerViewProvider(id)),
+        onRetry: () => ref.invalidate(customerViewProvider(id)),
+        builder: (context, customer) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomerHeader(
+              customer: customer,
+              onBack: widget.onBack,
+              onOpenReport: widget.onOpenReport,
+            ),
+            const SizedBox(height: AppSpace.lg),
+            Expanded(
+              child: AppPanel(
+                expand: true,
+                padding: EdgeInsets.zero,
+                child: CustomerTransactionsTable(
+                  customer: customer,
+                  selectedTransactionId: _selected,
+                  onSelect: (transactionId) =>
+                      setState(() => _selected = transactionId),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
