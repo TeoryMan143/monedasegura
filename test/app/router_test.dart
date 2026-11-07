@@ -5,6 +5,7 @@ import 'package:monedasegura/app/app.dart';
 import 'package:monedasegura/features/auth/data/auth_repository.dart';
 import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
+import 'package:monedasegura/features/transactions/presentation/transactions_screen.dart';
 
 import '../helpers/shell_overrides.dart';
 
@@ -40,7 +41,7 @@ void main() {
   ) async {
     await _pumpApp(tester, signedIn: true);
 
-    expect(find.textContaining('HU-02'), findsOneWidget);
+    expect(find.byType(TransactionsScreen), findsOneWidget);
   });
 
   testWidgets('the side menu switches branches', (tester) async {

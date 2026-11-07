@@ -5,6 +5,7 @@ import 'package:monedasegura/app/app.dart';
 import 'package:monedasegura/core/ui/kit.dart';
 import 'package:monedasegura/features/auth/data/auth_repository.dart';
 import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
+import 'package:monedasegura/features/transactions/presentation/transactions_screen.dart';
 
 import '../../../helpers/shell_overrides.dart';
 
@@ -75,7 +76,7 @@ void main() {
     await _pumpApp(tester);
 
     await _signIn(tester, email: 'laura.gomez@monedasegura.co');
-    expect(find.textContaining('HU-02'), findsOneWidget);
+    expect(find.byType(TransactionsScreen), findsOneWidget);
     expect(find.text('Laura Gomez'), findsOneWidget);
 
     await tester.tap(find.text('Laura Gomez'));
