@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/catalogs/catalog_providers.dart';
+import '../../../../core/local_writes/local_writes_provider.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/analyst.dart';
 
@@ -24,15 +26,22 @@ class SessionController extends Notifier<Analyst?> {
   @override
   Analyst? build() {
     final repository = ref.watch(authRepositoryProvider);
-    final subscription = repository.authStateChanges().listen(
-      (analyst) => state = analyst,
-    );
+    final subscription = repository.authStateChanges().listen((analyst) {
+      final analystChanged = analyst?.id != state?.id;
+      state = analyst;
+      if (analystChanged) {
+        invalidateCatalogs(ref);
+        ref.read(localWritesStoreProvider).clear();
+      }
+    });
     ref.onDispose(subscription.cancel);
     return repository.currentAnalyst;
   }
 
   /// Ends the session. The router then goes back to the login by itself.
   ///
-  /// When features add keep-alive providers with user data, invalidate them here.
+  /// Keep-alive providers with user data are invalidated in [build] whenever the analyst
+  /// changes. That also covers an expired session, and a sign in replaces anything that
+  /// failed to reload right after the session ended.
   Future<void> signOut() => ref.read(authRepositoryProvider).signOut();
 }

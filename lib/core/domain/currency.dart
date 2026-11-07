@@ -2,11 +2,22 @@ import '../theme/app_icons.dart';
 import '../theme/status_tone.dart';
 import 'domain_enum.dart';
 
+/// What `formatMoney` needs from a currency. Both [Currency] and the `currencies` catalog
+/// row provide it, so a screen with the catalog loaded formats with its decimals.
+abstract interface class MoneyCurrency {
+  String get code;
+  String get symbol;
+  int get decimals;
+
+  /// BCP 47, e.g. `es-CO`, `pt-BR`.
+  String get locale;
+}
+
 /// Currency of an amount (`currencies.code`), used by HU-02, HU-03 and HU-13.
 ///
 /// [symbol], [decimals] and [locale] mirror the `currencies` catalog. `formatMoney` in
 /// `core/formatting` reads them.
-enum Currency implements DomainEnum {
+enum Currency implements DomainEnum, MoneyCurrency {
   cop('COP', 'Peso colombiano', r'$', 2, 'es-CO'),
   mxn('MXN', 'Peso mexicano', r'$', 2, 'es-MX'),
   pen('PEN', 'Sol peruano', 'S/', 2, 'es-PE'),
@@ -30,12 +41,14 @@ enum Currency implements DomainEnum {
   final String dbValue;
   @override
   final String label;
+  @override
   final String symbol;
+  @override
   final int decimals;
-
-  /// BCP 47, e.g. `es-CO`, `pt-BR`.
+  @override
   final String locale;
 
+  @override
   String get code => dbValue;
 
   @override

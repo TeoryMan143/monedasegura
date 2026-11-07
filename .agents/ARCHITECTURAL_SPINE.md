@@ -45,6 +45,7 @@ lib/
     catalogs/            CatalogRepository + keep-alive providers (fraud types, confidence and
                          severity levels, currencies, countries, channels)
     formatting/          money, dates, masked account (•••• 4417), relative time
+    local_writes/        LocalWritesStore: prototype writes in memory until the RPCs exist
     realtime/            RealtimeService + connectionStatusProvider
     theme/               tokens (AppColors, AppText, AppSpace, AppRadius, AppShadows) + app_theme.dart
     ui/                  the component kit: AppButton, StatusBadge, ScoreBadge, AppDataTable,
