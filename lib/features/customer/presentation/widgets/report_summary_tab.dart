@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
 import '../../domain/customer_report.dart';
 import '../controllers/customer_report_controller.dart';
+import 'report_activity_chart.dart';
 
 /// C-08 · «Resumen» of the customer report (HU-09): personal data, segment and risk, the
 /// monthly activity and the labels and alerts of the range.
@@ -37,17 +38,7 @@ class ReportSummaryTab extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpace.lg),
-            const AppPanel(
-              title: 'Actividad por mes',
-              subtitle: 'Cantidad y monto de transacciones',
-              child: EmptyState(
-                title: 'Sin datos de actividad todavía',
-                message:
-                    'La actividad mensual se mostrará cuando la base tenga su '
-                    'consulta agregada.',
-                icon: AppIcons.statistics,
-              ),
-            ),
+            ReportActivityChart(customerId: customerId),
             const SizedBox(height: AppSpace.lg),
             ScreenState(
               value: ref.watch(historyProvider),

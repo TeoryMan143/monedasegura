@@ -25,6 +25,19 @@ final customerProductsProvider = FutureProvider.autoDispose
       name: 'customerProductsProvider',
     );
 
+/// Transactions and amount per month in the shared range, added up in the database.
+final customerMonthlyActivityProvider = FutureProvider.autoDispose
+    .family<List<MonthlyActivity>, String>(
+      (ref, customerId) {
+        final range = ref.watch(customerDateRangeProvider(customerId));
+        return ref
+            .watch(customerReportRepositoryProvider)
+            .fetchMonthlyActivity(customerId, range);
+      },
+      retry: _noAutoRetry,
+      name: 'customerMonthlyActivityProvider',
+    );
+
 /// Labels and alerts of the customer in the shared range of A-02 and the report.
 final customerHistoryProvider = FutureProvider.autoDispose
     .family<CustomerHistory, String>(

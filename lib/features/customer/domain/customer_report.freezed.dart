@@ -2308,4 +2308,279 @@ as DateTime,
 
 }
 
+/// @nodoc
+mixin _$MonthlyActivity {
+
+/// The first day of the month.
+ DateTime get month; Currency get currency; int get transactionCount; double get totalAmount;
+/// Create a copy of MonthlyActivity
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MonthlyActivityCopyWith<MonthlyActivity> get copyWith => _$MonthlyActivityCopyWithImpl<MonthlyActivity>(this as MonthlyActivity, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as MonthlyActivity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MonthlyActivity&&(identical(other.month, _this.month) || other.month == _this.month)&&(identical(other.currency, _this.currency) || other.currency == _this.currency)&&(identical(other.transactionCount, _this.transactionCount) || other.transactionCount == _this.transactionCount)&&(identical(other.totalAmount, _this.totalAmount) || other.totalAmount == _this.totalAmount));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as MonthlyActivity;
+  return Object.hash(runtimeType,_this.month,_this.currency,_this.transactionCount,_this.totalAmount);
+}
+
+@override
+String toString() {
+  final _this = this as MonthlyActivity;
+  return 'MonthlyActivity(month: ${_this.month}, currency: ${_this.currency}, transactionCount: ${_this.transactionCount}, totalAmount: ${_this.totalAmount})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MonthlyActivityCopyWith<$Res>  {
+  factory $MonthlyActivityCopyWith(MonthlyActivity value, $Res Function(MonthlyActivity) _then) = _$MonthlyActivityCopyWithImpl;
+@useResult
+$Res call({
+ DateTime month, Currency currency, int transactionCount, double totalAmount
+});
+
+
+
+
+}
+/// @nodoc
+class _$MonthlyActivityCopyWithImpl<$Res>
+    implements $MonthlyActivityCopyWith<$Res> {
+  _$MonthlyActivityCopyWithImpl(this._self, this._then);
+
+  final MonthlyActivity _self;
+  final $Res Function(MonthlyActivity) _then;
+
+/// Create a copy of MonthlyActivity
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? month = null,Object? currency = null,Object? transactionCount = null,Object? totalAmount = null,}) {
+  return _then(MonthlyActivity(
+month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
+as DateTime,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as Currency,transactionCount: null == transactionCount ? _self.transactionCount : transactionCount // ignore: cast_nullable_to_non_nullable
+as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [MonthlyActivity].
+extension MonthlyActivityPatterns on MonthlyActivity {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MonthlyActivity value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _MonthlyActivity() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MonthlyActivity value)  $default,){
+final _that = this;
+switch (_that) {
+case _MonthlyActivity():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MonthlyActivity value)?  $default,){
+final _that = this;
+switch (_that) {
+case _MonthlyActivity() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime month,  Currency currency,  int transactionCount,  double totalAmount)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _MonthlyActivity() when $default != null:
+return $default(_that.month,_that.currency,_that.transactionCount,_that.totalAmount);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime month,  Currency currency,  int transactionCount,  double totalAmount)  $default,) {final _that = this;
+switch (_that) {
+case _MonthlyActivity():
+return $default(_that.month,_that.currency,_that.transactionCount,_that.totalAmount);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime month,  Currency currency,  int transactionCount,  double totalAmount)?  $default,) {final _that = this;
+switch (_that) {
+case _MonthlyActivity() when $default != null:
+return $default(_that.month,_that.currency,_that.transactionCount,_that.totalAmount);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _MonthlyActivity implements MonthlyActivity {
+  const _MonthlyActivity({required this.month, required this.currency, required this.transactionCount, required this.totalAmount});
+  
+
+/// The first day of the month.
+@override final  DateTime month;
+@override final  Currency currency;
+@override final  int transactionCount;
+@override final  double totalAmount;
+
+/// Create a copy of MonthlyActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$MonthlyActivityCopyWith<_MonthlyActivity> get copyWith => __$MonthlyActivityCopyWithImpl<_MonthlyActivity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MonthlyActivity&&(identical(other.month, month) || other.month == month)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.transactionCount, transactionCount) || other.transactionCount == transactionCount)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,month,currency,transactionCount,totalAmount);
+}
+
+@override
+String toString() {
+    return 'MonthlyActivity(month: $month, currency: $currency, transactionCount: $transactionCount, totalAmount: $totalAmount)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$MonthlyActivityCopyWith<$Res> implements $MonthlyActivityCopyWith<$Res> {
+  factory _$MonthlyActivityCopyWith(_MonthlyActivity value, $Res Function(_MonthlyActivity) _then) = __$MonthlyActivityCopyWithImpl;
+@override @useResult
+$Res call({
+ DateTime month, Currency currency, int transactionCount, double totalAmount
+});
+
+
+
+
+}
+/// @nodoc
+class __$MonthlyActivityCopyWithImpl<$Res>
+    implements _$MonthlyActivityCopyWith<$Res> {
+  __$MonthlyActivityCopyWithImpl(this._self, this._then);
+
+  final _MonthlyActivity _self;
+  final $Res Function(_MonthlyActivity) _then;
+
+/// Create a copy of MonthlyActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? month = null,Object? currency = null,Object? transactionCount = null,Object? totalAmount = null,}) {
+  return _then(_MonthlyActivity(
+month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
+as DateTime,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as Currency,transactionCount: null == transactionCount ? _self.transactionCount : transactionCount // ignore: cast_nullable_to_non_nullable
+as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
+as double,
+  ));
+}
+
+
+}
+
 // dart format on

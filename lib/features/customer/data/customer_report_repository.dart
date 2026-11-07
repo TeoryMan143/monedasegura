@@ -83,6 +83,30 @@ class CustomerReportRepository {
     }
   }
 
+  /// Transactions and amount per month and currency in [range], added up in the database
+  /// by the `customer_monthly_activity` RPC.
+  Future<List<MonthlyActivity>> fetchMonthlyActivity(
+    String customerId,
+    DateRange range,
+  ) async {
+    try {
+      final rows = await _client.rpc<List<dynamic>>(
+        'customer_monthly_activity',
+        params: {
+          'p_customer_id': customerId,
+          'p_from': range.start.toUtc().toIso8601String(),
+          'p_to': range.end.toUtc().toIso8601String(),
+        },
+      );
+      return [
+        for (final row in rows)
+          monthlyActivityFromRow(row as Map<String, dynamic>),
+      ];
+    } catch (error) {
+      throw mapToFailure(error);
+    }
+  }
+
   /// The latest labeled transactions and AI alerts of the customer in [range]. Labels
   /// saved in this session show over the database's.
   Future<CustomerHistory> fetchHistory(
@@ -244,6 +268,17 @@ LabelHistoryItem labelItemFromRow(
     verdict: verdict == null ? Verdict.uncertain : Verdict.fromDb(verdict),
     analystName: analystName,
     labeledAt: labeledAt == null ? null : DateTime.parse(labeledAt).toLocal(),
+  );
+}
+
+/// A row of `customer_monthly_activity`: `month` is a date, the first of the month.
+MonthlyActivity monthlyActivityFromRow(Map<String, dynamic> row) {
+  final month = DateTime.parse(row['month'] as String);
+  return MonthlyActivity(
+    month: DateTime(month.year, month.month),
+    currency: Currency.fromDb(row['currency_code'] as String),
+    transactionCount: row['transaction_count'] as int,
+    totalAmount: (row['total_amount'] as num).toDouble(),
   );
 }
 
