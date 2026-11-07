@@ -13,42 +13,40 @@ import 'package:monedasegura/core/domain/severity.dart';
 import '../../helpers/counting_catalog_repository.dart';
 
 void main() {
-  test(
-    'the prototype loads every catalog with the values of the enums',
-    () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+  test('the fake catalogs carry the values of the enums', () async {
+    final container = ProviderContainer(
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
 
-      final fraudTypes = await container.read(fraudTypesProvider.future);
-      final confidence = await container.read(confidenceLevelsProvider.future);
-      final severities = await container.read(severityLevelsProvider.future);
-      final currencies = await container.read(currenciesProvider.future);
-      final countries = await container.read(countriesProvider.future);
-      final channels = await container.read(channelsProvider.future);
+    final fraudTypes = await container.read(fraudTypesProvider.future);
+    final confidence = await container.read(confidenceLevelsProvider.future);
+    final severities = await container.read(severityLevelsProvider.future);
+    final currencies = await container.read(currenciesProvider.future);
+    final countries = await container.read(countriesProvider.future);
+    final channels = await container.read(channelsProvider.future);
 
-      expect(
-        fraudTypes.map((type) => FraudType.fromDb(type.code)),
-        FraudType.values,
-      );
-      expect(
-        confidence.map((level) => ConfidenceLevel.fromDb(level.level)),
-        ConfidenceLevel.values,
-      );
-      expect(
-        severities.map((level) => Severity.fromDb(level.level)),
-        Severity.values,
-      );
-      expect(
-        currencies.map((item) => Currency.fromDb(item.code)),
-        Currency.values,
-      );
-      expect(
-        countries.map((item) => Country.fromDb(item.code)),
-        Country.values,
-      );
-      expect(channels.map((item) => Channel.fromDb(item.code)), Channel.values);
-    },
-  );
+    expect(
+      fraudTypes.map((type) => FraudType.fromDb(type.code)),
+      FraudType.values,
+    );
+    expect(
+      confidence.map((level) => ConfidenceLevel.fromDb(level.level)),
+      ConfidenceLevel.values,
+    );
+    expect(
+      severities.map((level) => Severity.fromDb(level.level)),
+      Severity.values,
+    );
+    expect(
+      currencies.map((item) => Currency.fromDb(item.code)),
+      Currency.values,
+    );
+    expect(countries.map((item) => Country.fromDb(item.code)), Country.values);
+    expect(channels.map((item) => Channel.fromDb(item.code)), Channel.values);
+  });
 
   test('every prototype colour is a valid #RRGGBB', () async {
     final types = await FakeCatalogRepository().fetchFraudTypes();
