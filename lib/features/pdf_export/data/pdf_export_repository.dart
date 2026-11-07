@@ -34,7 +34,9 @@ class PdfExportRepository {
 
       final accountRows = await _client
           .from('accounts')
-          .select('id, last4, type, balance, status, banks(name), $_currencyColumns')
+          .select(
+            'id, last4, type, balance, status, banks(name), $_currencyColumns',
+          )
           .eq('customer_id', customerId)
           .order('opened_on');
       final accountIds = [for (final row in accountRows) row['id'] as String];

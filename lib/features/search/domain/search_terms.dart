@@ -33,7 +33,10 @@ class SearchTerms {
 
   static final _unsafe = RegExp(r'''[,()*%:"'\\]''');
   static final _onlyDigits = RegExp(r'^\d{2,}$');
-  static final _transactionCode = RegExp(r'^(?:tx-?)?(\d{2,})$', caseSensitive: false);
+  static final _transactionCode = RegExp(
+    r'^(?:tx-?)?(\d{2,})$',
+    caseSensitive: false,
+  );
 
   final List<String> words;
   final String? digits;
