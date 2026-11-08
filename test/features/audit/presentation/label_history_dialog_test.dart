@@ -57,7 +57,13 @@ void main() {
   testWidgets('lists the changes newest first, before → after', (tester) async {
     await pumpDialog(tester, FakeAuditRepository.historyTransactionId);
 
-    expect(find.text('Historial de la etiqueta'), findsOneWidget);
+    expect(find.text('Historial de la etiqueta · TX-48219'), findsOneWidget);
+    expect(
+      find.textContaining(
+        RegExp(r'^Alerta AL-1042 · generada por la IA el .+ \(score 92\)$'),
+      ),
+      findsOneWidget,
+    );
     final edited = tester.getTopLeft(
       find.textContaining('Etiqueta editada', findRichText: true),
     );
@@ -70,11 +76,11 @@ void main() {
     expect(edited.dy, lessThan(confirmed.dy));
     expect(confirmed.dy, lessThan(created.dy));
     expect(
-      find.textContaining('Incierto  →  Fraude', findRichText: true),
+      find.textContaining('Incierto → Fraude', findRichText: true),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Pendiente  →  Confirmada', findRichText: true),
+      find.textContaining('Pendiente → Confirmada', findRichText: true),
       findsOneWidget,
     );
     // Read only: no edit or delete actions.
@@ -110,6 +116,6 @@ void main() {
 
     expect(find.text('En esta sesión'), findsOneWidget);
     expect(find.text('Juan Camilo Borrero'), findsOneWidget);
-    expect(find.text('ahora'), findsOneWidget);
+    expect(find.textContaining(RegExp('^ahora · ')), findsOneWidget);
   });
 }

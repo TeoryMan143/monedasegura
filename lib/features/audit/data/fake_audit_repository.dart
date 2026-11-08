@@ -2,6 +2,7 @@ import '../../../core/domain/audit_action.dart';
 import '../../../core/domain/catalog_models.dart';
 import '../../../core/local_writes/local_writes_store.dart';
 import '../domain/audit_entry.dart';
+import '../domain/label_history.dart';
 import 'audit_repository.dart';
 
 /// [AuditRepository] without a backend: TX-48219 of `FakeLabelingRepository` was
@@ -24,13 +25,21 @@ class FakeAuditRepository implements AuditRepository {
       DateTime(_now.year, _now.month, _now.day - 1, hour, minute);
 
   @override
-  Future<List<AuditEntry>> fetchLabelHistory(int transactionId) async {
-    final database = transactionId == historyTransactionId
-        ? _history()
-        : const <AuditEntry>[];
-    return mergeAuditHistory(
-      database,
-      sessionHistory(_localWrites, transactionId, const {}),
+  Future<LabelHistory> fetchLabelHistory(int transactionId) async {
+    final isHistory = transactionId == historyTransactionId;
+    return LabelHistory(
+      entries: mergeAuditHistory(
+        isHistory ? _history() : const [],
+        sessionHistory(_localWrites, transactionId, const {}),
+      ),
+      alerts: [
+        if (isHistory)
+          HistoryAlert(
+            code: 'AL-1042',
+            score: 92,
+            generatedAt: _yesterday(22, 42),
+          ),
+      ],
     );
   }
 

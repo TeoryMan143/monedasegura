@@ -10,6 +10,7 @@ import '../../../core/local_writes/local_writes_provider.dart';
 import '../../../core/local_writes/local_writes_store.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/audit_entry.dart';
+import '../domain/label_history.dart';
 import 'fake_audit_repository.dart';
 
 /// Reads the history of a transaction for N-03 (HU-15): the `audit_log` of its label and
@@ -27,17 +28,21 @@ class AuditRepository {
       'action, analyst_id, old_value, new_value, created_at, '
       'analyst:analysts(full_name)';
 
-  /// Every change of [transactionId], newest first.
-  Future<List<AuditEntry>> fetchLabelHistory(int transactionId) async {
+  /// Every change of [transactionId], newest first, and its AI alerts.
+  Future<LabelHistory> fetchLabelHistory(int transactionId) async {
     try {
       final links = await _client
           .from('ai_alert_transactions')
-          .select('alert_id, ai_alerts(code)')
+          .select('alert_id, ai_alerts(code, score, generated_at)')
           .eq('transaction_id', transactionId);
-      final alertCodes = {
+      final alerts = {
         for (final link in links)
-          link['alert_id'] as String:
-              (link['ai_alerts'] as Map<String, dynamic>)['code'] as String,
+          link['alert_id'] as String: historyAlertFromRow(
+            link['ai_alerts'] as Map<String, dynamic>,
+          ),
+      };
+      final alertCodes = {
+        for (final MapEntry(:key, :value) in alerts.entries) key: value.code,
       };
       final results = await Future.wait<List<Map<String, dynamic>>>([
         _client
@@ -55,16 +60,27 @@ class AuditRepository {
           ? await fraudTypes()
           : const <CatalogFraudType>[];
       final codes = {for (final type in catalog) type.id: type.code};
-      return mergeAuditHistory([
-        for (final rows in results)
-          for (final row in rows)
-            AuditEntry.fromJson(withFinalTypeCode(row, codes)),
-      ], sessionHistory(_localWrites, transactionId, alertCodes));
+      return LabelHistory(
+        entries: mergeAuditHistory([
+          for (final rows in results)
+            for (final row in rows)
+              AuditEntry.fromJson(withFinalTypeCode(row, codes)),
+        ], sessionHistory(_localWrites, transactionId, alertCodes)),
+        alerts: alerts.values.toList()
+          ..sort((a, b) => a.generatedAt.compareTo(b.generatedAt)),
+      );
     } catch (error) {
       throw mapToFailure(error);
     }
   }
 }
+
+/// An embedded `ai_alerts` row with its code, score and date.
+HistoryAlert historyAlertFromRow(Map<String, dynamic> row) => HistoryAlert(
+  code: row['code'] as String,
+  score: row['score'] as int,
+  generatedAt: DateTime.parse(row['generated_at'] as String),
+);
 
 /// An alert row keeps its `final_type_id`; [auditChanges] reads the type by its code.
 Map<String, dynamic> withFinalTypeCode(

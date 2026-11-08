@@ -10,22 +10,31 @@ import 'audit_entry.dart';
 typedef AuditChange = ({String field, String? before, String? after});
 
 /// The fields an [AuditEntry] changed, in form order. A created label lists every field
-/// it has; an edit lists only the fields whose value changed.
+/// it has, its verdict coming from «Sin etiquetar»; an edit lists only the fields whose
+/// value changed.
 ///
 /// The labels of the database store their fraud types in another table, so their
 /// entries have no `fraud_types` and show no type change.
 List<AuditChange> auditChanges(AuditEntry entry) {
   final before = entry.oldValue ?? const <String, dynamic>{};
   final after = entry.newValue ?? const <String, dynamic>{};
+  final isCreation = entry.oldValue == null && !entry.isAlert;
   final fields = entry.isAlert ? _alertFields : _labelFields;
   return [
     for (final MapEntry(key: key, value: (:label, :format)) in fields.entries)
       if (after.containsKey(key) || before.containsKey(key))
         if ((_text(before[key], format), _text(after[key], format))
             case (final old, final current) when old != current)
-          (field: label, before: old, after: current),
+          (
+            field: label,
+            before: isCreation && key == 'verdict' ? unlabeledText : old,
+            after: current,
+          ),
   ];
 }
+
+/// The verdict of a transaction before its first label.
+const unlabeledText = 'Sin etiquetar';
 
 typedef _Field = ({String label, String Function(Object value) format});
 

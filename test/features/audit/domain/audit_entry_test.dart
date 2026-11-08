@@ -85,7 +85,7 @@ void main() {
     );
 
     expect(auditChanges(entry), [
-      (field: 'Veredicto', before: null, after: 'No fraude'),
+      (field: 'Veredicto', before: 'Sin etiquetar', after: 'No fraude'),
       (field: 'Confianza', before: null, after: 'Media'),
     ]);
   });

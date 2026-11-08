@@ -184,7 +184,7 @@ void main() {
 
     await tapText(tester, 'Ver historial');
 
-    expect(find.text('Historial de la etiqueta'), findsOneWidget);
+    expect(find.text('Historial de la etiqueta · TX-48219'), findsOneWidget);
     expect(
       find.textContaining('Etiqueta editada', findRichText: true),
       findsOneWidget,
