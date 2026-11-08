@@ -13,6 +13,9 @@ abstract class AlertTransaction with _$AlertTransaction {
     required bool isPrimary,
     required double amount,
     required String currencyCode,
+
+    /// Whether it already has a label, which resolving the alert would replace.
+    @Default(false) bool isLabeled,
   }) = _AlertTransaction;
 
   factory AlertTransaction.fromJson(Map<String, dynamic> json) =>
@@ -27,5 +30,6 @@ Map<String, dynamic> _flatten(Map<String, dynamic> row) {
     'code': transaction['code'],
     'amount': transaction['amount'],
     'currency_code': transaction['currency_code'],
+    'is_labeled': transaction['is_labeled'],
   };
 }

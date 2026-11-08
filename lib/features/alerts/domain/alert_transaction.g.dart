@@ -13,6 +13,7 @@ _AlertTransaction _$AlertTransactionFromJson(Map<String, dynamic> json) =>
       isPrimary: json['is_primary'] as bool,
       amount: (json['amount'] as num).toDouble(),
       currencyCode: json['currency_code'] as String,
+      isLabeled: json['is_labeled'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$AlertTransactionToJson(_AlertTransaction instance) =>
@@ -22,4 +23,5 @@ Map<String, dynamic> _$AlertTransactionToJson(_AlertTransaction instance) =>
       'is_primary': instance.isPrimary,
       'amount': instance.amount,
       'currency_code': instance.currencyCode,
+      'is_labeled': instance.isLabeled,
     };
