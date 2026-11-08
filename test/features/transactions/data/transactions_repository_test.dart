@@ -233,6 +233,31 @@ void main() {
     expect(page.items.single.accountLast4, '4417');
   });
 
+  test(
+    'the label filter counts labels saved in this session as labeled',
+    () async {
+      localWrites = LocalWritesStore(delay: Duration.zero);
+      repository = TransactionsRepository(client, localWrites);
+      await localWrites.saveLabels(
+        transactionIds: {48219, 48220},
+        values: const LabelValues(
+          verdict: Verdict.notFraud,
+          confidence: ConfidenceLevel.high,
+        ),
+        analystId: 'analyst-1',
+        analystName: 'Analista',
+      );
+
+      await fetch(const TransactionsQuery(labelStatus: LabelStatus.unlabeled));
+      expect(params()['is_labeled'], 'eq.false');
+      expect(params()['id'], 'not.in.(48219,48220)');
+
+      await fetch(const TransactionsQuery(labelStatus: LabelStatus.labeled));
+      expect(params()['is_labeled'], isNull);
+      expect(params()['or'], '(is_labeled.eq.true,id.in.(48219,48220))');
+    },
+  );
+
   test('a label saved in this session replaces the one of the view', () async {
     await localWrites.saveLabel(
       transactionId: 48219,
