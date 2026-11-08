@@ -164,7 +164,9 @@ final List<AppTableColumn<TransactionRow>> _columns = [
   AppTableColumn(
     id: TransactionsSort.amount.name,
     label: 'Monto',
-    width: _amountWidth,
+    // Flexible: on a wide window the free space is shared with the customer and type
+    // columns instead of opening a gap after the customer.
+    minWidth: _amountWidth,
     numeric: true,
     sortable: true,
     cellBuilder: (context, row) {

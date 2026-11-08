@@ -91,6 +91,14 @@ GoRouter _buildRouter(Ref ref) {
                 builder: (context, state) => CustomerScreen(
                   customerId: state.pathParameters['customerId']!,
                   transactionId: state.uri.queryParameters['tx'],
+                  // The open transaction lives in `?tx=`. replace, not go: go would drop
+                  // the list below, and replace keeps this page and its state.
+                  onSelectTransaction: (transactionId) => context.replace(
+                    AppRoutes.customer(
+                      state.pathParameters['customerId']!,
+                      transactionId: transactionId?.toString(),
+                    ),
+                  ),
                   // Back to the list it came from, keeping its filters and page.
                   onBack: () => context.canPop()
                       ? context.pop()

@@ -98,11 +98,19 @@ class CustomerRepository {
         range,
         accountId,
       );
+      // Labels saved in this session are not in the database yet: count the ones on
+      // transactions of the range that the database still has unlabeled.
+      final localIds = _localWrites.labeledTransactionIds.toList();
       final counts = await Future.wait([
         count().eq('is_labeled', true),
         count(),
+        if (localIds.isNotEmpty)
+          count().eq('is_labeled', false).inFilter('id', localIds),
       ]);
-      return LabelProgress(labeled: counts[0], total: counts[1]);
+      return LabelProgress(
+        labeled: counts[0] + (localIds.isEmpty ? 0 : counts[2]),
+        total: counts[1],
+      );
     } catch (error) {
       throw mapToFailure(error);
     }
