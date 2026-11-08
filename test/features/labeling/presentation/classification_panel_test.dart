@@ -131,8 +131,11 @@ void main() {
 
     await tapText(tester, 'No fraude');
 
-    expect(find.text('Tipo(s) de fraude'), findsNothing);
-    expect(find.text('Severidad'), findsNothing);
+    expect(
+      find.textContaining('Tipo(s) de fraude', findRichText: true),
+      findsNothing,
+    );
+    expect(find.textContaining('Severidad', findRichText: true), findsNothing);
   });
 
   testWidgets('low confidence needs a justification, then saves', (

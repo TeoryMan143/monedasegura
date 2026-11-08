@@ -80,7 +80,7 @@ class FakeCustomerRepository implements CustomerRepository {
     DateRange range, {
     String? accountId,
   }) async {
-    final rows = _inRange(range, accountId);
+    final rows = withLocalLabels(_inRange(range, accountId), _localWrites);
     return LabelProgress(
       labeled: rows.where((row) => row.isLabeled).length,
       total: rows.length,

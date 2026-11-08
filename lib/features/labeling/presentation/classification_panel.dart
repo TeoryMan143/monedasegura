@@ -5,8 +5,8 @@ import '../../../core/errors/failure.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
 import 'controllers/classification_controller.dart';
-import 'widgets/classification_fields.dart';
 import 'widgets/classification_summary.dart';
+import 'widgets/label_form_fields.dart';
 
 /// N-02 · Classification side panel (HU-04): the transaction, its AI alert and its label
 /// form, with live validation and the save.
@@ -39,15 +39,6 @@ class ClassificationPanel extends ConsumerStatefulWidget {
 }
 
 class _ClassificationPanelState extends ConsumerState<ClassificationPanel> {
-  final _justification = TextEditingController();
-  bool _filled = false;
-
-  @override
-  void dispose() {
-    _justification.dispose();
-    super.dispose();
-  }
-
   Future<void> _save() async {
     final provider = classificationProvider(widget.transactionId);
     final wasLabeled = ref.read(provider).value?.target.label != null;
@@ -66,10 +57,6 @@ class _ClassificationPanelState extends ConsumerState<ClassificationPanel> {
     final provider = classificationProvider(widget.transactionId);
     final value = ref.watch(provider);
     final state = value.value;
-    if (state != null && !_filled) {
-      _justification.text = state.form.justification;
-      _filled = true;
-    }
 
     return SidePanel(
       title: 'Clasificar transacción',
@@ -87,9 +74,11 @@ class _ClassificationPanelState extends ConsumerState<ClassificationPanel> {
               onOpenHistory: widget.onOpenHistory,
             ),
             const SizedBox(height: AppSpace.xl),
-            ClassificationFields(
-              transactionId: widget.transactionId,
-              justification: _justification,
+            LabelFormFields(
+              form: state.form,
+              errors: state.visibleErrors,
+              enabled: !state.isSaving,
+              onChanged: ref.read(provider.notifier).change,
             ),
             if (state.failure case final failure?) ...[
               const SizedBox(height: AppSpace.lg),

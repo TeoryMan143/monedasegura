@@ -3,13 +3,30 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:monedasegura/core/catalogs/catalog_repository.dart';
+import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/core/ui/kit.dart';
+import 'package:monedasegura/features/auth/domain/analyst.dart';
+import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 import 'package:monedasegura/features/customer/data/customer_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_repository.dart';
 import 'package:monedasegura/features/customer/presentation/customer_screen.dart';
+import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
+import 'package:monedasegura/features/labeling/data/label_writer.dart';
+import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
+
+class _SignedIn extends SessionController {
+  @override
+  Analyst? build() => const Analyst(
+    id: 'a1',
+    email: 'laura.gomez@monedasegura.test',
+    fullName: 'Laura Gómez',
+  );
+}
 
 void main() {
   setUpAll(() async {
@@ -24,7 +41,10 @@ void main() {
 
   late int backs;
   late List<CustomerReportTab> reports;
+  late GoRouter router;
 
+  /// A-02 behind a real router, which keeps the open transaction in `?tx=` as the app's
+  /// does. The customer view and the panel share one store, as in the prototype.
   Future<void> pumpScreen(
     WidgetTester tester, {
     String customerId = FakeCustomerRepository.customerId,
@@ -38,30 +58,67 @@ void main() {
       ..physicalSize = const Size(1280, 720)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    final store = LocalWritesStore(delay: Duration.zero);
+    router = GoRouter(
+      initialLocation: transactionId == null
+          ? '/customers/$customerId'
+          : '/customers/$customerId?tx=$transactionId',
+      routes: [
+        GoRoute(
+          path: '/customers/:customerId',
+          builder: (context, state) {
+            final id = state.pathParameters['customerId']!;
+            return Scaffold(
+              body: CustomerScreen(
+                customerId: id,
+                transactionId: state.uri.queryParameters['tx'],
+                onSelectTransaction: (tx) => context.replace(
+                  tx == null ? '/customers/$id' : '/customers/$id?tx=$tx',
+                ),
+                onBack: () => backs++,
+                onOpenReport: withReport ? reports.add : null,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           customerRepositoryProvider.overrideWithValue(
-            FakeCustomerRepository(LocalWritesStore()),
+            FakeCustomerRepository(store),
           ),
+          labelingRepositoryProvider.overrideWithValue(
+            FakeLabelingRepository(LocalLabelWriter(store)),
+          ),
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          sessionProvider.overrideWith(_SignedIn.new),
         ],
-        child: MaterialApp(
+        child: MaterialApp.router(
           theme: AppTheme.light(),
           locale: const Locale('es'),
           supportedLocales: const [Locale('es')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          home: Scaffold(
-            body: CustomerScreen(
-              customerId: customerId,
-              transactionId: transactionId,
-              at: at,
-              onBack: () => backs++,
-              onOpenReport: withReport ? reports.add : null,
-            ),
-          ),
+          routerConfig: router,
         ),
       ),
     );
+    await tester.pumpAndSettle();
+  }
+
+  /// The `?tx=` of the current location, or null without it.
+  String? openTransaction() =>
+      router.routeInformationProvider.value.uri.queryParameters['tx'];
+
+  Finder inPanel(Finder finder) =>
+      find.descendant(of: find.byType(SidePanel), matching: finder);
+
+  Future<void> tapInPanel(WidgetTester tester, String text) async {
+    final target = inPanel(find.text(text)).first;
+    await tester.ensureVisible(target);
+    await tester.tap(target);
     await tester.pumpAndSettle();
   }
 
@@ -129,6 +186,38 @@ void main() {
     expect(find.textContaining('1 transacción · Entradas'), findsOneWidget);
   });
 
+  testWidgets('the checkbox selects for HU-05 without opening the panel', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+    expect(find.text('Clasificar 1 transacción'), findsOneWidget);
+    expect(find.byType(SidePanel), findsNothing);
+    expect(find.text('Guardar etiqueta'), findsNothing);
+  });
+
+  testWidgets('another account clears the selection', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+
+    await tester.tap(find.byType(AppDropdown<String?>));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppMenu),
+        matching: find.text('Bil •••• 3391'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 seleccionada'), findsNothing);
+  });
+
   testWidgets('the report buttons wait for the report route', (tester) async {
     await pumpScreen(tester);
 
@@ -150,6 +239,69 @@ void main() {
     await tester.tap(find.text('Ver perfil'));
     await tester.tap(find.text('Reportes'));
     expect(reports, [CustomerReportTab.summary, CustomerReportTab.timeline]);
+  });
+
+  testWidgets('a click on a row opens N-02 on it and writes ?tx=', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.byType(SidePanel), findsNothing);
+
+    await tester.tap(find.text('Éxito Laureles'));
+    await tester.pumpAndSettle();
+
+    expect(openTransaction(), '48303');
+    expect(inPanel(find.text('TX-48303')), findsOneWidget);
+  });
+
+  testWidgets('?tx= opens the panel; Siguiente moves it and ?tx= follows', (
+    tester,
+  ) async {
+    await pumpScreen(tester, transactionId: '48302');
+    expect(inPanel(find.text('TX-48302')), findsOneWidget);
+
+    await tapInPanel(tester, 'Siguiente');
+
+    expect(openTransaction(), '48303');
+    expect(inPanel(find.text('TX-48303')), findsOneWidget);
+    expect(find.text('TX-48302'), findsNothing);
+  });
+
+  testWidgets('closing the panel removes ?tx=', (tester) async {
+    await pumpScreen(tester, transactionId: '48302');
+
+    await tester.tap(find.byTooltip('Cerrar panel'));
+    await tester.pumpAndSettle();
+
+    expect(openTransaction(), isNull);
+    expect(find.byType(SidePanel), findsNothing);
+  });
+
+  testWidgets('a save changes the badge of the row and the progress', (
+    tester,
+  ) async {
+    // TX-48301 is the row of 22:47.
+    Finder badgeOfRow() => find.descendant(
+      of: find.ancestor(of: find.text('22:47'), matching: find.byType(Row)),
+      matching: find.byType(StatusBadge),
+    );
+    await pumpScreen(tester, transactionId: '48301');
+    expect(find.text('5/8 etiquetadas'), findsOneWidget);
+    expect(
+      tester.widget<StatusBadge>(badgeOfRow().first).label,
+      'Sin etiquetar',
+    );
+
+    await tapInPanel(tester, 'No fraude');
+    await tapInPanel(tester, 'Alta');
+    await tapInPanel(tester, 'Guardar etiqueta');
+
+    expect(find.text('Etiqueta guardada'), findsOneWidget);
+    expect(find.text('6/8 etiquetadas'), findsOneWidget);
+    expect(tester.widget<StatusBadge>(badgeOfRow().first).label, 'No fraude');
+    // The panel stays on the transaction, now with its label.
+    expect(openTransaction(), '48301');
+    expect(inPanel(find.text('Actualizar etiqueta')), findsOneWidget);
   });
 
   testWidgets('?tx= outside the range moves the range to show it', (

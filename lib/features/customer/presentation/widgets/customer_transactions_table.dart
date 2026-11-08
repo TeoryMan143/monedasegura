@@ -9,6 +9,9 @@ import '../../../../core/formatting/date_time.dart';
 import '../../../../core/formatting/money.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
+import '../../../labeling/domain/transaction_selection.dart';
+import '../../../labeling/presentation/bulk_selection_bar.dart';
+import '../../../labeling/presentation/controllers/transaction_selection_controller.dart';
 import '../../domain/customer_transaction.dart';
 import '../../domain/customer_transactions_query.dart';
 import '../../domain/customer_view.dart';
@@ -25,9 +28,13 @@ const _accountFilterWidth = 220.0;
 /// The table card of A-02 (HU-03): the account filter, the count with the totals of the
 /// range, the transactions of all the customer's accounts and the pagination.
 ///
-/// A click on a row selects it ([onSelect]); the classification panel (N-02, HU-04) will
-/// open on it. The checkbox only selects rows for the bulk classification (HU-05).
-class CustomerTransactionsTable extends ConsumerStatefulWidget {
+/// A click on a row selects it ([onSelect]) and the classification panel (N-02, HU-04)
+/// opens on it. The checkbox only selects rows for the bulk classification (HU-05).
+///
+/// The checked rows live in [selectedTransactionsProvider] with this customer's
+/// [SelectionScope]. They survive a change of page, page size or sort, and are cleared
+/// when the account or the date range changes, because the rows are no longer the same.
+class CustomerTransactionsTable extends ConsumerWidget {
   const CustomerTransactionsTable({
     required this.customer,
     required this.selectedTransactionId,
@@ -40,25 +47,29 @@ class CustomerTransactionsTable extends ConsumerStatefulWidget {
   final ValueChanged<int> onSelect;
 
   @override
-  ConsumerState<CustomerTransactionsTable> createState() =>
-      _CustomerTransactionsTableState();
-}
-
-class _CustomerTransactionsTableState
-    extends ConsumerState<CustomerTransactionsTable> {
-  Set<Object> _checked = {};
-
-  @override
-  Widget build(BuildContext context) {
-    final customer = widget.customer;
+  Widget build(BuildContext context, WidgetRef ref) {
     final id = customer.id;
     final queryProvider = customerTransactionsQueryProvider(id);
     final query = ref.watch(queryProvider);
     final notifier = ref.read(queryProvider.notifier);
     final page = ref.watch(customerTransactionsPageProvider(id));
-    ref.listen(queryProvider, (_, _) {
-      if (_checked.isNotEmpty) setState(() => _checked = {});
-    });
+    final selectionProvider = selectedTransactionsProvider(
+      SelectionScope.customer(id),
+    );
+    final selection = ref.watch(selectionProvider);
+    void clearSelection() => ref.read(selectionProvider.notifier).clear();
+    ref
+      ..listen(
+        queryProvider.select((query) => query.accountId),
+        (_, _) => clearSelection(),
+      )
+      ..listen(customerDateRangeProvider(id), (_, _) => clearSelection())
+      ..listen(
+        customerTransactionsPageProvider(id),
+        (_, next) => ref
+            .read(selectionProvider.notifier)
+            .refresh(_selectable(next.value?.items ?? const [])),
+      );
 
     final sort = AppTableSort(
       columnId: query.sort.name,
@@ -84,10 +95,11 @@ class _CustomerTransactionsTableState
           ascending: next.direction == SortDirection.ascending,
         );
       },
-      onRowTap: (row) => widget.onSelect(row.id),
-      activeKey: widget.selectedTransactionId,
-      selectedKeys: _checked,
-      onSelectionChanged: (keys) => setState(() => _checked = keys),
+      onRowTap: (row) => onSelect(row.id),
+      activeKey: selectedTransactionId,
+      selectedKeys: selection.ids,
+      onSelectionChanged: (keys) =>
+          ref.read(selectionProvider.notifier).setPage(_selectable(rows), keys),
       isFlagged: (row) => row.hasAiAlert,
       empty: _EmptyTransactions(customer: customer, query: query),
       rowSemanticLabel: (row) => 'Seleccionar ${row.code}',
@@ -121,6 +133,7 @@ class _CustomerTransactionsTableState
             ],
           ),
         ),
+        BulkSelectionBar(scope: SelectionScope.customer(id)),
         Expanded(
           child: ScreenState<PageResult<CustomerTransaction>>(
             value: page,
@@ -145,6 +158,12 @@ class _CustomerTransactionsTableState
     );
   }
 }
+
+/// The rows of a page as the selection keeps them.
+Iterable<SelectedTransaction> _selectable(List<CustomerTransaction> rows) =>
+    rows.map(
+      (row) => SelectedTransaction(id: row.id, isLabeled: row.isLabeled),
+    );
 
 String _accountLabel(CustomerAccount account) =>
     '${account.type.abbreviation} ${maskAccount(account.last4)}';

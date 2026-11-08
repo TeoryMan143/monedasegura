@@ -15,15 +15,20 @@ export 'widgets/customer_header.dart'
 /// A-02 · Customer view (HU-03): the transactions of all the customer's accounts in a
 /// date range, to classify them with context.
 ///
-/// [transactionId] (`?tx=`) is the selected transaction: the range moves to show it if
-/// needed. [at] (`?at=2026-09-03`, from an alert) moves the range to show that day the
-/// same way, without selecting anything. [onBack] goes back to the list, and [onOpenReport] opens the customer report,
-/// or is null while that route does not exist. The router passes both, so this feature
-/// does not depend on the app's routes.
+/// [transactionId] (`?tx=`) is the transaction open in the classification panel (N-02):
+/// the range moves to show it if needed. The screen does not keep it: a click on a row,
+/// «Siguiente» and closing the panel call [onSelectTransaction], and the router writes
+/// the new `?tx=` (null closes the panel). So the open transaction survives going to the
+/// report and back.
+///
+/// [onBack] goes back to the list, and [onOpenReport] opens the customer report, or is
+/// null while that route does not exist. The router passes them, so this feature does
+/// not depend on the app's routes.
 class CustomerScreen extends ConsumerStatefulWidget {
   const CustomerScreen({
     required this.customerId,
     required this.onBack,
+    required this.onSelectTransaction,
     this.transactionId,
     this.at,
     this.onOpenReport,
@@ -34,6 +39,7 @@ class CustomerScreen extends ConsumerStatefulWidget {
   final String? transactionId;
   final String? at;
   final VoidCallback onBack;
+  final ValueChanged<int?> onSelectTransaction;
   final OpenCustomerReport? onOpenReport;
 
   @override
@@ -41,13 +47,14 @@ class CustomerScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerScreenState extends ConsumerState<CustomerScreen> {
-  int? _selected;
+  ProviderSubscription<AsyncValue<DateTime?>>? _dateSubscription;
+
+  int? get _selected => int.tryParse(widget.transactionId ?? '');
 
   @override
   void initState() {
     super.initState();
     final transactionId = int.tryParse(widget.transactionId ?? '');
-    _selected = transactionId;
     if (DateTime.tryParse(widget.at ?? '') case final day?
         when transactionId == null) {
       // After this build: a provider cannot change while the tree is building.
@@ -58,14 +65,43 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
             .show(day);
       });
     }
+    _showInRange(_selected);
+  }
+
+  @override
+  void didUpdateWidget(CustomerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selected = _selected;
+    if (oldWidget.transactionId == widget.transactionId || selected == null) {
+      return;
+    }
+    // A row of the table is already in the range. Only a `?tx=` from elsewhere, e.g. the
+    // global search while this customer is open, may need to move it.
+    final rows =
+        ref
+            .read(customerTransactionsPageProvider(widget.customerId))
+            .value
+            ?.items ??
+        const [];
+    if (!rows.any((row) => row.id == selected)) _showInRange(selected);
+  }
+
+  /// Moves the range so that it shows [transactionId], once its date arrives.
+  void _showInRange(int? transactionId) {
+    _dateSubscription?.close();
+    _dateSubscription = null;
     if (transactionId == null) return;
-    ref.listenManual(customerTransactionDateProvider(transactionId), (_, next) {
-      final date = next.value;
-      if (date == null) return;
-      ref
-          .read(customerDateRangeProvider(widget.customerId).notifier)
-          .show(date);
-    }, fireImmediately: true);
+    _dateSubscription = ref.listenManual(
+      customerTransactionDateProvider(transactionId),
+      (_, next) {
+        final date = next.value;
+        if (date == null) return;
+        ref
+            .read(customerDateRangeProvider(widget.customerId).notifier)
+            .show(date);
+      },
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -106,7 +142,7 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
     );
   }
 
-  void _closePanel() => setState(() => _selected = null);
+  void _closePanel() => widget.onSelectTransaction(null);
 
   /// «Siguiente»: the next row of the current page, or closes after the last one.
   void _openNext(int current) {
@@ -117,10 +153,8 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
             ?.items ??
         const [];
     final index = rows.indexWhere((row) => row.id == current);
-    setState(
-      () => _selected = index >= 0 && index + 1 < rows.length
-          ? rows[index + 1].id
-          : null,
+    widget.onSelectTransaction(
+      index >= 0 && index + 1 < rows.length ? rows[index + 1].id : null,
     );
   }
 
@@ -146,8 +180,7 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
                 child: CustomerTransactionsTable(
                   customer: customer,
                   selectedTransactionId: _selected,
-                  onSelect: (transactionId) =>
-                      setState(() => _selected = transactionId),
+                  onSelect: widget.onSelectTransaction,
                 ),
               ),
             ),

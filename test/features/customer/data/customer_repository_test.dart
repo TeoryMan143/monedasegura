@@ -3,8 +3,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monedasegura/core/domain/account_type.dart';
+import 'package:monedasegura/core/domain/confidence_level.dart';
 import 'package:monedasegura/core/domain/currency.dart';
+import 'package:monedasegura/core/domain/verdict.dart';
 import 'package:monedasegura/core/errors/failure.dart';
+import 'package:monedasegura/core/local_writes/local_writes_models.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/features/customer/data/customer_repository.dart';
 import 'package:monedasegura/features/customer/domain/customer_transactions_query.dart';
@@ -179,6 +182,30 @@ void main() {
       hasLength(1),
     );
     expect(progress.total, 60);
+  });
+
+  test('the progress also counts the labels saved in this session', () async {
+    final store = LocalWritesStore(delay: Duration.zero);
+    await store.saveLabel(
+      transactionId: 48219,
+      values: const LabelValues(
+        verdict: Verdict.notFraud,
+        confidence: ConfidenceLevel.high,
+      ),
+      analystId: 'a1',
+      analystName: 'Laura Gómez',
+    );
+    repository = CustomerRepository(client, store);
+
+    final progress = await repository.fetchProgress(_customer, _range);
+
+    // The database has 60 labeled; the local label is on a row it still has unlabeled.
+    final local = requests.where(
+      (request) => request.uri.queryParameters['is_labeled'] == 'eq.false',
+    );
+    expect(requests, hasLength(3));
+    expect(local.single.uri.queryParameters['id'], 'in.(48219)');
+    expect(progress.labeled, 120);
   });
 
   test('a customer without accounts asks nothing', () async {
