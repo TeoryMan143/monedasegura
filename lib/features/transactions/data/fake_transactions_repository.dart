@@ -30,11 +30,13 @@ class FakeTransactionsRepository implements TransactionsRepository {
     final (:known, :currencyCode) = currencyFilter(query, countries);
     if (!known) return const PageResult(items: [], total: 0);
     final matching =
-        _rows.where((row) => _matches(row, query, currencyCode)).toList()
+        _currentRows()
+            .where((row) => _matches(row, query, currencyCode))
+            .toList()
           ..sort((a, b) => _compare(a, b, query));
     final items = matching.skip(query.from).take(query.pageSize).toList();
     return PageResult(
-      items: withLocalLabels(withCountries(items, countries), _localWrites),
+      items: withCountries(items, countries),
       total: matching.length,
     );
   }
@@ -48,8 +50,14 @@ class FakeTransactionsRepository implements TransactionsRepository {
     final (:known, :currencyCode) = currencyFilter(query, countries);
     if (!known) return 0;
     final unlabeled = query.copyWith(labelStatus: LabelStatus.unlabeled);
-    return _rows.where((row) => _matches(row, unlabeled, currencyCode)).length;
+    return _currentRows()
+        .where((row) => _matches(row, unlabeled, currencyCode))
+        .length;
   }
+
+  /// The rows with the labels saved in this session, so the label filter and the
+  /// unlabeled count see them as the table does.
+  List<TransactionRow> _currentRows() => withLocalLabels(_rows, _localWrites);
 
   static bool _matches(
     TransactionRow row,

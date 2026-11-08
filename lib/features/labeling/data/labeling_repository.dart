@@ -89,6 +89,20 @@ class LabelingRepository {
     analystId: analystId,
     analystName: analystName,
   );
+
+  /// Saves the same [form] on every transaction (HU-05). All or none: returns how many
+  /// already had a label.
+  Future<int> labelMany({
+    required Set<int> transactionIds,
+    required LabelForm form,
+    required String analystId,
+    required String analystName,
+  }) => _writer.saveMany(
+    transactionIds: transactionIds,
+    form: form,
+    analystId: analystId,
+    analystName: analystName,
+  );
 }
 
 /// [target] with the label [writer] holds, if the database does not have it yet.

@@ -133,7 +133,13 @@ class CustomerTransactionsTable extends ConsumerWidget {
             ],
           ),
         ),
-        BulkSelectionBar(scope: SelectionScope.customer(id)),
+        BulkSelectionBar(
+          scope: SelectionScope.customer(id),
+          // As after N-02: the rows show their new label and the header its progress.
+          onApplied: () => ref
+            ..invalidate(customerTransactionsPageProvider(id))
+            ..invalidate(customerLabelProgressProvider(id)),
+        ),
         Expanded(
           child: ScreenState<PageResult<CustomerTransaction>>(
             value: page,
