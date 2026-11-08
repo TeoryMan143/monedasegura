@@ -148,12 +148,23 @@ GoRouter _buildRouter(Ref ref) {
                             ? context.pop()
                             : context.go(AppRoutes.customer(customerId)),
                         onOpenList: () => context.go(AppRoutes.transactions),
-                        onOpenTransaction: (transactionId) => context.push(
-                          AppRoutes.customer(
+                        // Back to the customer view below (pop) and open the
+                        // transaction there in `?tx=` (replace): one A-02 in the
+                        // history, with the list still below it.
+                        onOpenTransaction: (transactionId) {
+                          final router = GoRouter.of(context);
+                          final target = AppRoutes.customer(
                             customerId,
                             transactionId: '$transactionId',
-                          ),
-                        ),
+                          );
+                          if (router.canPop()) {
+                            router
+                              ..pop()
+                              ..replace<void>(target);
+                          } else {
+                            router.go(target);
+                          }
+                        },
                       );
                     },
                   ),

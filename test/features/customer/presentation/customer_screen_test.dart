@@ -59,10 +59,14 @@ void main() {
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final store = LocalWritesStore(delay: Duration.zero);
+    final query = [
+      if (transactionId != null) 'tx=$transactionId',
+      if (at != null) 'at=$at',
+    ];
     router = GoRouter(
-      initialLocation: transactionId == null
+      initialLocation: query.isEmpty
           ? '/customers/$customerId'
-          : '/customers/$customerId?tx=$transactionId',
+          : '/customers/$customerId?${query.join('&')}',
       routes: [
         GoRoute(
           path: '/customers/:customerId',
@@ -72,6 +76,7 @@ void main() {
               body: CustomerScreen(
                 customerId: id,
                 transactionId: state.uri.queryParameters['tx'],
+                at: state.uri.queryParameters['at'],
                 onSelectTransaction: (tx) => context.replace(
                   tx == null ? '/customers/$id' : '/customers/$id?tx=$tx',
                 ),
