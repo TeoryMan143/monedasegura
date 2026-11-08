@@ -15,14 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ResolveAlertState {
 
-/// «Confirmar» is the one that comes selected.
- ResolveAlertAction get action;/// Confidence, severity and justification have no default: the analyst chooses them,
-/// because these labels train the model.
- LabelForm get form;/// The involved transactions the analyst unchecked. They keep the label they have.
- Set<int> get excludedTransactionIds;/// Fields the analyst changed: only those show their error before sending.
- Set<LabelField> get touched;/// True after the first send: from then on every error shows.
- bool get submitted; SaveState get saveState;/// Why the last send failed. The form keeps its data for the retry.
- Failure? get failure;
+ ResolveAlertAction get action; LabelForm get form; Set<int> get excludedTransactionIds; Set<LabelField> get touched; bool get submitted; SaveState get saveState; Failure? get failure;
 /// Create a copy of ResolveAlertState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -249,33 +242,24 @@ class _ResolveAlertState extends ResolveAlertState {
   const _ResolveAlertState({this.action = ResolveAlertAction.confirm, this.form = const LabelForm(),  Set<int> excludedTransactionIds = const <int>{},  Set<LabelField> touched = const <LabelField>{}, this.submitted = false, this.saveState = SaveState.idle, this.failure}): _excludedTransactionIds = excludedTransactionIds,_touched = touched,super._();
   
 
-/// «Confirmar» is the one that comes selected.
 @override@JsonKey() final  ResolveAlertAction action;
-/// Confidence, severity and justification have no default: the analyst chooses them,
-/// because these labels train the model.
 @override@JsonKey() final  LabelForm form;
-/// The involved transactions the analyst unchecked. They keep the label they have.
  final  Set<int> _excludedTransactionIds;
-/// The involved transactions the analyst unchecked. They keep the label they have.
 @override@JsonKey() Set<int> get excludedTransactionIds {
   if (_excludedTransactionIds is EqualUnmodifiableSetView) return _excludedTransactionIds;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableSetView(_excludedTransactionIds);
 }
 
-/// Fields the analyst changed: only those show their error before sending.
  final  Set<LabelField> _touched;
-/// Fields the analyst changed: only those show their error before sending.
 @override@JsonKey() Set<LabelField> get touched {
   if (_touched is EqualUnmodifiableSetView) return _touched;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableSetView(_touched);
 }
 
-/// True after the first send: from then on every error shows.
 @override@JsonKey() final  bool submitted;
 @override@JsonKey() final  SaveState saveState;
-/// Why the last send failed. The form keeps its data for the retry.
 @override final  Failure? failure;
 
 /// Create a copy of ResolveAlertState
