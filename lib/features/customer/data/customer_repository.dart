@@ -8,11 +8,13 @@ import '../../../core/errors/failure_mapper.dart';
 import '../../../core/local_writes/local_writes_provider.dart';
 import '../../../core/local_writes/local_writes_store.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
+import '../domain/customer_activity.dart';
 import '../domain/customer_transaction.dart';
 import '../domain/customer_transactions_query.dart';
 import '../domain/customer_view.dart';
 import '../domain/date_range.dart';
 import '../domain/range_totals.dart';
+import '../domain/security_event.dart';
 import 'fake_customer_repository.dart';
 
 /// Reads the A-02 customer view (HU-03): the customer, their accounts and pending
@@ -32,6 +34,10 @@ class CustomerRepository {
       'id, code, occurred_at, type, channel_code, amount, currency_code, '
       'source_account_id, destination_account_id, merchant_name, alert_score, '
       'is_labeled, verdict';
+  static const _activityColumns = '$_columns, latitude, longitude, city_name';
+  static const _securityEventColumns =
+      'id, type, occurred_at, channel_code, succeeded, latitude, longitude, '
+      'city:cities(name)';
 
   Future<CustomerView> fetchCustomer(String customerId) async {
     try {
@@ -161,6 +167,57 @@ class CustomerRepository {
           for (final row in response.data) CustomerTransaction.fromJson(row),
         ], _localWrites),
         total: response.count,
+      );
+    } catch (error) {
+      throw mapToFailure(error);
+    }
+  }
+
+  /// The transactions (with their place) and the security events of the customer in
+  /// [range], oldest first, for the timeline and the map (HU-10, HU-11).
+  ///
+  /// Not paginated: the charts need the whole range. Each list is capped at
+  /// [CustomerActivity.limit], keeping the most recent rows.
+  Future<CustomerActivity> fetchActivity(
+    CustomerView customer,
+    DateRange range,
+  ) async {
+    const limit = CustomerActivity.limit;
+    try {
+      final results = await Future.wait([
+        if (customer.accounts.isEmpty)
+          Future.value(const <Map<String, dynamic>>[])
+        else
+          _applyFilters(
+                _client.from(_view).select(_activityColumns),
+                customer.accountIds,
+                range,
+                null,
+              )
+              .order('occurred_at', ascending: false)
+              .order('id', ascending: false)
+              .limit(limit + 1),
+        _client
+            .from('security_events')
+            .select(_securityEventColumns)
+            .eq('customer_id', customer.id)
+            .gte('occurred_at', range.start.toUtc().toIso8601String())
+            .lt('occurred_at', range.end.toUtc().toIso8601String())
+            .order('occurred_at', ascending: false)
+            .limit(limit + 1),
+      ]);
+      final transactions = results[0];
+      final events = results[1];
+      return CustomerActivity(
+        transactions: withLocalLabels([
+          for (final row in transactions.take(limit).toList().reversed)
+            CustomerTransaction.fromJson(row),
+        ], _localWrites),
+        securityEvents: [
+          for (final row in events.take(limit).toList().reversed)
+            SecurityEvent.fromJson(row),
+        ],
+        truncated: transactions.length > limit || events.length > limit,
       );
     } catch (error) {
       throw mapToFailure(error);

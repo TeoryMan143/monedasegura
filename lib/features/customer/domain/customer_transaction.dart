@@ -34,6 +34,12 @@ abstract class CustomerTransaction with _$CustomerTransaction {
     /// The merchant of a purchase or a payment.
     String? merchantName,
 
+    /// Where it happened, for the timeline and the map (HU-10, HU-11). Null for
+    /// operations without a place, such as most online credits.
+    double? latitude,
+    double? longitude,
+    String? cityName,
+
     /// Score of its AI alert, 0 to 100. Null without an alert.
     int? alertScore,
     required bool isLabeled,

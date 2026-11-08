@@ -77,6 +77,28 @@ void main() {
     expect(row.merchantName, 'Éxito Laureles');
     expect(row.labelStatus, LabelStatus.unlabeled);
     expect(row.hasAiAlert, isFalse);
+    expect(row.latitude, isNull);
+  });
+
+  test('reads the place of a row of the view', () {
+    final row = CustomerTransaction.fromJson(const {
+      'id': 47326,
+      'code': 'TX-47326',
+      'occurred_at': '2026-09-03T21:28:11Z',
+      'type': 'purchase',
+      'channel_code': 'POS',
+      'amount': 2963.27,
+      'currency_code': 'BRL',
+      'source_account_id': 'a1',
+      'is_labeled': false,
+      'latitude': 10.409404,
+      'longitude': -75,
+      'city_name': 'Cartagena',
+    });
+
+    expect(row.latitude, 10.409404);
+    expect(row.longitude, -75.0);
+    expect(row.cityName, 'Cartagena');
   });
 
   group('DateRange', () {

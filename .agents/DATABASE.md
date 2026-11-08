@@ -121,7 +121,7 @@ The app reads lists and statistics from views, so it never joins on the client:
 
 | View | Feeds |
 | --- | --- |
-| `v_transactions_list` | A-01 and the customer view table: transaction + customer + masked account + country + channel + top pending/any alert score + label verdict and status |
+| `v_transactions_list` | A-01 and the customer view table: transaction + customer + masked account + country + channel + top pending/any alert score + label verdict and status + latitude, longitude and city name (timeline and map, HU-10, HU-11) |
 | `v_customer_label_progress` | Customer view header: labeled / total, pending alerts |
 | `v_labeling_progress` | Overall labeling progress. The statistics page uses `fraud_stats_kpis`, which filters |
 | `v_fraud_stats` | Frauds by type and currency, with amounts per currency. It has no date or country: the statistics page uses the functions above |

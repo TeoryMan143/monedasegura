@@ -234,6 +234,83 @@ void main() {
     },
   );
 
+  group('activity for the timeline and the map', () {
+    const event = {
+      'id': 'e1',
+      'type': 'password_change',
+      'occurred_at': '2026-03-03T22:30:00Z',
+      'channel_code': 'APP',
+      'succeeded': true,
+      'latitude': 6.2442,
+      'longitude': -75.5812,
+      'city': {'name': 'Medellín'},
+    };
+    final older = {
+      ..._row,
+      'id': 48100,
+      'occurred_at': '2026-03-02T10:00:00Z',
+      'latitude': 6.2442,
+      'longitude': -75.5812,
+      'city_name': 'Medellín',
+    };
+
+    test('asks for the transactions with their place and the security events in the range', () async {
+      respond = (request) => switch (request.uri.path) {
+        '/rest/v1/security_events' => [event],
+        _ => [
+          {..._row, 'latitude': 4.711, 'longitude': -74.0721},
+          older,
+        ],
+      };
+
+      final activity = await repository.fetchActivity(_customer, _range);
+
+      final transactions = requests.singleWhere(
+        (request) => request.uri.path == '/rest/v1/v_transactions_list',
+      );
+      final query = transactions.uri.queryParametersAll;
+      expect(query['select']!.single, contains('latitude'));
+      expect(query['select']!.single, contains('city_name'));
+      expect(query['or'], [
+        '(source_account_id.in.(a1,a2),destination_account_id.in.(a1,a2))',
+      ]);
+      expect(query['occurred_at'], ['gte.$from', 'lt.$to']);
+      expect(query['limit'], ['2001']);
+
+      final events = requests.singleWhere(
+        (request) => request.uri.path == '/rest/v1/security_events',
+      );
+      expect(events.uri.queryParameters['customer_id'], 'eq.c1');
+      expect(events.uri.queryParameters['select'], contains('cities(name)'));
+      expect(events.uri.queryParametersAll['occurred_at'], [
+        'gte.$from',
+        'lt.$to',
+      ]);
+
+      // The newest come first from the server; the activity is oldest first.
+      expect(activity.transactions.map((row) => row.id), [48100, 48219]);
+      expect(activity.transactions.last.latitude, 4.711);
+      expect(activity.securityEvents.single.cityName, 'Medellín');
+      expect(activity.truncated, isFalse);
+    });
+
+    test('a customer without accounts still has security events', () async {
+      respond = (_) => [event];
+      const empty = CustomerView(
+        id: 'c2',
+        fullName: 'Sin Cuentas',
+        accounts: [],
+        pendingAlerts: 0,
+      );
+
+      final activity = await repository.fetchActivity(empty, _range);
+
+      expect(requests.single.uri.path, '/rest/v1/security_events');
+      expect(activity.transactions, isEmpty);
+      expect(activity.securityEvents, hasLength(1));
+    });
+  });
+
   test('a rejected request becomes a Failure', () async {
     await server.close(force: true);
 
