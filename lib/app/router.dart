@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/ui/placeholder_view.dart';
+import '../features/alerts/presentation/alert_detail_screen.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
 import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -108,9 +108,23 @@ GoRouter _buildRouter(Ref ref) {
                 routes: [
                   GoRoute(
                     path: ':alertId',
-                    builder: (context, state) => const PlaceholderView(
-                      title: 'Detalle de alerta',
-                      story: 'HU-07',
+                    builder: (context, state) => AlertDetailScreen(
+                      alertId: state.pathParameters['alertId']!,
+                      // Back to the inbox it came from, keeping its filters and page.
+                      onBack: () => context.canPop()
+                          ? context.pop()
+                          : context.go(AppRoutes.alerts),
+                      // TODO(HU-08): onResolve opens the resolve window (A-06). Until then
+                      // «Resolver alerta» stays disabled.
+                      onOpenCustomer: (customerId) =>
+                          context.push(AppRoutes.customer(customerId)),
+                      onOpenTransaction: (customerId, transactionId) =>
+                          context.push(
+                            AppRoutes.customer(
+                              customerId,
+                              transactionId: '$transactionId',
+                            ),
+                          ),
                     ),
                   ),
                 ],

@@ -82,6 +82,9 @@ abstract final class AppLayout {
   static const double contentPadding = AppSpace.x3l;
   static const double blockGap = AppSpace.xxl;
   static const double sidePanelWidth = 400;
+
+  /// Side column of a detail screen: the customer card of A-05.
+  static const double detailAsideWidth = 360;
   static const double dialogM = 560;
   static const double dialogL = 800;
   static const double brandMarkSize = 32;
