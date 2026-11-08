@@ -164,17 +164,22 @@ class _TripBanner extends StatelessWidget {
     final trip = trips.first;
     final from = trip.from.transaction;
     final to = trip.to.transaction;
-    final speed = trip.speedKmh.isInfinite
+    final instant = trip.speedKmh.isInfinite;
+    final when = instant
+        ? 'al mismo tiempo'
+        : 'en ${formatElapsed(trip.elapsed)}';
+    final speed = instant
         ? 'en el mismo instante'
         : 'a ${formatWhole(trip.speedKmh)} km/h';
     final others = trips.length - 1;
     return InlineBanner(
-      title: 'Viaje imposible',
+      title:
+          'Viaje imposible: ${from.cityName ?? 'Sin ciudad'} → '
+          '${to.cityName ?? 'Sin ciudad'} $when '
+          '(≈ ${formatWhole(trip.distanceKm)} km)',
       message:
-          '${from.code} en ${from.cityName ?? 'una ubicación'} y ${to.code} en '
-          '${to.cityName ?? 'otra'}: ${formatWhole(trip.distanceKm)} km en '
-          '${formatElapsed(trip.elapsed)}, $speed. Ningún viaje real es tan '
-          'rápido.${others == 0 ? '' : ' Hay $others más en el rango.'}',
+          '${from.code} y ${to.code} se hicieron $speed: ningún viaje real es '
+          'tan rápido.${others == 0 ? '' : ' Hay $others más en el rango.'}',
       tone: StatusTone.danger,
       icon: AppIcons.location,
       action: AppButton(

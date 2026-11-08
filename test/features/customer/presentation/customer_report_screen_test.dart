@@ -156,11 +156,16 @@ void main() {
   ) async {
     await pumpReport(tester, CustomerReportTab.map);
 
-    expect(find.text('Viaje imposible'), findsWidgets);
+    // The legend names the highlighted leg.
+    expect(find.text('Viaje imposible'), findsOneWidget);
     expect(
-      find.textContaining('TX-48219 en Medellín y TX-48301 en Bogotá'),
+      find.textContaining(
+        RegExp(r'^Viaje imposible: Medellín → Bogotá en .+ \(≈ [\d.]+ km\)$'),
+      ),
       findsOneWidget,
     );
+    expect(find.textContaining('TX-48219 y TX-48301'), findsOneWidget);
+    expect(find.byTooltip('Encuadrar transacciones'), findsOneWidget);
 
     await tester.tap(find.text('Ver transacción'));
     await tester.pumpAndSettle();

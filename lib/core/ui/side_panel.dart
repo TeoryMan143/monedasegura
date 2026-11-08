@@ -21,12 +21,19 @@ Future<T?> showSidePanel<T>({
     barrierLabel: 'Cerrar panel',
     barrierColor: AppColors.bgOverlay,
     transitionDuration: const Duration(milliseconds: 220),
-    pageBuilder: (context, animation, secondaryAnimation) => Align(
-      alignment: Alignment.centerRight,
-      child: SizedBox(
-        width: width,
-        height: double.infinity,
-        child: Builder(builder: builder),
+    // Not dismissible: the dimmed area takes the click silently, instead of the barrier
+    // playing the system alert (the Windows «ding»).
+    pageBuilder: (context, animation, secondaryAnimation) => Listener(
+      behavior: barrierDismissible
+          ? HitTestBehavior.deferToChild
+          : HitTestBehavior.opaque,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: SizedBox(
+          width: width,
+          height: double.infinity,
+          child: Builder(builder: builder),
+        ),
       ),
     ),
     transitionBuilder: (context, animation, secondaryAnimation, child) =>

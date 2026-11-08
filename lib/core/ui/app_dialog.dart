@@ -19,8 +19,10 @@ enum AppDialogSize {
 
 /// Opens [builder] (usually an [AppDialog]) centred on `bgOverlay`.
 ///
-/// Esc or a click outside closes it (unless [barrierDismissible] is false). Overlays are
-/// not routes (ARCHITECTURAL_SPINE.md · Navigation): call this from the screen.
+/// Esc or a click outside closes it. With [barrierDismissible] false a click outside does
+/// nothing, silently: the barrier alone would play the system alert (the Windows «ding»).
+/// Overlays are not routes (ARCHITECTURAL_SPINE.md · Navigation): call this from the
+/// screen.
 Future<T?> showAppDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -28,7 +30,12 @@ Future<T?> showAppDialog<T>({
 }) {
   return showDialog<T>(
     context: context,
-    builder: builder,
+    builder: barrierDismissible
+        ? builder
+        : (context) => Listener(
+            behavior: HitTestBehavior.opaque,
+            child: builder(context),
+          ),
     barrierDismissible: barrierDismissible,
     barrierColor: AppColors.bgOverlay,
     barrierLabel: 'Cerrar',

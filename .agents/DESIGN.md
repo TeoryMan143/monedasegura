@@ -308,7 +308,10 @@ Use the same rules for statistics (A-07, A-08, N-04), the customer summary chart
     label and AI alert badges) with "Abrir en la vista de cliente".
 - **Map** (C-12): OpenStreetMap tiles. Markers coloured by label or alert state with an icon,
   and lines between consecutive transactions labelled with the elapsed time. Impossible travel
-  is drawn in `danger` and explained in an `InlineBanner`.
+  is drawn in `danger` and explained in an `InlineBanner` above the map ("Viaje imposible:
+  Bogotá → Ciudad de México en 40 min (≈ 3.200 km)"). The camera fits every marker; + / − and
+  "Encuadrar transacciones" sit top left. Zooming out stops when one world fills the map:
+  the tiles never repeat side by side and no grey band shows above or below them.
 - Every chart has its loading skeleton, empty and error state through `ScreenState`.
 
 ## Screen patterns
