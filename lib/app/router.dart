@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/ui/placeholder_view.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
 import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -99,7 +100,20 @@ GoRouter _buildRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.alerts,
-                builder: (context, state) => const AlertsScreen(),
+                builder: (context, state) => AlertsScreen(
+                  // push, not go: the inbox stays below the detail, so going back
+                  // keeps its filters and page.
+                  onOpen: (alertId) => context.push(AppRoutes.alert(alertId)),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':alertId',
+                    builder: (context, state) => const PlaceholderView(
+                      title: 'Detalle de alerta',
+                      story: 'HU-07',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

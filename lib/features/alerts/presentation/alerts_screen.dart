@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
+import 'widgets/alerts_filter_bar.dart';
+import 'widgets/alerts_filter_panel.dart';
 import 'widgets/alerts_inbox_table.dart';
 
-/// A-04 · AI alert inbox (HU-06), first version: header and the table of pending alerts.
+/// A-04 · AI alert inbox (HU-06): header, filters (N-01), table and pagination.
 ///
-/// The table watches its own providers, so this screen stays stateless.
+/// [onOpen] opens a row in the alert detail. The router passes it, so this feature does
+/// not depend on the app's routes. The table watches its own providers, so this screen
+/// stays stateless.
 class AlertsScreen extends StatelessWidget {
-  const AlertsScreen({super.key});
+  const AlertsScreen({required this.onOpen, super.key});
+
+  final OpenAlert onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +31,19 @@ class AlertsScreen extends StatelessWidget {
             style: AppText.bodyM.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppLayout.blockGap),
-          const Expanded(
+          Expanded(
             child: AppPanel(
               expand: true,
               padding: EdgeInsets.zero,
-              child: AlertsInboxTable(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AlertsFilterBar(
+                    onOpenFilters: () => showAlertsFilterPanel(context),
+                  ),
+                  Expanded(child: AlertsInboxTable(onOpen: onOpen)),
+                ],
+              ),
             ),
           ),
         ],
