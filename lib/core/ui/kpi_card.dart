@@ -85,7 +85,12 @@ class KpiCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpace.xs),
-          Text(value, style: AppText.kpi),
+          // Long amounts («$ 1.284.000.000,00 COP») shrink instead of overflowing.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: AppText.kpi),
+          ),
           const SizedBox(height: AppSpace.xs),
           if (trend != null)
             Row(

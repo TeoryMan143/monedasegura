@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/statistics_filter.dart';
 
+/// Date range and country of the page, shared by the two tabs (A-07, A-08).
+///
+/// Kept alive: the analyst keeps the filters when switching tabs or screens.
 final statisticsFilterProvider =
     NotifierProvider<StatisticsFilterNotifier, StatisticsFilter>(
       StatisticsFilterNotifier.new,

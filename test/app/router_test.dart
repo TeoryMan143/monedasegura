@@ -17,6 +17,7 @@ import 'package:monedasegura/features/alerts/presentation/controllers/alerts_pro
 import 'package:monedasegura/features/auth/data/auth_repository.dart';
 import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
+import 'package:monedasegura/features/statistics/presentation/statistics_screen.dart';
 import 'package:monedasegura/features/transactions/presentation/transactions_screen.dart';
 
 import '../helpers/shell_overrides.dart';
@@ -107,9 +108,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AlertsScreen), findsOneWidget);
 
-    await tester.tap(find.text('Estadísticas'));
+    // The side menu comes first; the page has its own «Estadísticas» title.
+    await tester.tap(find.text('Estadísticas').first);
     await tester.pumpAndSettle();
-    expect(find.textContaining('HU-13'), findsOneWidget);
+    expect(find.byType(StatisticsScreen), findsOneWidget);
   });
 
   testWidgets('a click on an alert opens its detail route', (tester) async {

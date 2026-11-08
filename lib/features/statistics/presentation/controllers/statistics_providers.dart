@@ -10,6 +10,8 @@ import '../../domain/statistics_filter.dart';
 import '../../domain/stats_group_by.dart';
 import '../../domain/time_series_point.dart';
 
+export 'statistics_filter_controller.dart';
+
 /// A failed statistic shows «Reintentar» at once instead of retrying in silence.
 Duration? _noAutoRetry(int retryCount, Object error) => null;
 
@@ -17,30 +19,6 @@ final statisticsRepositoryProvider = Provider<StatisticsRepository>(
   (ref) => StatisticsRepository(ref.watch(supabaseClientProvider)),
   name: 'statisticsRepositoryProvider',
 );
-
-/// Date range and country of the page, shared by the two tabs (A-07, A-08).
-///
-/// Kept alive: the analyst keeps the filters when switching tabs or screens.
-final statisticsFilterProvider =
-    NotifierProvider<StatisticsFilterNotifier, StatisticsFilter>(
-      StatisticsFilterNotifier.new,
-      name: 'statisticsFilterProvider',
-    );
-
-class StatisticsFilterNotifier extends Notifier<StatisticsFilter> {
-  @override
-  StatisticsFilter build() => const StatisticsFilter();
-
-  /// Both ends of the range, or null to clear it.
-  void setRange(DateTime? from, DateTime? to) =>
-      state = state.copyWith(fromDate: from, toDate: to);
-
-  /// A country code, or null for every country.
-  void setCountry(String? countryCode) =>
-      state = state.copyWith(countryCode: countryCode);
-
-  void reset() => state = const StatisticsFilter();
-}
 
 // The statistics below are families by filter: [StatisticsFilter] is a value class, so
 // two equal filters share one request, and changing the filter asks for new data.

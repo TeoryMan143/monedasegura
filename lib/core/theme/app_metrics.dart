@@ -71,6 +71,27 @@ abstract final class AppSizes {
   static const double toastWidth = 380;
   static const double tooltipMaxWidth = 260;
   static const double skeletonLine = 12;
+
+  /// Plot area of a line chart (A-07).
+  static const double chartHeight = 280;
+
+  /// Width reserved for the Y axis labels and height for the X axis ones.
+  static const double chartAxisLeft = 36;
+  static const double chartAxisBottom = 28;
+
+  /// Line width of a single-series chart.
+  static const double chartLine = 2;
+
+  /// Horizontal bar lists: row height, bar thickness, label and value columns.
+  static const double barRow = 32;
+  static const double barThickness = 8;
+  static const double barLabelWidth = 112;
+  static const double barValueWidth = 56;
+
+  /// Confusion matrix (N-04): cell size and the column of row labels.
+  static const double matrixCellWidth = 64;
+  static const double matrixCellHeight = 36;
+  static const double matrixLabelWidth = 72;
 }
 
 /// Fixed sizes of the app layout (DESIGN.md · Layout).
