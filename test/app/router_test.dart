@@ -10,6 +10,7 @@ import 'package:monedasegura/core/domain/page_result.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/features/alerts/data/alerts_repository.dart';
 import 'package:monedasegura/features/alerts/domain/ai_alert.dart';
+import 'package:monedasegura/features/alerts/domain/alert_detail.dart';
 import 'package:monedasegura/features/alerts/domain/alerts_query.dart';
 import 'package:monedasegura/features/alerts/presentation/alerts_screen.dart';
 import 'package:monedasegura/features/alerts/presentation/controllers/alerts_providers.dart';
@@ -36,6 +37,15 @@ Future<void> _pumpApp(
   final repository = _MockAlertsRepository();
   when(() => repository.list(any())).thenAnswer(
     (_) async => PageResult<AiAlert>(items: alerts, total: alerts.length),
+  );
+
+  when(() => repository.getById(any())).thenAnswer(
+    (_) async => AlertDetail(
+      alert: _alert,
+      modelVersion: 'v1',
+      reasons: const [],
+      transactions: const [],
+    ),
   );
 
   await tester.pumpWidget(
@@ -110,6 +120,6 @@ void main() {
     await tester.tap(find.text('Juan Pérez'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Detalle de alerta'), findsOneWidget);
+    expect(find.text('Alerta AL-1042 · Juan Pérez'), findsOneWidget);
   });
 }
