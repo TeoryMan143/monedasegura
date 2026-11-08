@@ -50,6 +50,7 @@ void main() {
     WidgetTester tester, {
     String customerId = FakeCustomerRepository.customerId,
     String? transactionId,
+    String? at,
     bool withReport = false,
   }) async {
     backs = 0;
@@ -59,10 +60,14 @@ void main() {
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final store = LocalWritesStore(delay: Duration.zero);
+    final query = [
+      if (transactionId != null) 'tx=$transactionId',
+      if (at != null) 'at=$at',
+    ];
     router = GoRouter(
-      initialLocation: transactionId == null
+      initialLocation: query.isEmpty
           ? '/customers/$customerId'
-          : '/customers/$customerId?tx=$transactionId',
+          : '/customers/$customerId?${query.join('&')}',
       routes: [
         GoRoute(
           path: '/customers/:customerId',
@@ -72,6 +77,7 @@ void main() {
               body: CustomerScreen(
                 customerId: id,
                 transactionId: state.uri.queryParameters['tx'],
+                at: state.uri.queryParameters['at'],
                 onSelectTransaction: (tx) => context.replace(
                   tx == null ? '/customers/$id' : '/customers/$id?tx=$tx',
                 ),
@@ -339,6 +345,18 @@ void main() {
     tester,
   ) async {
     await pumpScreen(tester, transactionId: '48308');
+
+    expect(find.text('Claro Colombia'), findsOneWidget);
+  });
+
+  testWidgets('?at= from an alert moves the range to that day', (tester) async {
+    final day = DateTime.now().subtract(const Duration(days: 45));
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    await pumpScreen(
+      tester,
+      at: '${day.year}-${two(day.month)}-${two(day.day)}',
+    );
 
     expect(find.text('Claro Colombia'), findsOneWidget);
   });

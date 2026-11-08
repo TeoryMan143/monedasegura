@@ -30,12 +30,14 @@ class CustomerScreen extends ConsumerStatefulWidget {
     required this.onBack,
     required this.onSelectTransaction,
     this.transactionId,
+    this.at,
     this.onOpenReport,
     super.key,
   });
 
   final String customerId;
   final String? transactionId;
+  final String? at;
   final VoidCallback onBack;
   final ValueChanged<int?> onSelectTransaction;
   final OpenCustomerReport? onOpenReport;
@@ -52,6 +54,17 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
   @override
   void initState() {
     super.initState();
+    final transactionId = int.tryParse(widget.transactionId ?? '');
+    if (DateTime.tryParse(widget.at ?? '') case final day?
+        when transactionId == null) {
+      // After this build: a provider cannot change while the tree is building.
+      Future.microtask(() {
+        if (!mounted) return;
+        ref
+            .read(customerDateRangeProvider(widget.customerId).notifier)
+            .show(day);
+      });
+    }
     _showInRange(_selected);
   }
 

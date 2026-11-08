@@ -1,6 +1,7 @@
 {
-  "enabledMcpjsonServers": [
-    "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+	"enabledMcpjsonServers": ["supabase"],
+	"enableAllProjectMcpServers": true,
+	"permissions": {
+		"allow": ["mcp__supabase__apply_migration"]
+	}
 }

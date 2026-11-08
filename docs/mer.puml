@@ -216,6 +216,7 @@ package "Catalogs" as catalogs #F8FCFF {
     * currency_code : char(3) <<FK>>
     * primary_document_type : document_type
     * phone_prefix : text
+    * time_zone : text  <color:#64748B><i>// IANA, e.g. America/Bogota</i></color>
   }
 
   entity cities <<catalog>> {
@@ -735,7 +736,8 @@ note as N_supabase
     notifications: analyst_id = auth.uid().
   • <b>Realtime</b> enabled on: transactions (is_labeled), labels, ai_alerts,
     notifications. Connection status shown in the app.
-  • <b>Read views</b>: v_transactions_list (with alert score and label status),
+  • <b>Read views</b>: v_transactions_list (with alert score, label status,
+    location and the customer's local time for the timeline and map),
     v_customer_label_progress, v_labeling_progress, v_fraud_stats (by type and
     currency), v_ai_performance (suggested vs. final type), v_stats_transactions
     (date, channel, country and amount in COP per transaction),

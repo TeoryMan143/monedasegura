@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import 'package:monedasegura/features/auth/domain/analyst.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 import 'package:monedasegura/features/customer/data/customer_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_repository.dart';
+import 'package:monedasegura/features/customer/presentation/customer_report_screen.dart';
 import 'package:monedasegura/features/customer/presentation/customer_screen.dart';
 import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
 import 'package:monedasegura/features/labeling/data/label_writer.dart';
@@ -142,4 +145,47 @@ void main() {
     expect(find.byType(TransactionsScreen), findsOneWidget);
     expect(find.text('rojas'), findsOneWidget);
   });
+
+  testWidgets(
+    'a transaction of the report opens in the customer view below, not a new one',
+    (tester) async {
+      await pumpApp(tester);
+      const customerId = FakeCustomerRepository.customerId;
+
+      await tester.tap(find.text('Ana María Rojas'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Cerrar panel'));
+      await tester.pumpAndSettle();
+      unawaited(
+        router.push(
+          AppRoutes.customerReport(customerId, CustomerReportTab.map),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CustomerReportScreen), findsOneWidget);
+
+      // The impossible travel of the fake customer: its arrival, in the card.
+      await tester.tap(find.text('Ver transacción'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Abrir en la vista de cliente'));
+      await tester.pumpAndSettle();
+
+      expect(location().path, '/customers/$customerId');
+      expect(location().queryParameters['tx'], '48301');
+      expect(find.byType(CustomerReportScreen), findsNothing);
+      expect(find.byType(CustomerScreen, skipOffstage: false), findsOneWidget);
+
+      // One step back is the list, as before the report.
+      await tester.tap(find.byTooltip('Cerrar panel'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Breadcrumbs),
+          matching: find.text('Transacciones'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(TransactionsScreen), findsOneWidget);
+    },
+  );
 }

@@ -24,11 +24,27 @@ abstract final class AppRoutes {
   /// Route pattern of [customer], in the Transacciones branch.
   static const customerPattern = '/customers/:customerId';
 
-  /// A-02 customer view; [transactionId] opens the N-02 panel on that transaction.
-  static String customer(String customerId, {String? transactionId}) =>
-      transactionId == null
-      ? '/customers/$customerId'
-      : '/customers/$customerId?tx=$transactionId';
+  /// A-02 customer view; [transactionId] opens the N-02 panel on that transaction, and
+  /// [at] makes the date range show that day (an alert's day).
+  static String customer(
+    String customerId, {
+    String? transactionId,
+    DateTime? at,
+  }) {
+    final query = [
+      if (transactionId != null) 'tx=$transactionId',
+      if (at != null) 'at=${_day(at)}',
+    ];
+    return query.isEmpty
+        ? '/customers/$customerId'
+        : '/customers/$customerId?${query.join('&')}';
+  }
+
+  static String _day(DateTime at) {
+    final local = at.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)}';
+  }
 
   /// C-08…C-12 customer report on [tab] (HU-09), a child of the customer view.
   static String customerReport(String customerId, CustomerReportTab tab) =>
@@ -91,6 +107,7 @@ GoRouter _buildRouter(Ref ref) {
                 builder: (context, state) => CustomerScreen(
                   customerId: state.pathParameters['customerId']!,
                   transactionId: state.uri.queryParameters['tx'],
+                  at: state.uri.queryParameters['at'],
                   // The open transaction lives in `?tx=`. replace, not go: go would drop
                   // the list below, and replace keeps this page and its state.
                   onSelectTransaction: (transactionId) => context.replace(
@@ -131,6 +148,23 @@ GoRouter _buildRouter(Ref ref) {
                             ? context.pop()
                             : context.go(AppRoutes.customer(customerId)),
                         onOpenList: () => context.go(AppRoutes.transactions),
+                        // Back to the customer view below (pop) and open the
+                        // transaction there in `?tx=` (replace): one A-02 in the
+                        // history, with the list still below it.
+                        onOpenTransaction: (transactionId) {
+                          final router = GoRouter.of(context);
+                          final target = AppRoutes.customer(
+                            customerId,
+                            transactionId: '$transactionId',
+                          );
+                          if (router.canPop()) {
+                            router
+                              ..pop()
+                              ..replace<void>(target);
+                          } else {
+                            router.go(target);
+                          }
+                        },
                       );
                     },
                   ),
@@ -158,8 +192,9 @@ GoRouter _buildRouter(Ref ref) {
                           : context.go(AppRoutes.alerts),
                       // TODO(HU-08): onResolve opens the resolve window (A-06). Until then
                       // «Resolver alerta» stays disabled.
-                      onOpenCustomer: (customerId) =>
-                          context.push(AppRoutes.customer(customerId)),
+                      // The range ends on the alert's day, so its activity shows.
+                      onOpenCustomer: (customerId, at) =>
+                          context.push(AppRoutes.customer(customerId, at: at)),
                       onOpenTransaction: (customerId, transactionId) =>
                           context.push(
                             AppRoutes.customer(

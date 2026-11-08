@@ -27,17 +27,17 @@ begin
     set name = excluded.name, symbol = excluded.symbol,
         decimals = excluded.decimals, locale = excluded.locale;
 
-  insert into public.countries (code, name, currency_code, primary_document_type, phone_prefix) values
-    ('CO', 'Colombia',  'COP', 'CC',   '+57'),
-    ('MX', 'México',    'MXN', 'CURP', '+52'),
-    ('PE', 'Perú',      'PEN', 'DNI',  '+51'),
-    ('CL', 'Chile',     'CLP', 'RUT',  '+56'),
-    ('AR', 'Argentina', 'ARS', 'DNI',  '+54'),
-    ('BR', 'Brasil',    'BRL', 'CPF',  '+55')
+  insert into public.countries (code, name, currency_code, primary_document_type, phone_prefix, time_zone) values
+    ('CO', 'Colombia',  'COP', 'CC',   '+57', 'America/Bogota'),
+    ('MX', 'México',    'MXN', 'CURP', '+52', 'America/Mexico_City'),
+    ('PE', 'Perú',      'PEN', 'DNI',  '+51', 'America/Lima'),
+    ('CL', 'Chile',     'CLP', 'RUT',  '+56', 'America/Santiago'),
+    ('AR', 'Argentina', 'ARS', 'DNI',  '+54', 'America/Argentina/Buenos_Aires'),
+    ('BR', 'Brasil',    'BRL', 'CPF',  '+55', 'America/Sao_Paulo')
   on conflict (code) do update
     set name = excluded.name, currency_code = excluded.currency_code,
         primary_document_type = excluded.primary_document_type,
-        phone_prefix = excluded.phone_prefix;
+        phone_prefix = excluded.phone_prefix, time_zone = excluded.time_zone;
 
   -- Six cities per country. Ids are fixed: country k owns ids 6k-5 .. 6k and the first one is
   -- the capital (or main city). The generator relies on this layout.

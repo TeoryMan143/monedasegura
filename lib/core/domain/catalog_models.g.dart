@@ -89,6 +89,7 @@ _CatalogCountry _$CatalogCountryFromJson(Map<String, dynamic> json) =>
       currencyCode: json['currency_code'] as String,
       primaryDocumentType: json['primary_document_type'] as String,
       phonePrefix: json['phone_prefix'] as String,
+      timeZone: json['time_zone'] as String,
     );
 
 Map<String, dynamic> _$CatalogCountryToJson(_CatalogCountry instance) =>
@@ -98,6 +99,7 @@ Map<String, dynamic> _$CatalogCountryToJson(_CatalogCountry instance) =>
       'currency_code': instance.currencyCode,
       'primary_document_type': instance.primaryDocumentType,
       'phone_prefix': instance.phonePrefix,
+      'time_zone': instance.timeZone,
     };
 
 _CatalogChannel _$CatalogChannelFromJson(Map<String, dynamic> json) =>

@@ -44,7 +44,7 @@ class CatalogRepository {
 
   Future<List<CatalogCountry>> fetchCountries() => _fetch(
     table: 'countries',
-    columns: 'code, name, currency_code, primary_document_type, phone_prefix',
+    columns: 'code, name, currency_code, primary_document_type, phone_prefix, time_zone',
     orderBy: 'name',
     fromJson: CatalogCountry.fromJson,
   );

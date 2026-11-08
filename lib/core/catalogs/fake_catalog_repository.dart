@@ -20,12 +20,12 @@ const _fraudTypeColors = {
 };
 
 const _countryDetails = {
-  Country.colombia: ('CC', '+57'),
-  Country.mexico: ('CURP', '+52'),
-  Country.peru: ('DNI', '+51'),
-  Country.chile: ('RUT', '+56'),
-  Country.argentina: ('DNI', '+54'),
-  Country.brazil: ('CPF', '+55'),
+  Country.colombia: ('CC', '+57', 'America/Bogota'),
+  Country.mexico: ('CURP', '+52', 'America/Mexico_City'),
+  Country.peru: ('DNI', '+51', 'America/Lima'),
+  Country.chile: ('RUT', '+56', 'America/Santiago'),
+  Country.argentina: ('DNI', '+54', 'America/Argentina/Buenos_Aires'),
+  Country.brazil: ('CPF', '+55', 'America/Sao_Paulo'),
 };
 
 /// Channels that exist in a single country.
@@ -97,6 +97,7 @@ class FakeCatalogRepository implements CatalogRepository {
         currencyCode: country.currency.code,
         primaryDocumentType: _countryDetails[country]!.$1,
         phonePrefix: _countryDetails[country]!.$2,
+        timeZone: _countryDetails[country]!.$3,
       ),
   ];
 

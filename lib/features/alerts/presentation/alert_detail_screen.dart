@@ -36,8 +36,9 @@ class AlertDetailScreen extends ConsumerWidget {
   /// the transaction.
   final void Function(String customerId, int transactionId) onOpenTransaction;
 
-  /// Opens the customer view, from «Ver cliente».
-  final ValueChanged<String> onOpenCustomer;
+  /// Opens the customer view, from «Ver cliente»: receives the customer and when the
+  /// alert was generated, so the view's date range can show the alert's activity.
+  final void Function(String customerId, DateTime at) onOpenCustomer;
 
   /// Opens the resolve window (A-06, HU-08). Null while that window does not exist:
   /// «Resolver alerta» stays disabled.
@@ -94,7 +95,10 @@ class AlertDetailScreen extends ConsumerWidget {
                   width: AppLayout.detailAsideWidth,
                   child: AlertCustomerCard(
                     customerName: detail.alert.customerName,
-                    onOpen: () => onOpenCustomer(detail.alert.customerId),
+                    onOpen: () => onOpenCustomer(
+                      detail.alert.customerId,
+                      detail.alert.generatedAt,
+                    ),
                   ),
                 ),
               ],

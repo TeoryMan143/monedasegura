@@ -2,15 +2,18 @@ import '../../../core/domain/account_type.dart';
 import '../../../core/domain/channel.dart';
 import '../../../core/domain/currency.dart';
 import '../../../core/domain/page_result.dart';
+import '../../../core/domain/security_event_type.dart';
 import '../../../core/domain/transaction_type.dart';
 import '../../../core/domain/verdict.dart';
 import '../../../core/errors/failure.dart';
 import '../../../core/local_writes/local_writes_store.dart';
+import '../domain/customer_activity.dart';
 import '../domain/customer_transaction.dart';
 import '../domain/customer_transactions_query.dart';
 import '../domain/customer_view.dart';
 import '../domain/date_range.dart';
 import '../domain/range_totals.dart';
+import '../domain/security_event.dart';
 import 'customer_repository.dart';
 
 /// Offline customer view for `USE_FAKE_DATA=true` and tests: one customer, Ana María
@@ -18,12 +21,16 @@ import 'customer_repository.dart';
 /// so this is the only place where rows are filtered and added up in memory.
 ///
 /// Dates are relative to [now], so the default range (the last 30 days) shows them.
+/// The two late transfers of yesterday are 6 minutes apart, one in Medellín and one in
+/// Bogotá, so the offline map shows an impossible travel (HU-11).
 class FakeCustomerRepository implements CustomerRepository {
   FakeCustomerRepository(this._localWrites, {DateTime? now})
-    : _rows = _prototypeRows(now ?? DateTime.now());
+    : _rows = _prototypeRows(now ?? DateTime.now()),
+      _events = _securityEvents(now ?? DateTime.now());
 
   final LocalWritesStore _localWrites;
   final List<CustomerTransaction> _rows;
+  final List<SecurityEvent> _events;
 
   static const customerId = '00000000-0000-4000-8000-000000000001';
 
@@ -130,6 +137,25 @@ class FakeCustomerRepository implements CustomerRepository {
     );
   }
 
+  @override
+  Future<CustomerActivity> fetchActivity(
+    CustomerView customer,
+    DateRange range,
+  ) async {
+    final transactions = _inRange(range, null)
+      ..sort((a, b) {
+        final order = a.occurredAt.compareTo(b.occurredAt);
+        return order != 0 ? order : a.id.compareTo(b.id);
+      });
+    return CustomerActivity(
+      transactions: withLocalLabels(transactions, _localWrites),
+      securityEvents: [
+        for (final event in _events)
+          if (range.contains(event.occurredAt)) event,
+      ],
+    );
+  }
+
   List<CustomerTransaction> _inRange(DateRange range, String? accountId) {
     final accounts = accountId == null ? _ids : {accountId};
     return _rows
@@ -148,6 +174,10 @@ const _checking = '00000000-0000-4000-9000-000000000201';
 const _wallet = '00000000-0000-4000-9000-000000000301';
 const _external = '00000000-0000-4000-9000-000000000101';
 
+const _medellin = (6.2442, -75.5812);
+const _laureles = (6.2447, -75.5951);
+const _bogota = (4.7110, -74.0721);
+
 List<CustomerTransaction> _prototypeRows(DateTime now) {
   DateTime daysAgo(int days, int hour, int minute) =>
       DateTime(now.year, now.month, now.day - days, hour, minute);
@@ -164,6 +194,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       sourceAccountId: _savings,
       destinationAccountId: _external,
       alertScore: 92,
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: true,
       verdict: Verdict.fraud,
     ),
@@ -178,6 +211,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       sourceAccountId: _savings,
       destinationAccountId: _external,
       alertScore: 88,
+      latitude: _bogota.$1,
+      longitude: _bogota.$2,
+      cityName: 'Bogotá',
       isLabeled: false,
     ),
     CustomerTransaction(
@@ -190,6 +226,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       currency: Currency.cop,
       sourceAccountId: _savings,
       merchantName: 'EPM Servicios',
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: true,
       verdict: Verdict.notFraud,
     ),
@@ -203,6 +242,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       currency: Currency.cop,
       sourceAccountId: _checking,
       merchantName: 'Éxito Laureles',
+      latitude: _laureles.$1,
+      longitude: _laureles.$2,
+      cityName: 'Medellín',
       isLabeled: true,
       verdict: Verdict.notFraud,
     ),
@@ -228,6 +270,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       amount: 400000,
       currency: Currency.cop,
       sourceAccountId: _checking,
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: false,
     ),
     CustomerTransaction(
@@ -240,6 +285,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       currency: Currency.cop,
       sourceAccountId: _wallet,
       merchantName: 'Falabella.com',
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: true,
       verdict: Verdict.uncertain,
     ),
@@ -253,6 +301,9 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       currency: Currency.cop,
       sourceAccountId: _checking,
       destinationAccountId: _savings,
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: false,
     ),
     // Outside the default range of 30 days.
@@ -266,7 +317,47 @@ List<CustomerTransaction> _prototypeRows(DateTime now) {
       currency: Currency.cop,
       sourceAccountId: _savings,
       merchantName: 'Claro Colombia',
+      latitude: _medellin.$1,
+      longitude: _medellin.$2,
+      cityName: 'Medellín',
       isLabeled: false,
     ),
+  ];
+}
+
+/// Ana María's logins and, right before the two late transfers, a password change and a
+/// new device (HU-10).
+List<SecurityEvent> _securityEvents(DateTime now) {
+  DateTime daysAgo(int days, int hour, int minute) =>
+      DateTime(now.year, now.month, now.day - days, hour, minute);
+  SecurityEvent event(
+    int n,
+    SecurityEventType type,
+    DateTime occurredAt, {
+    bool succeeded = true,
+    Channel channel = Channel.app,
+  }) => SecurityEvent(
+    id: '00000000-0000-4000-a000-${n.toString().padLeft(12, '0')}',
+    type: type,
+    occurredAt: occurredAt,
+    channel: channel,
+    succeeded: succeeded,
+    latitude: _medellin.$1,
+    longitude: _medellin.$2,
+    cityName: 'Medellín',
+  );
+
+  return [
+    event(1, SecurityEventType.login, daysAgo(10, 8, 2)),
+    event(2, SecurityEventType.login, daysAgo(6, 15, 10), channel: Channel.web),
+    event(3, SecurityEventType.login, daysAgo(3, 12, 1)),
+    event(
+      4,
+      SecurityEventType.loginFailed,
+      daysAgo(1, 22, 20),
+      succeeded: false,
+    ),
+    event(5, SecurityEventType.loginNewDevice, daysAgo(1, 22, 24)),
+    event(6, SecurityEventType.passwordChange, daysAgo(1, 22, 31)),
   ];
 }

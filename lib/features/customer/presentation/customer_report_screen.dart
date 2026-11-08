@@ -9,7 +9,9 @@ import 'controllers/customer_report_controller.dart';
 import 'widgets/customer_header.dart';
 import 'widgets/customer_range_button.dart';
 import 'widgets/report_accounts_tab.dart';
+import 'widgets/report_map_tab.dart';
 import 'widgets/report_summary_tab.dart';
+import 'widgets/report_timeline_tab.dart';
 
 /// Spanish names of the report tabs, in [CustomerReportTab] order.
 extension CustomerReportTabLabel on CustomerReportTab {
@@ -24,9 +26,10 @@ extension CustomerReportTabLabel on CustomerReportTab {
 /// C-08…C-12 · Customer report (HU-09): one screen with four tabs and the date range
 /// of A-02, shared by all of them.
 ///
-/// This card builds «Resumen» and «Cuentas». «Línea de tiempo» (HU-10) and «Mapa»
-/// (HU-11) stay empty for integrante 5. [onTab] changes the tab in the URL, [onBack]
-/// returns to the customer view and [onOpenList] to the transaction list.
+/// «Línea de tiempo» (HU-10) and «Mapa» (HU-11) are the proof of concept of
+/// `poc/timeline-map`. [onTab] changes the tab in the URL, [onBack] returns to the
+/// customer view, [onOpenList] to the transaction list and [onOpenTransaction] opens a
+/// transaction of the timeline or the map in the customer view.
 class CustomerReportScreen extends ConsumerWidget {
   const CustomerReportScreen({
     required this.customerId,
@@ -34,6 +37,7 @@ class CustomerReportScreen extends ConsumerWidget {
     required this.onTab,
     required this.onBack,
     required this.onOpenList,
+    required this.onOpenTransaction,
     super.key,
   });
 
@@ -42,6 +46,7 @@ class CustomerReportScreen extends ConsumerWidget {
   final ValueChanged<CustomerReportTab> onTab;
   final VoidCallback onBack;
   final VoidCallback onOpenList;
+  final ValueChanged<int> onOpenTransaction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -101,15 +106,13 @@ class CustomerReportScreen extends ConsumerWidget {
               CustomerReportTab.accounts => ReportAccountsTab(
                 customerId: customerId,
               ),
-              CustomerReportTab.timeline => const _LaterTab(
-                title: 'Línea de tiempo',
-                story: 'HU-10',
-                icon: AppIcons.timeline,
+              CustomerReportTab.timeline => ReportTimelineTab(
+                customerId: customerId,
+                onOpenTransaction: onOpenTransaction,
               ),
-              CustomerReportTab.map => const _LaterTab(
-                title: 'Mapa de transacciones',
-                story: 'HU-11',
-                icon: AppIcons.location,
+              CustomerReportTab.map => ReportMapTab(
+                customerId: customerId,
+                onOpenTransaction: onOpenTransaction,
               ),
             },
           ),
@@ -117,29 +120,4 @@ class CustomerReportScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// A tab another card fills (integrante 5).
-class _LaterTab extends StatelessWidget {
-  const _LaterTab({
-    required this.title,
-    required this.story,
-    required this.icon,
-  });
-
-  final String title;
-  final String story;
-  final AppIcons icon;
-
-  @override
-  Widget build(BuildContext context) => ScreenState<Object?>(
-    value: const AsyncData(null),
-    isEmpty: (_) => true,
-    empty: EmptyState(
-      title: title,
-      message: 'Esta pestaña llega con $story.',
-      icon: icon,
-    ),
-    builder: (context, _) => const SizedBox.shrink(),
-  );
 }

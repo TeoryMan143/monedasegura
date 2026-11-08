@@ -34,6 +34,16 @@ abstract class CustomerTransaction with _$CustomerTransaction {
     /// The merchant of a purchase or a payment.
     String? merchantName,
 
+    /// Where it happened, for the timeline and the map (HU-10, HU-11). Null for
+    /// operations without a place, such as most online credits.
+    double? latitude,
+    double? longitude,
+    String? cityName,
+
+    /// [occurredAt] on the clock of the customer's country, read as a wall time (no time
+    /// zone): its hour is the customer's hour. Unusual hours use it (HU-10).
+    @JsonKey(fromJson: _wallTimeOrNull) DateTime? customerLocalAt,
+
     /// Score of its AI alert, 0 to 100. Null without an alert.
     int? alertScore,
     required bool isLabeled,
@@ -65,6 +75,11 @@ abstract class CustomerTransaction with _$CustomerTransaction {
       customerAccounts.contains(destinationAccountId) &&
       !customerAccounts.contains(sourceAccountId);
 }
+
+/// A `timestamp without time zone` as the wall time it is: `DateTime.parse` reads a text
+/// without offset as local time and keeps its fields.
+DateTime? _wallTimeOrNull(String? value) =>
+    value == null ? null : DateTime.parse(value);
 
 Verdict? _verdictOrNull(String? value) =>
     value == null ? null : Verdict.fromDb(value);

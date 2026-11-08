@@ -55,8 +55,10 @@ void main() {
       'currency_code': 'BRL',
       'primary_document_type': 'CPF',
       'phone_prefix': '+55',
+      'time_zone': 'America/Sao_Paulo',
     });
 
+    expect(country.timeZone, 'America/Sao_Paulo');
     expect(country.currencyCode, 'BRL');
     expect(country.primaryDocumentType, 'CPF');
     expect(country.phonePrefix, '+55');

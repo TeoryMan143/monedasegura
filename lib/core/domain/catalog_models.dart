@@ -87,6 +87,9 @@ abstract class CatalogCountry with _$CatalogCountry {
     required String currencyCode,
     required String primaryDocumentType,
     required String phonePrefix,
+
+    /// IANA time zone, e.g. `America/Bogota`: the customer's clock for unusual hours.
+    required String timeZone,
   }) = _CatalogCountry;
 
   factory CatalogCountry.fromJson(Map<String, dynamic> json) =>
