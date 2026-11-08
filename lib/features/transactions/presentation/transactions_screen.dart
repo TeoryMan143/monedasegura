@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
+import '../../labeling/presentation/bulk_selection_bar.dart';
+import '../../labeling/presentation/controllers/transaction_selection_controller.dart';
 import 'widgets/transactions_filter_bar.dart';
 import 'widgets/transactions_search_field.dart';
 import 'widgets/transactions_sort_dropdown.dart';
 import 'widgets/transactions_table.dart';
 
-/// A-01 · Transaction list (HU-02): search, sort, filters (N-01), table and pagination.
+/// A-01 · Transaction list (HU-02): search, sort, filters (N-01), table and pagination,
+/// with the multiple selection for the bulk classification (HU-05).
 ///
 /// [onOpen] opens a row in the customer view. The router passes it, so this feature does
 /// not depend on the app's routes.
@@ -47,6 +50,7 @@ class TransactionsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const TransactionsFilterBar(),
+                  const BulkSelectionBar(scope: SelectionScope.transactions),
                   Expanded(child: TransactionsTable(onOpen: onOpen)),
                 ],
               ),

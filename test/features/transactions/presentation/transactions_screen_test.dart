@@ -14,6 +14,8 @@ import 'package:monedasegura/core/errors/failure.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/core/ui/kit.dart';
+import 'package:monedasegura/features/labeling/presentation/bulk_label_dialog.dart';
+import 'package:monedasegura/features/labeling/presentation/bulk_selection_bar.dart';
 import 'package:monedasegura/features/transactions/data/fake_transactions_repository.dart';
 import 'package:monedasegura/features/transactions/data/transactions_repository.dart';
 import 'package:monedasegura/features/transactions/domain/transaction_row.dart';
@@ -122,6 +124,62 @@ void main() {
     await tester.tap(find.text('Lucía Quispe'));
     await tester.pump();
     expect(opened, ['00000000-0000-4000-8000-000000000003?tx=48221']);
+  });
+
+  testWidgets('checked rows show the bulk bar, which opens A-03 (HU-05)', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.byType(BulkSelectionBar), findsOneWidget);
+    expect(find.text('Quitar selección'), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+    expect(find.text('Clasificar 1 transacción'), findsOneWidget);
+
+    // The header checkbox selects the whole page: 6 rows, 3 of them labeled.
+    await tester.tap(
+      find.bySemanticsLabel('Seleccionar todas las filas de la página'),
+    );
+    await tester.pump();
+    expect(find.text('6 seleccionadas'), findsOneWidget);
+    expect(find.text('· 3 ya tienen etiqueta'), findsOneWidget);
+
+    await tester.tap(find.text('Clasificar 6 transacciones'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(BulkLabelDialog),
+        matching: find.text('Clasificar 6 transacciones'),
+      ),
+      findsOneWidget,
+    );
+    expect(opened, isEmpty);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quitar selección'));
+    await tester.pump();
+    expect(find.text('Quitar selección'), findsNothing);
+  });
+
+  testWidgets('a new search clears the selection', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(TransactionsSearchField),
+        matching: find.byType(EditableText),
+      ),
+      'quispe',
+    );
+    await tester.pump(TransactionsSearchField.debounce);
+    await tester.pumpAndSettle();
+    expect(find.text('1 seleccionada'), findsNothing);
   });
 
   testWidgets('the search waits for the analyst to stop typing', (

@@ -9,6 +9,8 @@ import '../../../../core/formatting/date_time.dart';
 import '../../../../core/formatting/money.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
+import '../../../labeling/domain/transaction_selection.dart';
+import '../../../labeling/presentation/controllers/transaction_selection_controller.dart';
 import '../../domain/transaction_row.dart';
 import '../../domain/transactions_query.dart';
 import '../controllers/transactions_page_controller.dart';
@@ -25,33 +27,42 @@ typedef OpenTransaction = void Function(String customerId, int transactionId);
 /// The table of A-01 and its pagination (HU-02), with loading (E-01), empty and no
 /// results (E-02) and error states.
 ///
-/// A click on a row calls [onOpen]; the checkbox only selects. The selection is cleared
-/// when the query changes, because the rows are no longer the same.
-class TransactionsTable extends ConsumerStatefulWidget {
+/// A click on a row calls [onOpen]; the checkbox only selects for the bulk
+/// classification (HU-05).
+///
+/// The selection lives in [selectedTransactionsProvider]. It survives a change of page,
+/// page size or sort, which only show the same results another way, and is cleared when
+/// the search or a filter changes, because the matching rows are no longer the same.
+class TransactionsTable extends ConsumerWidget {
   const TransactionsTable({required this.onOpen, super.key});
 
   final OpenTransaction onOpen;
 
-  @override
-  ConsumerState<TransactionsTable> createState() => _TransactionsTableState();
-}
-
-class _TransactionsTableState extends ConsumerState<TransactionsTable> {
-  Set<Object> _selected = {};
-
   void _open(TransactionRow row) {
     final customerId = row.customerId;
-    if (customerId != null) widget.onOpen(customerId, row.id);
+    if (customerId != null) onOpen(customerId, row.id);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final query = ref.watch(transactionsQueryProvider);
     final notifier = ref.read(transactionsQueryProvider.notifier);
     final page = ref.watch(transactionsPageProvider(query));
-    ref.listen(transactionsQueryProvider, (_, _) {
-      if (_selected.isNotEmpty) setState(() => _selected = {});
-    });
+    final selectionProvider = selectedTransactionsProvider(
+      SelectionScope.transactions,
+    );
+    final selection = ref.watch(selectionProvider);
+    ref
+      ..listen(
+        transactionsQueryProvider.select((query) => query.filtersOnly),
+        (_, _) => ref.read(selectionProvider.notifier).clear(),
+      )
+      ..listen(
+        transactionsPageProvider(query),
+        (_, next) => ref
+            .read(selectionProvider.notifier)
+            .refresh(_selectable(next.value?.items ?? const [])),
+      );
 
     final sort = AppTableSort(
       columnId: query.sort.name,
@@ -77,8 +88,9 @@ class _TransactionsTableState extends ConsumerState<TransactionsTable> {
         );
       },
       onRowTap: _open,
-      selectedKeys: _selected,
-      onSelectionChanged: (keys) => setState(() => _selected = keys),
+      selectedKeys: selection.ids,
+      onSelectionChanged: (keys) =>
+          ref.read(selectionProvider.notifier).setPage(_selectable(rows), keys),
       isFlagged: (row) => row.hasAiAlert,
       empty: _EmptyTransactions(query: query),
       rowSemanticLabel: (row) =>
@@ -112,6 +124,10 @@ class _TransactionsTableState extends ConsumerState<TransactionsTable> {
     );
   }
 }
+
+/// The rows of a page as the selection keeps them.
+Iterable<SelectedTransaction> _selectable(List<TransactionRow> rows) => rows
+    .map((row) => SelectedTransaction(id: row.id, isLabeled: row.isLabeled));
 
 final List<AppTableColumn<TransactionRow>> _columns = [
   AppTableColumn(
