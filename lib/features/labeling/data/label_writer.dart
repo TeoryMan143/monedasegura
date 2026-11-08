@@ -30,6 +30,16 @@ abstract interface class LabelWriter {
     required String analystName,
   });
 
+  /// Saves the same [form], which must already pass `validateLabel`, on every
+  /// transaction (HU-05). All of them are saved or none. Returns how many already had
+  /// a label.
+  Future<int> saveMany({
+    required Set<int> transactionIds,
+    required LabelForm form,
+    required String analystId,
+    required String analystName,
+  });
+
   /// A label this writer holds that the database does not have yet, to show over the
   /// database's one. Always null once labels are written to the database.
   SavedLabel? pendingLabelFor(int transactionId);
@@ -49,20 +59,37 @@ class LocalLabelWriter implements LabelWriter {
     required String analystId,
     required String analystName,
   }) async {
-    final (:verdict, :confidence) = _required(form);
     final saved = await _store.saveLabel(
       transactionId: transactionId,
-      values: LabelValues(
-        verdict: verdict,
-        confidence: confidence,
-        severity: _severity(form),
-        justification: _justification(form),
-        fraudTypes: _fraudTypes(form),
-      ),
+      values: _values(form),
       analystId: analystId,
       analystName: analystName,
     );
     return savedLabelFromLocal(saved);
+  }
+
+  @override
+  Future<int> saveMany({
+    required Set<int> transactionIds,
+    required LabelForm form,
+    required String analystId,
+    required String analystName,
+  }) => _store.saveLabels(
+    transactionIds: transactionIds,
+    values: _values(form),
+    analystId: analystId,
+    analystName: analystName,
+  );
+
+  LabelValues _values(LabelForm form) {
+    final (:verdict, :confidence) = _required(form);
+    return LabelValues(
+      verdict: verdict,
+      confidence: confidence,
+      severity: _severity(form),
+      justification: _justification(form),
+      fraudTypes: _fraudTypes(form),
+    );
   }
 
   @override
@@ -93,27 +120,12 @@ class SupabaseLabelWriter implements LabelWriter {
     required String analystId,
     required String analystName,
   }) async {
-    final (:verdict, :confidence) = _required(form);
     // E-03 stays reproducible with the demo case.
     if (transactionId == DemoCases.failingTransactionId) {
       throw Failure.unknown(message: 'Simulated save error: $transactionId');
     }
     try {
-      final catalog = await fraudTypes();
-      final ids = {for (final type in catalog) type.code: type.id};
-      await _client.rpc<Object?>(
-        'label_transactions',
-        params: {
-          'p_transaction_ids': [transactionId],
-          'p_verdict': verdict.dbValue,
-          'p_confidence': confidence.dbValue,
-          'p_fraud_type_ids': [
-            for (final type in _fraudTypes(form)) ids[type.dbValue],
-          ],
-          'p_severity': _severity(form)?.dbValue,
-          'p_justification': _justification(form),
-        },
-      );
+      await _labelTransactions({transactionId}, form);
       final row = await _client
           .from('labels')
           .select(LabelingRepository.labelColumns)
@@ -126,7 +138,48 @@ class SupabaseLabelWriter implements LabelWriter {
   }
 
   @override
+  Future<int> saveMany({
+    required Set<int> transactionIds,
+    required LabelForm form,
+    required String analystId,
+    required String analystName,
+  }) async {
+    // As the store does: the failing demo case rejects the whole bulk save.
+    if (transactionIds.contains(DemoCases.failingTransactionId)) {
+      throw const Failure.unknown(message: 'Simulated bulk save error');
+    }
+    try {
+      return await _labelTransactions(transactionIds, form);
+    } catch (error) {
+      throw mapToFailure(error);
+    }
+  }
+
+  @override
   SavedLabel? pendingLabelFor(int transactionId) => null;
+
+  /// Calls `label_transactions`, which returns how many already had a label.
+  Future<int> _labelTransactions(
+    Set<int> transactionIds,
+    LabelForm form,
+  ) async {
+    final (:verdict, :confidence) = _required(form);
+    final catalog = await fraudTypes();
+    final ids = {for (final type in catalog) type.code: type.id};
+    return _client.rpc<int>(
+      'label_transactions',
+      params: {
+        'p_transaction_ids': transactionIds.toList(),
+        'p_verdict': verdict.dbValue,
+        'p_confidence': confidence.dbValue,
+        'p_fraud_type_ids': [
+          for (final type in _fraudTypes(form)) ids[type.dbValue],
+        ],
+        'p_severity': _severity(form)?.dbValue,
+        'p_justification': _justification(form),
+      },
+    );
+  }
 }
 
 /// Where the app saves labels: in memory for the prototype.
