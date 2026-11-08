@@ -127,6 +127,38 @@ void main() {
     expect(find.textContaining('1 transacción · Entradas'), findsOneWidget);
   });
 
+  testWidgets('the checkbox selects for HU-05 without opening the panel', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+    expect(find.text('Clasificar 1 transacción'), findsOneWidget);
+    expect(find.byType(SidePanel), findsNothing);
+    expect(find.text('Guardar etiqueta'), findsNothing);
+  });
+
+  testWidgets('another account clears the selection', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.bySemanticsLabel('Seleccionar fila').first);
+    await tester.pump();
+    expect(find.text('1 seleccionada'), findsOneWidget);
+
+    await tester.tap(find.byType(AppDropdown<String?>));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppMenu),
+        matching: find.text('Bil •••• 3391'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 seleccionada'), findsNothing);
+  });
+
   testWidgets('the report buttons wait for the report route', (tester) async {
     await pumpScreen(tester);
 
