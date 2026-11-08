@@ -8,6 +8,10 @@ import 'timeline_point.dart';
 
 part 'activity_analysis.freezed.dart';
 
+// The rules of HU-10 and HU-11 over the [CustomerActivity] of a range. Each tab runs only
+// its own analysis. Both are pure and sendable, so a long range can run them in
+// `Isolate.run`.
+
 /// A run of transactions flagged as [ActivityAnomaly.burst], drawn as one band on the
 /// timeline (HU-10).
 @freezed
@@ -19,54 +23,76 @@ abstract class BurstWindow with _$BurstWindow {
   }) = _BurstWindow;
 }
 
-/// What the timeline and the map draw for a customer and a range (HU-10, HU-11), worked
-/// out once from [CustomerActivity].
+/// What the C-11 timeline draws for a customer and a range (HU-10).
 @freezed
-abstract class ActivityAnalysis with _$ActivityAnalysis {
-  const factory ActivityAnalysis({
-    /// Oldest first.
+abstract class TimelineAnalysis with _$TimelineAnalysis {
+  const factory TimelineAnalysis({
+    /// Transactions with their anomalies and security events, oldest first.
     required List<TimelinePoint> timeline,
     required List<BurstWindow> bursts,
 
+    /// The range had more activity than was read (see [CustomerActivity.truncated]).
+    @Default(false) bool truncated,
+  }) = _TimelineAnalysis;
+
+  const TimelineAnalysis._();
+
+  bool get isEmpty => timeline.isEmpty;
+}
+
+/// What the C-12 map draws for a customer and a range (HU-11).
+@freezed
+abstract class MapAnalysis with _$MapAnalysis {
+  const factory MapAnalysis({
     /// The transactions with a place, oldest first.
-    required List<MapPoint> mapPoints,
+    required List<MapPoint> points,
     required List<ImpossibleTravel> trips,
+
+    /// Anomalies by transaction id, for the detail card. Ids without any are left out.
+    required Map<int, Set<ActivityAnomaly>> anomalies,
 
     /// Transactions without a place, which the map cannot show.
     required int withoutPlace,
+
+    /// The range had more activity than was read (see [CustomerActivity.truncated]).
     @Default(false) bool truncated,
-  }) = _ActivityAnalysis;
+  }) = _MapAnalysis;
 
-  const ActivityAnalysis._();
+  const MapAnalysis._();
 
-  bool get isEmpty => timeline.isEmpty;
+  bool get isEmpty => points.isEmpty;
 
-  /// The anomalies of the transaction [id], for the map's detail card.
-  Set<ActivityAnomaly> anomaliesOf(int id) {
-    for (final point in timeline) {
-      if (point case TransactionPoint(:final transaction, :final anomalies)
-          when transaction.id == id) {
-        return anomalies;
-      }
-    }
-    return const {};
-  }
+  Set<ActivityAnomaly> anomaliesOf(int id) => anomalies[id] ?? const {};
 }
 
-/// Every rule of HU-10 and HU-11 over [activity]. Pure and sendable, so a long range
-/// can run it in `Isolate.run`.
-ActivityAnalysis analyzeActivity(
+/// The timeline of [activity]: its marks, with anomalies, and the burst bands.
+TimelineAnalysis analyzeTimeline(
   CustomerActivity activity, {
   required Set<String> customerAccounts,
 }) {
   final timeline = buildTimeline(activity, customerAccounts: customerAccounts);
-  final mapPoints = mapPointsOf(activity.transactions);
-  return ActivityAnalysis(
+  return TimelineAnalysis(
     timeline: timeline,
     bursts: burstWindowsOf(timeline),
-    mapPoints: mapPoints,
-    trips: detectImpossibleTravel(mapPoints),
-    withoutPlace: activity.transactions.length - mapPoints.length,
+    truncated: activity.truncated,
+  );
+}
+
+/// The map of [activity]: its markers, the impossible trips between consecutive ones
+/// and the anomalies of each transaction.
+MapAnalysis analyzeMap(
+  CustomerActivity activity, {
+  required Set<String> customerAccounts,
+}) {
+  final points = mapPointsOf(activity.transactions);
+  return MapAnalysis(
+    points: points,
+    trips: detectImpossibleTravel(points),
+    anomalies: detectActivityAnomalies(
+      activity.transactions,
+      customerAccounts: customerAccounts,
+    ),
+    withoutPlace: activity.transactions.length - points.length,
     truncated: activity.truncated,
   );
 }

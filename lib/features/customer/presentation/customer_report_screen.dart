@@ -26,10 +26,11 @@ extension CustomerReportTabLabel on CustomerReportTab {
 /// C-08…C-12 · Customer report (HU-09): one screen with four tabs and the date range
 /// of A-02, shared by all of them.
 ///
-/// «Línea de tiempo» (HU-10) and «Mapa» (HU-11) are the proof of concept of
-/// `poc/timeline-map`. [onTab] changes the tab in the URL, [onBack] returns to the
-/// customer view, [onOpenList] to the transaction list and [onOpenTransaction] opens a
-/// transaction of the timeline or the map in the customer view.
+/// Every tab receives the [customerId] and reads the shared range from
+/// `customerDateRangeProvider`, so a new range reloads the tab on screen. [onTab]
+/// changes the tab in the URL, [onBack] returns to the customer view, [onOpenList] to
+/// the transaction list and [onOpenTransaction] opens a transaction of the timeline or
+/// the map in the customer view.
 class CustomerReportScreen extends ConsumerWidget {
   const CustomerReportScreen({
     required this.customerId,

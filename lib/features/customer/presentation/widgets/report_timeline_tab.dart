@@ -82,7 +82,7 @@ class _ReportTimelineTabState extends ConsumerState<ReportTimelineTab> {
 
   /// Where a closer zoom opens: the selected point, else the first anomaly, else the
   /// latest activity.
-  DateTime _focusOf(ActivityAnalysis analysis) {
+  DateTime _focusOf(TimelineAnalysis analysis) {
     if (_selected case final selected?) return selected.occurredAt;
     for (final point in analysis.timeline) {
       if (point case TransactionPoint(:final anomalies)
@@ -93,7 +93,7 @@ class _ReportTimelineTabState extends ConsumerState<ReportTimelineTab> {
     return analysis.timeline.last.occurredAt;
   }
 
-  void _setZoom(_Zoom zoom, ActivityAnalysis analysis) => setState(() {
+  void _setZoom(_Zoom zoom, TimelineAnalysis analysis) => setState(() {
     _zoom = zoom;
     _windowStart = zoom.length == null
         ? null
@@ -129,10 +129,10 @@ class _ReportTimelineTabState extends ConsumerState<ReportTimelineTab> {
         _selected = null;
       });
     });
-    final provider = customerActivityProvider(widget.customerId);
+    final provider = customerTimelineProvider(widget.customerId);
     final range = _rangeOf();
 
-    return ScreenState<ActivityAnalysis>(
+    return ScreenState<TimelineAnalysis>(
       value: ref.watch(provider),
       onRetry: () => ref.invalidate(provider),
       isEmpty: (analysis) => analysis.isEmpty,

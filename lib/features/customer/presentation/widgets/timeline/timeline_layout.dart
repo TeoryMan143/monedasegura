@@ -60,7 +60,7 @@ class TimelineTick {
 /// were drawn.
 class TimelineLayout {
   TimelineLayout({
-    required ActivityAnalysis analysis,
+    required TimelineAnalysis analysis,
     required this.window,
     required this.width,
   }) {

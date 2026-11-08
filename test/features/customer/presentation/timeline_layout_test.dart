@@ -24,8 +24,8 @@ CustomerTransaction _tx(int id, DateTime at, {Verdict? verdict}) =>
       verdict: verdict,
     );
 
-ActivityAnalysis _analysis(List<CustomerTransaction> transactions) =>
-    analyzeActivity(
+TimelineAnalysis _analysis(List<CustomerTransaction> transactions) =>
+    analyzeTimeline(
       CustomerActivity(transactions: transactions, securityEvents: const []),
       customerAccounts: const {'a1'},
     );

@@ -43,12 +43,12 @@ class _ReportMapTabState extends ConsumerState<ReportMapTab> {
       customerDateRangeProvider(widget.customerId),
       (_, _) => setState(() => _selected = null),
     );
-    final provider = customerActivityProvider(widget.customerId);
+    final provider = customerMapProvider(widget.customerId);
 
-    return ScreenState<ActivityAnalysis>(
+    return ScreenState<MapAnalysis>(
       value: ref.watch(provider),
       onRetry: () => ref.invalidate(provider),
-      isEmpty: (analysis) => analysis.mapPoints.isEmpty,
+      isEmpty: (analysis) => analysis.isEmpty,
       empty: const EmptyState(
         title: 'Sin ubicaciones en el rango',
         message: 'Ninguna transacción de estas fechas tiene una ubicación.',
@@ -64,6 +64,17 @@ class _ReportMapTabState extends ConsumerState<ReportMapTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (analysis.truncated) ...[
+                      const InlineBanner(
+                        title: 'Solo se muestra la actividad más reciente',
+                        message:
+                            'El rango tiene demasiados registros. Elige un rango '
+                            'más corto para verlos todos.',
+                        tone: StatusTone.warning,
+                        icon: AppIcons.warning,
+                      ),
+                      const SizedBox(height: AppSpace.lg),
+                    ],
                     if (analysis.trips.isNotEmpty) ...[
                       _TripBanner(
                         trips: analysis.trips,
@@ -81,7 +92,7 @@ class _ReportMapTabState extends ConsumerState<ReportMapTab> {
                           SizedBox(
                             height: _mapHeight,
                             child: CustomerMap(
-                              points: analysis.mapPoints,
+                              points: analysis.points,
                               trips: analysis.trips,
                               selectedId: selected?.transaction.id,
                               onSelect: (point) =>
