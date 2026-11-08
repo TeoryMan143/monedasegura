@@ -6,6 +6,7 @@ import '../core/ui/placeholder_view.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
 import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/customer/presentation/customer_report_screen.dart';
 import '../features/customer/presentation/customer_screen.dart';
 import '../features/statistics/presentation/statistics_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
@@ -28,6 +29,10 @@ abstract final class AppRoutes {
       transactionId == null
       ? '/customers/$customerId'
       : '/customers/$customerId?tx=$transactionId';
+
+  /// C-08…C-12 customer report on [tab] (HU-09), a child of the customer view.
+  static String customerReport(String customerId, CustomerReportTab tab) =>
+      '/customers/$customerId/report/${tab.name}';
 
   /// A-05 alert detail.
   static String alert(String alertId) => '$alerts/$alertId';
@@ -90,9 +95,38 @@ GoRouter _buildRouter(Ref ref) {
                   onBack: () => context.canPop()
                       ? context.pop()
                       : context.go(AppRoutes.transactions),
-                  // onOpenReport: the customer report route (HU-09) passes it here
-                  // when it exists: «Ver perfil» → summary, «Reportes» → timeline.
+                  // «Ver perfil» → summary, «Reportes» → timeline. push: A-02 stays
+                  // below with its range and page.
+                  onOpenReport: (tab) => context.push(
+                    AppRoutes.customerReport(
+                      state.pathParameters['customerId']!,
+                      tab,
+                    ),
+                  ),
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'report/:tab',
+                    builder: (context, state) {
+                      final customerId = state.pathParameters['customerId']!;
+                      return CustomerReportScreen(
+                        customerId: customerId,
+                        tab:
+                            CustomerReportTab.values
+                                .asNameMap()[state.pathParameters['tab']] ??
+                            CustomerReportTab.summary,
+                        // replace: changing tabs does not stack history.
+                        onTab: (tab) => context.replace(
+                          AppRoutes.customerReport(customerId, tab),
+                        ),
+                        onBack: () => context.canPop()
+                            ? context.pop()
+                            : context.go(AppRoutes.customer(customerId)),
+                        onOpenList: () => context.go(AppRoutes.transactions),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

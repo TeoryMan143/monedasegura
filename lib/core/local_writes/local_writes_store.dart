@@ -35,6 +35,9 @@ class LocalWritesStore {
   /// The label saved for [transactionId], or null if this session saved none.
   LocalLabel? labelFor(int transactionId) => _labels[transactionId];
 
+  /// Every transaction labeled here, for the customer report's history (HU-09).
+  Iterable<int> get labeledTransactionIds => _labels.keys;
+
   /// The status set for [alertId], or null if this session did not resolve it.
   AlertStatus? alertStatusFor(String alertId) => _alerts[alertId]?.status;
 
