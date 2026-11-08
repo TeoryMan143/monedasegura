@@ -7,12 +7,21 @@ import '../../../../core/theme/status_tone.dart';
 import '../../domain/customer_transaction.dart';
 import '../../domain/timeline_point.dart';
 
-/// How the timeline and the map show a transaction's label: Fraude danger, No fraude
-/// success, Incierto warning, Sin etiquetar neutral (DESIGN.md · Timeline, Map).
-extension TransactionLabelStyle on CustomerTransaction {
-  StatusTone get labelTone => verdict?.tone ?? LabelStatus.unlabeled.tone;
-  String get labelText => verdict?.label ?? LabelStatus.unlabeled.label;
-  AppIcons get labelIcon => verdict?.icon ?? LabelStatus.unlabeled.icon;
+/// How the timeline and the map show a transaction's status: its label (Fraude danger,
+/// No fraude success, Incierto warning), else its AI alert (info, IA icon), else Sin
+/// etiquetar neutral (DESIGN.md · Timeline, Map). Labels saved in this session are
+/// already in the transaction (`withLocalLabels`).
+extension TransactionStatusStyle on CustomerTransaction {
+  StatusTone get statusTone =>
+      verdict?.tone ??
+      (hasAiAlert ? StatusTone.info : LabelStatus.unlabeled.tone);
+
+  String get statusText =>
+      verdict?.label ??
+      (hasAiAlert ? 'Alerta IA · $alertScore' : LabelStatus.unlabeled.label);
+
+  AppIcons get statusIcon =>
+      verdict?.icon ?? (hasAiAlert ? AppIcons.ai : LabelStatus.unlabeled.icon);
 
   /// The customer's clock when it is not the analyst's: «16:53», or the full date when
   /// the day changes too. Null when both clocks agree or it is unknown.

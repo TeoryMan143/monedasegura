@@ -12,6 +12,12 @@ import 'timeline_point.dart';
 // in 17 minutes at 02:45, and the injected bursts are 2 to 6 operations a few minutes
 // apart.
 
+/// First hour of the night on the customer's clock (HU-10).
+const defaultNightStartHour = 0;
+
+/// The hour the night ends on the customer's clock, not included: 00:00–05:00.
+const defaultNightEndHour = 5;
+
 /// Ids of the transactions whose amount is at least [factor] times the median of the
 /// customer's transactions in the same currency and direction.
 ///
@@ -58,8 +64,8 @@ Set<int> detectAmountSpikes(
 Set<int> detectUnusualHours(
   List<CustomerTransaction> transactions, {
   required Set<String> customerAccounts,
-  int nightStartHour = 0,
-  int nightEndHour = 5,
+  int nightStartHour = defaultNightStartHour,
+  int nightEndHour = defaultNightEndHour,
   int minHistory = 10,
   Duration tolerance = const Duration(minutes: 90),
 }) {
@@ -174,6 +180,63 @@ List<TimelinePoint> buildTimeline(
       TimelinePoint.securityEvent(event),
   ]..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
 }
+
+/// How far the customer's clock is ahead of the analyst's: one hour when it is 15:00 for
+/// the customer and 14:00 for the analyst. Read from the first transaction with
+/// [CustomerTransaction.customerLocalAt]; null when none has it.
+Duration? customerClockOffsetOf(Iterable<CustomerTransaction> transactions) {
+  for (final transaction in transactions) {
+    final theirs = transaction.customerLocalAt;
+    if (theirs == null) continue;
+    return _wallClock(theirs)
+        .difference(_wallClock(transaction.occurredAt.toLocal()));
+  }
+  return null;
+}
+
+/// The customer's nights ([defaultNightStartHour]–[defaultNightEndHour] on their clock) that touch
+/// [from]–[to], as instants of the analyst's clock. [clockOffset] comes from
+/// [customerClockOffsetOf]; with [Duration.zero] the nights are the analyst's.
+List<({DateTime start, DateTime end})> customerNights(
+  DateTime from,
+  DateTime to, {
+  Duration clockOffset = Duration.zero,
+}) {
+  final first = from.toLocal().add(clockOffset);
+  final last = to.toLocal().add(clockOffset);
+  final nights = <({DateTime start, DateTime end})>[];
+  for (
+    var day = DateTime(first.year, first.month, first.day);
+    !day.isAfter(last);
+    day = DateTime(day.year, day.month, day.day + 1)
+  ) {
+    final start = DateTime(
+      day.year,
+      day.month,
+      day.day,
+      defaultNightStartHour,
+    ).subtract(clockOffset);
+    final end = DateTime(
+      day.year,
+      day.month,
+      day.day,
+      defaultNightEndHour,
+    ).subtract(clockOffset);
+    if (end.isAfter(from) && start.isBefore(to)) {
+      nights.add((start: start, end: end));
+    }
+  }
+  return nights;
+}
+
+/// The fields of [instant] as they read, without a time zone, so two clocks subtract.
+DateTime _wallClock(DateTime instant) => DateTime.utc(
+  instant.year,
+  instant.month,
+  instant.day,
+  instant.hour,
+  instant.minute,
+);
 
 num _median(List<num> values) {
   final sorted = [...values]..sort();

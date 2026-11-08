@@ -38,6 +38,16 @@ abstract class TimelineAnalysis with _$TimelineAnalysis {
   const TimelineAnalysis._();
 
   bool get isEmpty => timeline.isEmpty;
+
+  /// Transactions flagged with [anomaly], for the text summary of the highlights.
+  int countOf(ActivityAnomaly anomaly) => timeline
+      .where(
+        (point) =>
+            point is TransactionPoint && point.anomalies.contains(anomaly),
+      )
+      .length;
+
+  int get securityEventCount => timeline.whereType<SecurityEventPoint>().length;
 }
 
 /// What the C-12 map draws for a customer and a range (HU-11).

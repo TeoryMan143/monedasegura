@@ -22,16 +22,18 @@ class _Cluster {
     points.map((p) => p.longitude).reduce((a, b) => a + b) / points.length,
   );
 
-  /// The most serious label inside: Fraude, then Incierto, Sin etiquetar, No fraude.
+  /// The most serious status inside: Fraude, then Incierto, Alerta IA, Sin etiquetar,
+  /// No fraude.
   StatusTone get tone {
     const severity = [
       StatusTone.danger,
       StatusTone.warning,
+      StatusTone.info,
       StatusTone.neutral,
       StatusTone.success,
     ];
     return severity.firstWhere(
-      (tone) => points.any((p) => p.transaction.labelTone == tone),
+      (tone) => points.any((p) => p.transaction.statusTone == tone),
       orElse: () => StatusTone.neutral,
     );
   }
@@ -197,7 +199,7 @@ class _MapClusterLayerState extends State<MapClusterLayer> {
   static String _summary(_Cluster cluster) {
     final counts = <String, int>{};
     for (final point in cluster.points) {
-      final label = point.transaction.labelText;
+      final label = point.transaction.statusText;
       counts[label] = (counts[label] ?? 0) + 1;
     }
     final order = [

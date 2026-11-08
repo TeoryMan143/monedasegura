@@ -252,4 +252,36 @@ void main() {
       [...timeline.map((point) => point.occurredAt)]..sort(),
     );
   });
+
+  group('customer clock and nights', () {
+    test('the offset is the customer wall time minus the analyst clock', () {
+      final at = _at(3, 14, 30);
+      final rows = [
+        _tx(1, _at(2, 10)),
+        _tx(2, at).copyWith(customerLocalAt: _at(3, 15, 30)),
+      ];
+
+      expect(customerClockOffsetOf(rows), const Duration(hours: 1));
+      expect(customerClockOffsetOf([_tx(1, at)]), isNull);
+    });
+
+    test('nights are 00:00–05:00 on the customer clock', () {
+      final nights = customerNights(_at(3, 0), _at(5, 0));
+
+      expect(nights, [
+        (start: _at(3, 0), end: _at(3, 5)),
+        (start: _at(4, 0), end: _at(4, 5)),
+      ]);
+    });
+
+    test('a customer one hour ahead has their night one hour earlier', () {
+      final nights = customerNights(
+        _at(3, 12),
+        _at(4, 12),
+        clockOffset: const Duration(hours: 1),
+      );
+
+      expect(nights, [(start: _at(3, 23), end: _at(4, 4))]);
+    });
+  });
 }

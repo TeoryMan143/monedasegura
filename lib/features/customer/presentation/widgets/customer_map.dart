@@ -205,10 +205,10 @@ class _Pin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final transaction = point.transaction;
-    final tone = transaction.labelTone;
+    final tone = transaction.statusTone;
     return AppTooltip(
       message:
-          '${transaction.code} · ${transaction.labelText}'
+          '${transaction.code} · ${transaction.statusText}'
           '${transaction.cityName == null ? '' : ' · ${transaction.cityName}'}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -226,7 +226,7 @@ class _Pin extends StatelessWidget {
             ),
             child: Center(
               child: AppIcon(
-                transaction.labelIcon,
+                transaction.statusIcon,
                 size: AppIconSize.xs,
                 color: tone.onSolid,
               ),

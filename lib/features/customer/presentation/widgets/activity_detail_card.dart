@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/domain/label_status.dart';
 import '../../../../core/formatting/date_time.dart';
 import '../../../../core/formatting/money.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -55,18 +56,32 @@ class _Transaction extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Row(
-        children: [
-          Expanded(child: Text(transaction.code, style: AppText.h3)),
-          if (transaction.alertScore case final score?)
-            ScoreBadge(score: score),
-        ],
+      Text(
+        formatMoney(transaction.amount, transaction.currency),
+        style: AppText.h2,
+      ),
+      const SizedBox(height: AppSpace.xxs),
+      Text(
+        transaction.code,
+        style: AppText.bodyS.copyWith(color: AppColors.textSecondary),
       ),
       const SizedBox(height: AppSpace.sm),
-      StatusBadge(
-        label: transaction.labelText,
-        tone: transaction.labelTone,
-        icon: transaction.labelIcon,
+      Wrap(
+        spacing: AppSpace.xs,
+        runSpacing: AppSpace.xs,
+        children: [
+          StatusBadge(
+            label: transaction.verdict?.label ?? LabelStatus.unlabeled.label,
+            tone: transaction.verdict?.tone ?? LabelStatus.unlabeled.tone,
+            icon: transaction.verdict?.icon ?? LabelStatus.unlabeled.icon,
+          ),
+          if (transaction.alertScore case final score?)
+            StatusBadge(
+              label: 'Alerta IA · $score',
+              tone: StatusTone.info,
+              icon: AppIcons.ai,
+            ),
+        ],
       ),
       const SizedBox(height: AppSpace.md),
       _Field('Fecha', formatDateTime(transaction.occurredAt)),
@@ -76,7 +91,6 @@ class _Transaction extends StatelessWidget {
         'Tipo · canal',
         '${transaction.type.label} · ${transaction.channel.label}',
       ),
-      _Field('Monto', formatMoney(transaction.amount, transaction.currency)),
       if (transaction.merchantName case final merchant?)
         _Field('Comercio', merchant),
       _Field('Ciudad', transaction.cityName ?? 'Sin ubicación'),

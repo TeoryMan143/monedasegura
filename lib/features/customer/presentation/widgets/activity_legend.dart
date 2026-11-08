@@ -3,13 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../../core/domain/label_status.dart';
 import '../../../../core/domain/verdict.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/activity_anomalies.dart';
 import '../../domain/timeline_point.dart';
 import 'activity_style.dart';
 
 enum _Shape { circle, diamond, band, bar, ring, line }
 
+/// «05:00».
+String _hour(int hour) => '${hour.toString().padLeft(2, '0')}:00';
+
 /// Legend of the timeline ([timeline] true) or the map: every item is a shape and a
-/// text, never a colour alone (DESIGN.md · Data visualisation).
+/// text, never a colour alone (DESIGN.md · Data visualisation). Marks are coloured by
+/// label, else by AI alert.
 class ActivityLegend extends StatelessWidget {
   const ActivityLegend({required this.timeline, super.key});
 
@@ -20,6 +25,7 @@ class ActivityLegend extends StatelessWidget {
     final labels = [
       for (final verdict in Verdict.values)
         (_Shape.circle, verdict.tone.solid, verdict.label),
+      (_Shape.circle, StatusTone.info.solid, 'Alerta IA sin etiquetar'),
       (
         _Shape.circle,
         LabelStatus.unlabeled.tone.solid,
@@ -44,6 +50,12 @@ class ActivityLegend extends StatelessWidget {
               _Shape.ring,
               ActivityAnomaly.amountSpike.tone.solid,
               ActivityAnomaly.amountSpike.label,
+            ),
+            (
+              _Shape.band,
+              AppColors.bgSurfaceSubtle,
+              'Madrugada del cliente (${_hour(defaultNightStartHour)}–'
+                  '${_hour(defaultNightEndHour)})',
             ),
           ]
         : [
