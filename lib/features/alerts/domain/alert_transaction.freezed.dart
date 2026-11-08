@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AlertTransaction {
 
- int get transactionId; String get code; bool get isPrimary; double get amount; String get currencyCode;
+ int get transactionId; String get code; bool get isPrimary; double get amount; String get currencyCode;/// Whether it already has a label, which resolving the alert would replace.
+ bool get isLabeled;
 /// Create a copy of AlertTransaction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +31,20 @@ $AlertTransactionCopyWith<AlertTransaction> get copyWith => _$AlertTransactionCo
 @override
 bool operator ==(Object other) {
   final _this = this as AlertTransaction;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlertTransaction&&(identical(other.transactionId, _this.transactionId) || other.transactionId == _this.transactionId)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.isPrimary, _this.isPrimary) || other.isPrimary == _this.isPrimary)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.currencyCode, _this.currencyCode) || other.currencyCode == _this.currencyCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlertTransaction&&(identical(other.transactionId, _this.transactionId) || other.transactionId == _this.transactionId)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.isPrimary, _this.isPrimary) || other.isPrimary == _this.isPrimary)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.currencyCode, _this.currencyCode) || other.currencyCode == _this.currencyCode)&&(identical(other.isLabeled, _this.isLabeled) || other.isLabeled == _this.isLabeled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as AlertTransaction;
-  return Object.hash(runtimeType,_this.transactionId,_this.code,_this.isPrimary,_this.amount,_this.currencyCode);
+  return Object.hash(runtimeType,_this.transactionId,_this.code,_this.isPrimary,_this.amount,_this.currencyCode,_this.isLabeled);
 }
 
 @override
 String toString() {
   final _this = this as AlertTransaction;
-  return 'AlertTransaction(transactionId: ${_this.transactionId}, code: ${_this.code}, isPrimary: ${_this.isPrimary}, amount: ${_this.amount}, currencyCode: ${_this.currencyCode})';
+  return 'AlertTransaction(transactionId: ${_this.transactionId}, code: ${_this.code}, isPrimary: ${_this.isPrimary}, amount: ${_this.amount}, currencyCode: ${_this.currencyCode}, isLabeled: ${_this.isLabeled})';
 }
 
 
@@ -54,7 +55,7 @@ abstract mixin class $AlertTransactionCopyWith<$Res>  {
   factory $AlertTransactionCopyWith(AlertTransaction value, $Res Function(AlertTransaction) _then) = _$AlertTransactionCopyWithImpl;
 @useResult
 $Res call({
- int transactionId, String code, bool isPrimary, double amount, String currencyCode
+ int transactionId, String code, bool isPrimary, double amount, String currencyCode, bool isLabeled
 });
 
 
@@ -71,14 +72,15 @@ class _$AlertTransactionCopyWithImpl<$Res>
 
 /// Create a copy of AlertTransaction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? transactionId = null,Object? code = null,Object? isPrimary = null,Object? amount = null,Object? currencyCode = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? transactionId = null,Object? code = null,Object? isPrimary = null,Object? amount = null,Object? currencyCode = null,Object? isLabeled = null,}) {
   return _then(AlertTransaction(
 transactionId: null == transactionId ? _self.transactionId : transactionId // ignore: cast_nullable_to_non_nullable
 as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,isPrimary: null == isPrimary ? _self.isPrimary : isPrimary // ignore: cast_nullable_to_non_nullable
 as bool,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,currencyCode: null == currencyCode ? _self.currencyCode : currencyCode // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isLabeled: null == isLabeled ? _self.isLabeled : isLabeled // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -163,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode,  bool isLabeled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AlertTransaction() when $default != null:
-return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode);case _:
+return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode,_that.isLabeled);case _:
   return orElse();
 
 }
@@ -184,10 +186,10 @@ return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode,  bool isLabeled)  $default,) {final _that = this;
 switch (_that) {
 case _AlertTransaction():
-return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode);case _:
+return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode,_that.isLabeled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +206,10 @@ return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int transactionId,  String code,  bool isPrimary,  double amount,  String currencyCode,  bool isLabeled)?  $default,) {final _that = this;
 switch (_that) {
 case _AlertTransaction() when $default != null:
-return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode);case _:
+return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_that.currencyCode,_that.isLabeled);case _:
   return null;
 
 }
@@ -219,7 +221,7 @@ return $default(_that.transactionId,_that.code,_that.isPrimary,_that.amount,_tha
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _AlertTransaction implements AlertTransaction {
-  const _AlertTransaction({required this.transactionId, required this.code, required this.isPrimary, required this.amount, required this.currencyCode});
+  const _AlertTransaction({required this.transactionId, required this.code, required this.isPrimary, required this.amount, required this.currencyCode, this.isLabeled = false});
   factory _AlertTransaction.fromJson(Map<String, dynamic> json) => _$AlertTransactionFromJson(json);
 
 @override final  int transactionId;
@@ -227,6 +229,8 @@ class _AlertTransaction implements AlertTransaction {
 @override final  bool isPrimary;
 @override final  double amount;
 @override final  String currencyCode;
+/// Whether it already has a label, which resolving the alert would replace.
+@override@JsonKey() final  bool isLabeled;
 
 /// Create a copy of AlertTransaction
 /// with the given fields replaced by the non-null parameter values.
@@ -241,18 +245,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AlertTransaction&&(identical(other.transactionId, transactionId) || other.transactionId == transactionId)&&(identical(other.code, code) || other.code == code)&&(identical(other.isPrimary, isPrimary) || other.isPrimary == isPrimary)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currencyCode, currencyCode) || other.currencyCode == currencyCode));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AlertTransaction&&(identical(other.transactionId, transactionId) || other.transactionId == transactionId)&&(identical(other.code, code) || other.code == code)&&(identical(other.isPrimary, isPrimary) || other.isPrimary == isPrimary)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currencyCode, currencyCode) || other.currencyCode == currencyCode)&&(identical(other.isLabeled, isLabeled) || other.isLabeled == isLabeled));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,transactionId,code,isPrimary,amount,currencyCode);
+    return Object.hash(runtimeType,transactionId,code,isPrimary,amount,currencyCode,isLabeled);
 }
 
 @override
 String toString() {
-    return 'AlertTransaction(transactionId: $transactionId, code: $code, isPrimary: $isPrimary, amount: $amount, currencyCode: $currencyCode)';
+    return 'AlertTransaction(transactionId: $transactionId, code: $code, isPrimary: $isPrimary, amount: $amount, currencyCode: $currencyCode, isLabeled: $isLabeled)';
 }
 
 
@@ -263,7 +267,7 @@ abstract mixin class _$AlertTransactionCopyWith<$Res> implements $AlertTransacti
   factory _$AlertTransactionCopyWith(_AlertTransaction value, $Res Function(_AlertTransaction) _then) = __$AlertTransactionCopyWithImpl;
 @override @useResult
 $Res call({
- int transactionId, String code, bool isPrimary, double amount, String currencyCode
+ int transactionId, String code, bool isPrimary, double amount, String currencyCode, bool isLabeled
 });
 
 
@@ -280,14 +284,15 @@ class __$AlertTransactionCopyWithImpl<$Res>
 
 /// Create a copy of AlertTransaction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? transactionId = null,Object? code = null,Object? isPrimary = null,Object? amount = null,Object? currencyCode = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? transactionId = null,Object? code = null,Object? isPrimary = null,Object? amount = null,Object? currencyCode = null,Object? isLabeled = null,}) {
   return _then(_AlertTransaction(
 transactionId: null == transactionId ? _self.transactionId : transactionId // ignore: cast_nullable_to_non_nullable
 as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,isPrimary: null == isPrimary ? _self.isPrimary : isPrimary // ignore: cast_nullable_to_non_nullable
 as bool,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,currencyCode: null == currencyCode ? _self.currencyCode : currencyCode // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isLabeled: null == isLabeled ? _self.isLabeled : isLabeled // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
