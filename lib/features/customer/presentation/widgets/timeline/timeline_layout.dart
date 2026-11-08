@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:flutter/material.dart' show DateTimeRange;
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart'
+    show DateTimeRange, TextPainter, TextSpan;
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../../../../core/domain/currency.dart';
-import '../../../../../core/theme/status_tone.dart';
+import '../../../../../core/theme/app_theme.dart';
 import '../../../domain/activity_analysis.dart';
+import '../../../domain/activity_anomalies.dart';
 import '../../../domain/timeline_point.dart';
 import '../activity_style.dart';
 
@@ -36,13 +38,26 @@ class DensityBin {
   /// Transactions of the slice with at least one anomaly.
   int withAnomalies = 0;
 
-  /// Stacking order, bottom to top: Fraude, Incierto, No fraude, Sin etiquetar.
+  /// Stacking order, bottom to top: Fraude, Incierto, Alerta IA, No fraude, Sin
+  /// etiquetar.
   static const order = [
     StatusTone.danger,
     StatusTone.warning,
+    StatusTone.info,
     StatusTone.success,
     StatusTone.neutral,
   ];
+}
+
+/// The icon and name of a security event, above or below its diamond (HU-10). Only the
+/// ones that fit without overlapping get one; the tooltip names the rest.
+class EventLabel {
+  const EventLabel(this.mark, this.bounds);
+
+  final PlacedMark mark;
+  final Rect bounds;
+
+  SecurityEventPoint get point => mark.point as SecurityEventPoint;
 }
 
 /// A tick of the time axis.
@@ -56,8 +71,9 @@ class TimelineTick {
 /// Where every mark of the C-11 timeline goes for a [window] and a [width] (HU-10):
 /// two lanes (security events on top, transactions below) and the time axis.
 ///
-/// Pure geometry, apart from the painter, so hit testing uses the same positions that
-/// were drawn.
+/// Transactions that would cover each other move up or down in their lane (a beeswarm),
+/// so every one of a burst stays visible and clickable. Pure geometry, apart from the
+/// painter, so hit testing uses the same positions that were drawn.
 class TimelineLayout {
   TimelineLayout({
     required TimelineAnalysis analysis,
@@ -82,25 +98,46 @@ class TimelineLayout {
     final transactions = visible.whereType<TransactionPoint>().length;
     dense = transactions > (plotRight - plotLeft) / _pixelsPerMark;
     if (dense) _buildBins(visible.whereType<TransactionPoint>());
+    final placed = <PlacedMark>[];
     for (final point in visible) {
       final x = xOf(point.occurredAt);
       switch (point) {
         case TransactionPoint(:final transaction) when !dense:
-          marks.add(
-            PlacedMark(
-              point,
-              Offset(x, transactionsCenter),
+          final radius =
               minRadius +
-                  (maxRadius - minRadius) *
-                      math.sqrt(
-                        transaction.amount / maxAmount[transaction.currency]!,
-                      ),
-            ),
+              (maxRadius - minRadius) *
+                  math.sqrt(
+                    transaction.amount / maxAmount[transaction.currency]!,
+                  );
+          final mark = PlacedMark(
+            point,
+            Offset(x, _swarmY(x, radius, placed)),
+            radius,
           );
+          placed.add(mark);
+          marks.add(mark);
         case TransactionPoint():
           break;
         case SecurityEventPoint():
           marks.add(PlacedMark(point, Offset(x, eventsCenter), eventRadius));
+      }
+    }
+    _placeEventLabels();
+    if (window.duration <= _maxNightWindow) {
+      final offset = customerClockOffsetOf(
+        analysis.timeline.whereType<TransactionPoint>().map(
+          (point) => point.transaction,
+        ),
+      );
+      for (final night in customerNights(
+        window.start,
+        window.end,
+        clockOffset: offset ?? Duration.zero,
+      )) {
+        nights.add((
+          left: math.max(plotLeft, xOf(night.start)),
+          right: math.min(plotRight, xOf(night.end)),
+        ));
       }
     }
     for (final burst in analysis.bursts) {
@@ -130,6 +167,25 @@ class TimelineLayout {
   static const bandPadding = 10.0;
   static const _hitSlop = 4.0;
 
+  /// Room kept at the top of the transactions lane for the burst text, and at the bottom
+  /// for the unusual-hour bar.
+  static const _laneTopRoom = 18.0;
+  static const _laneBottomRoom = 8.0;
+
+  /// Vertical step of the beeswarm and the space left between two marks (a spike ring
+  /// is 3 px outside its circle).
+  static const _swarmStep = 4.0;
+  static const _swarmGap = 4.0;
+
+  /// The customer's nights are shaded only up to a week: in a month they would be thin
+  /// stripes.
+  static const _maxNightWindow = Duration(days: 8);
+
+  /// Height of an event label, its gap to the diamond and to the next label of its row.
+  static const eventLabelHeight = 16.0;
+  static const _eventLabelGap = 2.0;
+  static const _eventLabelSpacing = 8.0;
+
   /// Below this many pixels per transaction the window is [dense].
   static const _pixelsPerMark = 4.0;
 
@@ -152,6 +208,11 @@ class TimelineLayout {
   final bins = <DensityBin>[];
   final bursts = <({double left, double right, BurstWindow burst})>[];
 
+  /// The customer's nights in the window, shaded (HU-10 · madrugada).
+  final nights = <({double left, double right})>[];
+
+  final eventLabels = <EventLabel>[];
+
   double get plotLeft => gutter;
   double get plotRight => width - rightPadding;
 
@@ -172,6 +233,9 @@ class TimelineLayout {
         return mark;
       }
     }
+    for (final label in eventLabels) {
+      if (label.bounds.contains(position)) return label.mark;
+    }
     for (final bin in bins) {
       if (bin.total > 0 && bin.bounds.contains(position)) return bin;
     }
@@ -185,6 +249,89 @@ class TimelineLayout {
   }
 
   double get barBaseline => transactionsTop + transactionsHeight;
+
+  /// The height of the transactions lane closest to its middle where a circle of
+  /// [radius] at [x] does not touch the circles already [placed] (left to right). With
+  /// no free room left, the height where it overlaps the least.
+  static double _swarmY(double x, double radius, List<PlacedMark> placed) {
+    const reach = 2 * maxRadius + _swarmGap;
+    final top = transactionsTop + _laneTopRoom + radius;
+    final bottom =
+        transactionsTop + transactionsHeight - _laneBottomRoom - radius;
+    const tries = 2 * (transactionsHeight ~/ (2 * _swarmStep)) + 1;
+    var best = transactionsCenter;
+    var bestClearance = double.negativeInfinity;
+    for (var k = 0; k < tries; k++) {
+      // 0, -1, +1, -2, +2… steps from the middle.
+      final steps = k.isEven ? k ~/ 2 : -(k + 1) ~/ 2;
+      final y = transactionsCenter + steps * _swarmStep;
+      if (y < top || y > bottom) continue;
+      // Free space to the closest neighbour; negative when they overlap.
+      var clearance = double.infinity;
+      for (var i = placed.length - 1; i >= 0; i--) {
+        final other = placed[i];
+        if (x - other.center.dx > reach) break;
+        clearance = math.min(
+          clearance,
+          (other.center - Offset(x, y)).distance -
+              other.radius -
+              radius -
+              _swarmGap,
+        );
+      }
+      if (clearance >= 0) return y;
+      if (clearance > bestClearance) {
+        best = y;
+        bestClearance = clearance;
+      }
+    }
+    return best;
+  }
+
+  /// Gives each security event its icon and name, above or below its diamond, where
+  /// it does not overlap another. The ones that are not routine go first.
+  void _placeEventLabels() {
+    final events = marks.where((mark) => mark.point is SecurityEventPoint);
+    final ordered = [
+      ...events.where((mark) => !_isRoutine(mark)),
+      ...events.where(_isRoutine),
+    ];
+    final aboveTop =
+        eventsCenter - eventRadius - _eventLabelGap - eventLabelHeight;
+    final belowTop = eventsCenter + eventRadius + _eventLabelGap;
+    final rows = {aboveTop: <Rect>[], belowTop: <Rect>[]};
+    for (final mark in ordered) {
+      final event = (mark.point as SecurityEventPoint).event;
+      final text = TextPainter(
+        text: TextSpan(text: event.type.label, style: AppText.bodyS),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      final width = AppIconSize.xs + AppSpace.xs + text.width;
+      text.dispose();
+      final left = (mark.center.dx - width / 2)
+          .clamp(plotLeft, math.max(plotLeft, plotRight - width))
+          .toDouble();
+      for (final MapEntry(key: top, value: taken) in rows.entries) {
+        final bounds = Rect.fromLTWH(left, top, width, eventLabelHeight);
+        final free = taken.every(
+          (other) => !bounds
+              .inflate(_eventLabelSpacing / 2)
+              .overlaps(other.inflate(_eventLabelSpacing / 2)),
+        );
+        if (!free) continue;
+        taken.add(bounds);
+        eventLabels.add(EventLabel(mark, bounds));
+        break;
+      }
+    }
+  }
+
+  /// A successful login or logout: shown, but named only when there is room left.
+  static bool _isRoutine(PlacedMark mark) {
+    final event = (mark.point as SecurityEventPoint).event;
+    return event.succeeded && event.type.tone == StatusTone.neutral;
+  }
 
   void _buildBins(Iterable<TransactionPoint> transactions) {
     final count = math.max(1, ((plotRight - plotLeft) / binWidth).floor());
@@ -212,7 +359,7 @@ class TimelineLayout {
         count - 1,
       );
       final bin = bins[i];
-      final tone = point.transaction.labelTone;
+      final tone = point.transaction.statusTone;
       bin.counts[tone] = (bin.counts[tone] ?? 0) + 1;
       bin.total++;
       if (point.anomalies.isNotEmpty) bin.withAnomalies++;

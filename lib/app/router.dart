@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -92,48 +92,52 @@ GoRouter _buildRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.transactions,
-                builder: (context, state) => TransactionsScreen(
-                  // push, not go: the list stays below the customer view, so going
-                  // back keeps its filters and page.
-                  onOpen: (customerId, transactionId) => context.push(
-                    AppRoutes.customer(
-                      customerId,
-                      transactionId: '$transactionId',
+                builder: _silentBlankClicks(
+                  (context, state) => TransactionsScreen(
+                    // push, not go: the list stays below the customer view, so going
+                    // back keeps its filters and page.
+                    onOpen: (customerId, transactionId) => context.push(
+                      AppRoutes.customer(
+                        customerId,
+                        transactionId: '$transactionId',
+                      ),
                     ),
                   ),
                 ),
               ),
               GoRoute(
                 path: AppRoutes.customerPattern,
-                builder: (context, state) => CustomerScreen(
-                  customerId: state.pathParameters['customerId']!,
-                  transactionId: state.uri.queryParameters['tx'],
-                  at: state.uri.queryParameters['at'],
-                  // The open transaction lives in `?tx=`. replace, not go: go would drop
-                  // the list below, and replace keeps this page and its state.
-                  onSelectTransaction: (transactionId) => context.replace(
-                    AppRoutes.customer(
-                      state.pathParameters['customerId']!,
-                      transactionId: transactionId?.toString(),
+                builder: _silentBlankClicks(
+                  (context, state) => CustomerScreen(
+                    customerId: state.pathParameters['customerId']!,
+                    transactionId: state.uri.queryParameters['tx'],
+                    at: state.uri.queryParameters['at'],
+                    // The open transaction lives in `?tx=`. replace, not go: go would drop
+                    // the list below, and replace keeps this page and its state.
+                    onSelectTransaction: (transactionId) => context.replace(
+                      AppRoutes.customer(
+                        state.pathParameters['customerId']!,
+                        transactionId: transactionId?.toString(),
+                      ),
                     ),
-                  ),
-                  // Back to the list it came from, keeping its filters and page.
-                  onBack: () => context.canPop()
-                      ? context.pop()
-                      : context.go(AppRoutes.transactions),
-                  // «Ver perfil» → summary, «Reportes» → timeline. push: A-02 stays
-                  // below with its range and page.
-                  onOpenReport: (tab) => context.push(
-                    AppRoutes.customerReport(
-                      state.pathParameters['customerId']!,
-                      tab,
+                    // Back to the list it came from, keeping its filters and page.
+                    onBack: () => context.canPop()
+                        ? context.pop()
+                        : context.go(AppRoutes.transactions),
+                    // «Ver perfil» → summary, «Reportes» → timeline. push: A-02 stays
+                    // below with its range and page.
+                    onOpenReport: (tab) => context.push(
+                      AppRoutes.customerReport(
+                        state.pathParameters['customerId']!,
+                        tab,
+                      ),
                     ),
                   ),
                 ),
                 routes: [
                   GoRoute(
                     path: 'report/:tab',
-                    builder: (context, state) {
+                    builder: _silentBlankClicks((context, state) {
                       final customerId = state.pathParameters['customerId']!;
                       return CustomerReportScreen(
                         customerId: customerId,
@@ -167,7 +171,7 @@ GoRouter _buildRouter(Ref ref) {
                           }
                         },
                       );
-                    },
+                    }),
                   ),
                 ],
               ),
@@ -177,34 +181,39 @@ GoRouter _buildRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.alerts,
-                builder: (context, state) => AlertsScreen(
-                  // push, not go: the inbox stays below the detail, so going back
-                  // keeps its filters and page.
-                  onOpen: (alertId) => context.push(AppRoutes.alert(alertId)),
+                builder: _silentBlankClicks(
+                  (context, state) => AlertsScreen(
+                    // push, not go: the inbox stays below the detail, so going back
+                    // keeps its filters and page.
+                    onOpen: (alertId) => context.push(AppRoutes.alert(alertId)),
+                  ),
                 ),
                 routes: [
                   GoRoute(
                     path: ':alertId',
-                    builder: (context, state) => AlertDetailScreen(
-                      alertId: state.pathParameters['alertId']!,
-                      // Back to the inbox it came from, keeping its filters and page.
-                      onBack: () => context.canPop()
-                          ? context.pop()
-                          : context.go(AppRoutes.alerts),
-                      onResolve: () => showResolveAlertDialog(
-                        context: context,
+                    builder: _silentBlankClicks(
+                      (context, state) => AlertDetailScreen(
                         alertId: state.pathParameters['alertId']!,
-                      ),
-                      // The range ends on the alert's day, so its activity shows.
-                      onOpenCustomer: (customerId, at) =>
-                          context.push(AppRoutes.customer(customerId, at: at)),
-                      onOpenTransaction: (customerId, transactionId) =>
-                          context.push(
-                            AppRoutes.customer(
-                              customerId,
-                              transactionId: '$transactionId',
+                        // Back to the inbox it came from, keeping its filters and page.
+                        onBack: () => context.canPop()
+                            ? context.pop()
+                            : context.go(AppRoutes.alerts),
+                        onResolve: () => showResolveAlertDialog(
+                          context: context,
+                          alertId: state.pathParameters['alertId']!,
+                        ),
+                        // The range ends on the alert's day, so its activity shows.
+                        onOpenCustomer: (customerId, at) => context.push(
+                          AppRoutes.customer(customerId, at: at),
+                        ),
+                        onOpenTransaction: (customerId, transactionId) =>
+                            context.push(
+                              AppRoutes.customer(
+                                customerId,
+                                transactionId: '$transactionId',
+                              ),
                             ),
-                          ),
+                      ),
                     ),
                   ),
                 ],
@@ -222,8 +231,12 @@ GoRouter _buildRouter(Ref ref) {
                 routes: [
                   GoRoute(
                     path: ':tab',
-                    builder: (context, state) => StatisticsScreen(
-                      tab: StatisticsTab.fromPath(state.pathParameters['tab']),
+                    builder: _silentBlankClicks(
+                      (context, state) => StatisticsScreen(
+                        tab: StatisticsTab.fromPath(
+                          state.pathParameters['tab'],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -237,3 +250,17 @@ GoRouter _buildRouter(Ref ref) {
   ref.onDispose(router.dispose);
   return router;
 }
+
+/// Makes the empty parts of a page take the click.
+///
+/// Every page route has an invisible [ModalBarrier] below its content that cannot be
+/// dismissed. A click on blank space (between cards, on a heading) falls through to it,
+/// and it answers with `SystemSound.play(SystemSoundType.alert)`: on Windows, the error
+/// «ding». The pages of the shell have no [Scaffold] whose [Material] would stop the
+/// click, so this does: the barrier still blocks the page below during a transition,
+/// it just never hears a click on this one.
+GoRouterWidgetBuilder _silentBlankClicks(GoRouterWidgetBuilder builder) =>
+    (context, state) => Listener(
+      behavior: HitTestBehavior.opaque,
+      child: builder(context, state),
+    );

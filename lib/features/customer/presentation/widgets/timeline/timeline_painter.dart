@@ -11,12 +11,14 @@ import '../../../domain/timeline_point.dart';
 import '../activity_style.dart';
 import 'timeline_layout.dart';
 
-/// Paints the C-11 timeline from a [TimelineLayout] (DESIGN.md · Timeline): lane names,
-/// grid and time axis, burst bands, transactions as circles sized by amount and coloured
-/// by label, security events as diamonds and the selection outline.
+/// Paints the C-11 timeline from a [TimelineLayout] (DESIGN.md · Timeline): the
+/// customer's nights shaded, lane names, grid and time axis, burst bands, transactions as
+/// circles sized by amount and coloured by status, security events as diamonds and the
+/// selection outline.
 ///
-/// The hover tooltip is [TimelineHoverPainter], on its own layer: moving the mouse must
-/// not repaint thousands of marks (160 ms per frame in the load test).
+/// The icons over the marks and the event names are widgets of `ActivityTimeline`. The
+/// hover tooltip is [TimelineHoverPainter], on its own layer: moving the mouse must not
+/// repaint thousands of marks (160 ms per frame in the load test).
 class TimelinePainter extends CustomPainter {
   TimelinePainter({required this.layout, required this.selected});
 
@@ -29,14 +31,22 @@ class TimelinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    _paintNights(canvas);
     _paintGrid(canvas);
     _paintBursts(canvas);
     if (layout.dense) _paintBins(canvas);
     // In a dense window the marks are only the security events.
+    var textRight = double.negativeInfinity;
     for (final mark in layout.marks) {
       switch (mark.point) {
         case TransactionPoint(:final transaction, :final anomalies):
-          _paintTransaction(canvas, mark, transaction.labelTone, anomalies);
+          textRight = _paintTransaction(
+            canvas,
+            mark,
+            transaction.statusTone,
+            anomalies,
+            textRight,
+          );
         case SecurityEventPoint():
           _paintEvent(canvas, mark);
       }
@@ -95,6 +105,34 @@ class TimelinePainter extends CustomPainter {
     );
   }
 
+  /// The customer's nights (00:00–05:00 on their clock) across both lanes, named when
+  /// the band has room.
+  void _paintNights(Canvas canvas) {
+    final shade = Paint()..color = AppColors.bgSurfaceSubtle;
+    for (final (:left, :right) in layout.nights) {
+      if (right <= left) continue;
+      canvas.drawRect(
+        Rect.fromLTRB(
+          left,
+          TimelineLayout.eventsTop,
+          right,
+          TimelineLayout.axisTop,
+        ),
+        shade,
+      );
+      final label = _textPainter('Madrugada', _axisStyle);
+      if (label.width + 2 * AppSpace.xs <= right - left) {
+        label.paint(
+          canvas,
+          Offset(
+            left + AppSpace.xs,
+            TimelineLayout.axisTop - label.height - AppSpace.xxs,
+          ),
+        );
+      }
+    }
+  }
+
   void _paintGrid(Canvas canvas) {
     final line = Paint()
       ..color = AppColors.borderSubtle
@@ -143,26 +181,36 @@ class TimelinePainter extends CustomPainter {
         ),
         Paint()..color = tone.background,
       );
-      // The text only where it fits, so neighbour bands do not pile their labels.
-      final label = _textPainter(
+      // The text only where it fits, so neighbour bands do not pile their labels: the
+      // long one, else the short one, else none.
+      final style = AppText.bodySSemiBold.copyWith(color: tone.text);
+      final elapsed = burst.end.difference(burst.start);
+      final texts = [
+        if (elapsed.inMinutes > 0)
+          'Ráfaga · ${burst.count} en ${formatElapsed(elapsed)}',
         'Ráfaga · ${burst.count}',
-        AppText.bodySSemiBold.copyWith(color: tone.text),
-      );
-      final x = math.min(
-        left + AppSpace.xs,
-        layout.plotRight - label.width - AppSpace.xs,
-      );
-      if (label.width + 2 * AppSpace.xs <= right - left) {
+      ];
+      for (final text in texts) {
+        final label = _textPainter(text, style);
+        if (label.width + 2 * AppSpace.xs > right - left) continue;
+        final x = math.min(
+          left + AppSpace.xs,
+          layout.plotRight - label.width - AppSpace.xs,
+        );
         label.paint(canvas, Offset(x, TimelineLayout.transactionsTop + 2));
+        break;
       }
     }
   }
 
-  void _paintTransaction(
+  /// Paints one transaction and returns where the text under the marks now ends, so
+  /// the next «Horario inusual» is written only if it does not overlap ([textRight]).
+  double _paintTransaction(
     Canvas canvas,
     PlacedMark mark,
     StatusTone tone,
     Set<ActivityAnomaly> anomalies,
+    double textRight,
   ) {
     final center = mark.center;
     final r = mark.radius;
@@ -176,13 +224,17 @@ class TimelinePainter extends CustomPainter {
         Paint()..color = tone.solid,
       );
       if (layout.isZoomedIn) {
-        _text(
-          canvas,
-          'Horario inusual',
+        final label = _textPainter(
+          ActivityAnomaly.unusualHour.label,
           AppText.bodyS.copyWith(color: tone.text),
-          Offset(center.dx, center.dy + r + 9),
-          anchor: Alignment.topCenter,
         );
+        final left = center.dx - label.width / 2;
+        final top = center.dy + r + 9;
+        if (left > textRight + AppSpace.xs &&
+            top + label.height <= TimelineLayout.axisTop) {
+          label.paint(canvas, Offset(left, top));
+          textRight = left + label.width;
+        }
       }
     }
     canvas
@@ -195,6 +247,7 @@ class TimelinePainter extends CustomPainter {
         _stroke(ActivityAnomaly.amountSpike.tone.solid, 2),
       );
     }
+    return textRight;
   }
 
   /// Every security event is a high-tone diamond; the tooltip and the card name it.
@@ -271,7 +324,7 @@ class TimelineHoverPainter extends CustomPainter {
     TransactionPoint(:final transaction, :final anomalies) => [
       '${transaction.code} · '
           '${formatMoney(transaction.amount, transaction.currency)}',
-      '${formatDateTime(transaction.occurredAt)} · ${transaction.labelText}',
+      '${formatDateTime(transaction.occurredAt)} · ${transaction.statusText}',
       if (transaction.customerClock case final clock?)
         'Hora del cliente: $clock',
       if (anomalies.isNotEmpty)
@@ -292,6 +345,7 @@ class TimelineHoverPainter extends CustomPainter {
     final labels = {
       StatusTone.danger: Verdict.fraud.label,
       StatusTone.warning: Verdict.uncertain.label,
+      StatusTone.info: 'Alerta IA',
       StatusTone.success: Verdict.notFraud.label,
       StatusTone.neutral: LabelStatus.unlabeled.label,
     };

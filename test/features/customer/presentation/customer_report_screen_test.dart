@@ -11,8 +11,11 @@ import 'package:monedasegura/features/customer/data/customer_report_repository.d
 import 'package:monedasegura/features/customer/data/customer_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_report_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_repository.dart';
+import 'package:monedasegura/features/customer/domain/timeline_point.dart';
 import 'package:monedasegura/features/customer/presentation/customer_report_screen.dart';
 import 'package:monedasegura/features/customer/presentation/customer_screen.dart';
+import 'package:monedasegura/features/customer/presentation/widgets/timeline/activity_timeline.dart';
+import 'package:monedasegura/features/customer/presentation/widgets/timeline/timeline_layout.dart';
 
 void main() {
   setUpAll(() async {
@@ -105,12 +108,47 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Evento de seguridad'), findsOneWidget);
+    expect(find.text('Resaltados en el rango:'), findsOneWidget);
+    for (final zoom in ['Día', 'Semana', 'Mes', 'Rango completo']) {
+      expect(find.text(zoom), findsOneWidget);
+    }
+    expect(find.byTooltip('Anterior'), findsNothing);
 
     await tester.tap(find.text('Día'));
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Anterior'), findsOneWidget);
     expect(find.byTooltip('Siguiente'), findsOneWidget);
+
+    await tester.tap(find.text('Semana'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rango completo'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Anterior'), findsNothing);
+  });
+
+  testWidgets('Línea de tiempo: clicking a point shows its detail', (
+    tester,
+  ) async {
+    await pumpReport(tester, CustomerReportTab.timeline);
+    final timeline = find.byType(ActivityTimeline);
+    final layout = TimelineLayout(
+      analysis: tester.widget<ActivityTimeline>(timeline).analysis,
+      window: tester.widget<ActivityTimeline>(timeline).window,
+      width: tester.getSize(timeline).width,
+    );
+    final mark = layout.marks.firstWhere(
+      (mark) => mark.point is TransactionPoint,
+    );
+
+    await tester.tapAt(tester.getTopLeft(timeline) + mark.center);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Selecciona un punto para ver su detalle.'), findsNothing);
+    expect(find.text('Abrir en la vista de cliente'), findsOneWidget);
+    await tester.tap(find.text('Abrir en la vista de cliente'));
+    expect(opened, [(mark.point as TransactionPoint).transaction.id]);
   });
 
   testWidgets('Mapa explains the impossible travel and shows its detail', (
@@ -118,11 +156,16 @@ void main() {
   ) async {
     await pumpReport(tester, CustomerReportTab.map);
 
-    expect(find.text('Viaje imposible'), findsWidgets);
+    // The legend names the highlighted leg.
+    expect(find.text('Viaje imposible'), findsOneWidget);
     expect(
-      find.textContaining('TX-48219 en Medellín y TX-48301 en Bogotá'),
+      find.textContaining(
+        RegExp(r'^Viaje imposible: Medellín → Bogotá en .+ \(≈ [\d.]+ km\)$'),
+      ),
       findsOneWidget,
     );
+    expect(find.textContaining('TX-48219 y TX-48301'), findsOneWidget);
+    expect(find.byTooltip('Encuadrar transacciones'), findsOneWidget);
 
     await tester.tap(find.text('Ver transacción'));
     await tester.pumpAndSettle();

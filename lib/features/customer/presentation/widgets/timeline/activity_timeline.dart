@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/ui/kit.dart';
 import '../../../domain/activity_analysis.dart';
 import '../../../domain/timeline_point.dart';
+import '../activity_style.dart';
 import 'timeline_layout.dart';
 import 'timeline_painter.dart';
 
@@ -9,8 +12,10 @@ import 'timeline_painter.dart';
 /// mark for its tooltip, click it to select it ([onSelect]). In a dense window the
 /// transactions are bars per slice of time; clicking one zooms in on it ([onZoomTo]).
 ///
-/// One [CustomPaint] draws every mark, so thousands of transactions cost one paint and
-/// no widgets. Hover is local, ephemeral state of this widget.
+/// One [CustomPaint] draws every mark, so thousands of transactions cost one paint. The
+/// status icon of the marks big enough to hold it and the icon and name of the security
+/// events are widgets above it: a window has at most a few hundred marks. Hover is
+/// local, ephemeral state of this widget.
 class ActivityTimeline extends StatefulWidget {
   const ActivityTimeline({
     required this.analysis,
@@ -95,6 +100,25 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
                   ),
                 ),
               ),
+              for (final mark in layout.marks)
+                if (mark.point case TransactionPoint(:final transaction)
+                    when mark.radius >= _iconMarkRadius)
+                  Positioned(
+                    left: mark.center.dx - AppIconSize.xs / 2,
+                    top: mark.center.dy - AppIconSize.xs / 2,
+                    child: IgnorePointer(
+                      child: AppIcon(
+                        transaction.statusIcon,
+                        size: AppIconSize.xs,
+                        color: transaction.statusTone.onSolid,
+                      ),
+                    ),
+                  ),
+              for (final label in layout.eventLabels)
+                Positioned.fromRect(
+                  rect: label.bounds,
+                  child: IgnorePointer(child: _EventName(label.point)),
+                ),
               Positioned.fill(
                 child: CustomPaint(
                   painter: TimelineHoverPainter(
@@ -109,4 +133,35 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
       );
     },
   );
+}
+
+/// Radius from which a transaction mark shows its status icon inside.
+const _iconMarkRadius = 9.0;
+
+/// The icon and name of a security event, in the tone of its type.
+class _EventName extends StatelessWidget {
+  const _EventName(this.point);
+
+  final SecurityEventPoint point;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = point.event.type;
+    final color = type.tone.text;
+    return Row(
+      children: [
+        AppIcon(type.icon, size: AppIconSize.xs, color: color),
+        const SizedBox(width: AppSpace.xs),
+        Expanded(
+          child: Text(
+            type.label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.clip,
+            style: AppText.bodyS.copyWith(color: color),
+          ),
+        ),
+      ],
+    );
+  }
 }

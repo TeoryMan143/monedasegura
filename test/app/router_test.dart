@@ -122,4 +122,32 @@ void main() {
 
     expect(find.text('Alerta AL-1042 · Juan Pérez'), findsOneWidget);
   });
+
+  testWidgets(
+    'a click on blank space plays no system alert (the Windows ding)',
+    (tester) async {
+      await _pumpApp(tester, signedIn: true);
+      final sounds = <Object?>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'SystemSound.play') sounds.add(call.arguments);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      // The page padding, bottom right: nothing there takes the click.
+      final page = find.byType(TransactionsScreen);
+      await tester.tapAt(tester.getBottomRight(page) - const Offset(4, 4));
+      await tester.pumpAndSettle();
+
+      expect(sounds, isEmpty);
+    },
+  );
 }

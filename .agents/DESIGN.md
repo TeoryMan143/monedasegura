@@ -292,17 +292,26 @@ Use the same rules for statistics (A-07, A-08, N-04), the customer summary chart
   marked as correct.
 - Legends use shapes and text, not only colour swatches.
 - **Timeline** (C-11):
-  - Two lanes, "Eventos de seguridad" (high-tone diamonds) and "Transacciones" (circles sized
-    by amount, coloured by label: Fraude danger, No fraude success, Sin etiqueta neutral; the
-    selected one gets an azul outline).
-  - Zoom with Rango · Día · 1 hora and prev / next.
+  - Two lanes, "Eventos de seguridad" (high-tone diamonds, each named with its type's icon
+    and label where it fits) and "Transacciones" (circles sized by amount, coloured and
+    iconed by status: Fraude danger, No fraude success, Incierto warning, unlabeled with an
+    AI alert info + IA icon, Sin etiquetar neutral; the selected one gets an azul outline).
+    Marks that would overlap spread up and down their lane, so a burst stays clickable.
+  - Zoom with `AppSegmented` Día · Semana · Mes · Rango completo (calendar windows, the
+    week from Monday) and prev / next, disabled at the ends of the range.
   - Overview strip at the bottom: azul-200 bars, the selected window azul-500.
-  - Bursts are highlighted with a `danger` 50 band + text, and unusual hours with a `warning`
-    bar + text.
-  - The detail of the clicked point goes in a side card with "Abrir en la vista de cliente".
+  - Bursts are highlighted with a `danger` 50 band + text ("Ráfaga · 3 en 10 min"), unusual
+    hours with a `warning` bar + text, and up to a week the customer's nights
+    (00:00–05:00 on their clock) are shaded `bgSurfaceSubtle`. A line of badges sums them up
+    in text above the chart, and the legend names every shape.
+  - The detail of the clicked point goes in a side card (amount, date, type · channel,
+    label and AI alert badges) with "Abrir en la vista de cliente".
 - **Map** (C-12): OpenStreetMap tiles. Markers coloured by label or alert state with an icon,
   and lines between consecutive transactions labelled with the elapsed time. Impossible travel
-  is drawn in `danger` and explained in an `InlineBanner`.
+  is drawn in `danger` and explained in an `InlineBanner` above the map ("Viaje imposible:
+  Bogotá → Ciudad de México en 40 min (≈ 3.200 km)"). The camera fits every marker; + / − and
+  "Encuadrar transacciones" sit top left. Zooming out stops when one world fills the map:
+  the tiles never repeat side by side and no grey band shows above or below them.
 - Every chart has its loading skeleton, empty and error state through `ScreenState`.
 
 ## Screen patterns
