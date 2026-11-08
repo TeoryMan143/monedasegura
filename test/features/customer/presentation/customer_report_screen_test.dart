@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/features/customer/data/customer_report_repository.dart';
+import 'package:monedasegura/features/customer/data/customer_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_report_repository.dart';
 import 'package:monedasegura/features/customer/data/fake_customer_repository.dart';
 import 'package:monedasegura/features/customer/presentation/customer_report_screen.dart';
@@ -26,10 +27,12 @@ void main() {
 
   late List<CustomerReportTab> tabs;
   late int backs;
+  late List<int> opened;
 
   Future<void> pumpReport(WidgetTester tester, CustomerReportTab tab) async {
     tabs = [];
     backs = 0;
+    opened = [];
     tester.view
       ..physicalSize = const Size(1280, 900)
       ..devicePixelRatio = 1;
@@ -39,6 +42,9 @@ void main() {
         overrides: [
           customerReportRepositoryProvider.overrideWithValue(
             FakeCustomerReportRepository(LocalWritesStore()),
+          ),
+          customerRepositoryProvider.overrideWithValue(
+            FakeCustomerRepository(LocalWritesStore()),
           ),
         ],
         child: MaterialApp(
@@ -53,6 +59,7 @@ void main() {
               onTab: tabs.add,
               onBack: () => backs++,
               onOpenList: () {},
+              onOpenTransaction: opened.add,
             ),
           ),
         ),
@@ -87,12 +94,41 @@ void main() {
     expect(find.text('Nuevo'), findsOneWidget);
   });
 
-  testWidgets('Línea de tiempo and Mapa stay empty for HU-10 and HU-11', (
+  testWidgets('Línea de tiempo draws the range and zooms to a day', (
     tester,
   ) async {
     await pumpReport(tester, CustomerReportTab.timeline);
 
-    expect(find.text('Esta pestaña llega con HU-10.'), findsOneWidget);
+    expect(find.text('Actividad en el tiempo'), findsOneWidget);
+    expect(
+      find.text('Selecciona un punto para ver su detalle.'),
+      findsOneWidget,
+    );
+    expect(find.text('Evento de seguridad'), findsOneWidget);
+
+    await tester.tap(find.text('Día'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Anterior'), findsOneWidget);
+    expect(find.byTooltip('Siguiente'), findsOneWidget);
+  });
+
+  testWidgets('Mapa explains the impossible travel and shows its detail', (
+    tester,
+  ) async {
+    await pumpReport(tester, CustomerReportTab.map);
+
+    expect(find.text('Viaje imposible'), findsWidgets);
+    expect(
+      find.textContaining('TX-48219 en Medellín y TX-48301 en Bogotá'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Ver transacción'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Abrir en la vista de cliente'));
+
+    expect(opened, [48301]);
   });
 
   testWidgets('a tab and the breadcrumb call back', (tester) async {

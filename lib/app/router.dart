@@ -123,6 +123,12 @@ GoRouter _buildRouter(Ref ref) {
                             ? context.pop()
                             : context.go(AppRoutes.customer(customerId)),
                         onOpenList: () => context.go(AppRoutes.transactions),
+                        onOpenTransaction: (transactionId) => context.push(
+                          AppRoutes.customer(
+                            customerId,
+                            transactionId: '$transactionId',
+                          ),
+                        ),
                       );
                     },
                   ),

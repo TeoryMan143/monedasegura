@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../core/domain/currency.dart';
 import 'customer_activity.dart';
 import 'customer_transaction.dart';
@@ -73,20 +75,27 @@ Set<int> detectUnusualHours(
         : hour >= nightStartHour || hour < nightEndHour;
   }
 
-  bool outsidePattern(int index) {
-    for (var other = 0; other < minutes.length; other++) {
-      if (other == index) continue;
-      if (_clockDistance(minutes[index], minutes[other]) <=
-          tolerance.inMinutes) {
-        return false;
-      }
+  // Sorted by time of day, the closest other transaction on the clock is a neighbour
+  // (the first and the last are neighbours across midnight): O(n log n), not O(n²).
+  final byClock = List.generate(own.length, (i) => i)
+    ..sort((a, b) => minutes[a].compareTo(minutes[b]));
+  final lonely = <int>{};
+  if (checkPattern) {
+    for (var k = 0; k < byClock.length; k++) {
+      final minute = minutes[byClock[k]];
+      final before = minutes[byClock[(k - 1) % byClock.length]];
+      final after = minutes[byClock[(k + 1) % byClock.length]];
+      final closest = math.min(
+        _clockDistance(minute, before),
+        _clockDistance(minute, after),
+      );
+      if (closest > tolerance.inMinutes) lonely.add(byClock[k]);
     }
-    return true;
   }
 
   return {
     for (var i = 0; i < own.length; i++)
-      if (atNight(minutes[i]) || (checkPattern && outsidePattern(i))) own[i].id,
+      if (atNight(minutes[i]) || lonely.contains(i)) own[i].id,
   };
 }
 
