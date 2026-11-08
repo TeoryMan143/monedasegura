@@ -11,10 +11,12 @@ import 'controllers/transaction_selection_controller.dart';
 /// are checked, «Quitar selección» and «Clasificar N transacciones», which opens A-03.
 ///
 /// Takes no space while nothing is checked. [scope] is a [SelectionScope].
+/// [onApplied] runs after A-03 saves, so the screen refreshes its own data.
 class BulkSelectionBar extends ConsumerWidget {
-  const BulkSelectionBar({required this.scope, super.key});
+  const BulkSelectionBar({required this.scope, this.onApplied, super.key});
 
   final String scope;
+  final VoidCallback? onApplied;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,8 +80,12 @@ class BulkSelectionBar extends ConsumerWidget {
           AppButton(
             label: bulkLabelTitle(count),
             size: AppButtonSize.s,
-            onPressed: () =>
-                showBulkLabelDialog(context: context, selection: selection),
+            onPressed: () => showBulkLabelDialog(
+              context: context,
+              scope: scope,
+              selection: selection,
+              onApplied: onApplied,
+            ),
           ),
         ],
       ),

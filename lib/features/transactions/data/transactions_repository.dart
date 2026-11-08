@@ -110,7 +110,20 @@ class TransactionsRepository {
     }
     final labelStatus = query.labelStatus;
     if (labelStatus != null) {
-      request = request.eq('is_labeled', labelStatus.dbValue);
+      // Labels saved in this session count as labeled: the database does not have
+      // them yet, but the rows already show them.
+      final localIds = _localWrites.labeledTransactionIds.join(',');
+      request = switch (labelStatus) {
+        _ when localIds.isEmpty => request.eq(
+          'is_labeled',
+          labelStatus.dbValue,
+        ),
+        LabelStatus.unlabeled =>
+          request.eq('is_labeled', false).not('id', 'in', '($localIds)'),
+        LabelStatus.labeled => request.or(
+          'is_labeled.eq.true,id.in.($localIds)',
+        ),
+      };
     }
     if (query.withAiAlert) request = request.not('alert_score', 'is', null);
     return request;

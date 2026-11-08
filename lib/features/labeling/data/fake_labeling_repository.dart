@@ -41,6 +41,19 @@ class FakeLabelingRepository implements LabelingRepository {
     analystId: analystId,
     analystName: analystName,
   );
+
+  @override
+  Future<int> labelMany({
+    required Set<int> transactionIds,
+    required LabelForm form,
+    required String analystId,
+    required String analystName,
+  }) => _writer.saveMany(
+    transactionIds: transactionIds,
+    form: form,
+    analystId: analystId,
+    analystName: analystName,
+  );
 }
 
 Map<int, ClassificationTarget> _targets(DateTime now) {
