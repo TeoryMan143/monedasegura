@@ -40,7 +40,7 @@ class AlertsRepository {
       'suggested_type:fraud_types!suggested_type_id(code), '
       'ai_alert_reasons(id, position, weight, title, evidence, metric), '
       'ai_alert_transactions(is_primary, '
-      'transactions(id, code, amount, currency_code))';
+      'transactions(id, code, amount, currency_code, is_labeled))';
 
   /// One page of the inbox, highest score first.
   Future<PageResult<AiAlert>> list(AlertsQuery query) async {
@@ -87,7 +87,18 @@ class AlertsRepository {
           .maybeSingle();
       if (row == null) throw const Failure.notFound();
       final detail = AlertDetail.fromRow(row);
-      return detail.copyWith(alert: _withSession(detail.alert));
+      return detail.copyWith(
+        alert: _withSession(detail.alert),
+        transactions: [
+          for (final transaction in detail.transactions)
+            // A label saved in this session is not in the database yet.
+            transaction.copyWith(
+              isLabeled:
+                  transaction.isLabeled ||
+                  _localWrites.labelFor(transaction.transactionId) != null,
+            ),
+        ],
+      );
     } catch (error) {
       throw mapToFailure(error);
     }

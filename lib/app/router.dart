@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/alerts/presentation/alert_detail_screen.dart';
 import '../features/alerts/presentation/alerts_screen.dart';
+import '../features/alerts/presentation/resolve_alert_dialog.dart';
 import '../features/auth/presentation/controllers/session_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/customer/presentation/customer_report_screen.dart';
@@ -197,8 +198,10 @@ GoRouter _buildRouter(Ref ref) {
                         onBack: () => context.canPop()
                             ? context.pop()
                             : context.go(AppRoutes.alerts),
-                        // TODO(HU-08): onResolve opens the resolve window (A-06). Until then
-                        // «Resolver alerta» stays disabled.
+                        onResolve: () => showResolveAlertDialog(
+                          context: context,
+                          alertId: state.pathParameters['alertId']!,
+                        ),
                         // The range ends on the alert's day, so its activity shows.
                         onOpenCustomer: (customerId, at) => context.push(
                           AppRoutes.customer(customerId, at: at),
