@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -38,10 +37,8 @@ abstract class BulkLabelState with _$BulkLabelState {
 
   /// The errors to show now: all of them after «Aplicar», otherwise only the ones of
   /// fields the analyst touched.
-  Map<LabelField, String> get visibleErrors => {
-    for (final MapEntry(:key, :value) in errors.entries)
-      if (submitted || touched.contains(key)) key: value,
-  };
+  Map<LabelField, String> get visibleErrors =>
+      visibleLabelErrors(form, touched: touched, submitted: submitted);
 
   bool get isSaving => saveState == SaveState.saving;
 }
@@ -63,13 +60,14 @@ class BulkLabelController extends Notifier<BulkLabelState> {
   @override
   BulkLabelState build() => const BulkLabelState();
 
-  /// What the form fields report after a change: the whole [form].
-  void setForm(LabelForm form) {
+  /// What `LabelFormFields` reports after a change: the whole [form] and the [field]
+  /// the analyst changed.
+  void change(LabelForm form, LabelField field) {
     final current = state;
     if (current.isSaving) return;
     state = current.copyWith(
       form: form,
-      touched: {...current.touched, ..._changedFields(current.form, form)},
+      touched: {...current.touched, field},
       // An error stays until the retry; any other change is unsaved again.
       saveState: current.saveState == SaveState.error
           ? SaveState.error
@@ -121,12 +119,3 @@ class BulkLabelController extends Notifier<BulkLabelState> {
     }
   }
 }
-
-/// The fields that differ between [before] and [after].
-Set<LabelField> _changedFields(LabelForm before, LabelForm after) => {
-  if (before.verdict != after.verdict) LabelField.verdict,
-  if (!listEquals(before.fraudTypes, after.fraudTypes)) LabelField.fraudTypes,
-  if (before.confidence != after.confidence) LabelField.confidence,
-  if (before.severity != after.severity) LabelField.severity,
-  if (before.justification != after.justification) LabelField.justification,
-};

@@ -7,8 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:monedasegura/core/catalogs/catalog_repository.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
-import 'package:monedasegura/core/domain/confidence_level.dart';
-import 'package:monedasegura/core/domain/verdict.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/core/ui/kit.dart';
@@ -20,10 +18,7 @@ import 'package:monedasegura/features/customer/presentation/customer_screen.dart
 import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
 import 'package:monedasegura/features/labeling/data/label_writer.dart';
 import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
-import 'package:monedasegura/features/labeling/domain/label_form.dart';
 import 'package:monedasegura/features/labeling/presentation/bulk_label_dialog.dart';
-import 'package:monedasegura/features/labeling/presentation/controllers/bulk_label_controller.dart';
-import 'package:monedasegura/features/labeling/presentation/controllers/transaction_selection_controller.dart';
 
 class _SignedIn extends SessionController {
   @override
@@ -217,19 +212,13 @@ void main() {
     await tester.tap(find.text('Clasificar 2 transacciones'));
     await tester.pumpAndSettle();
 
-    ProviderScope.containerOf(tester.element(find.byType(BulkLabelDialog)))
-        .read(
-          bulkLabelProvider(
-            SelectionScope.customer(FakeCustomerRepository.customerId),
-          ).notifier,
-        )
-        .setForm(
-          const LabelForm(
-            verdict: Verdict.notFraud,
-            confidence: ConfidenceLevel.high,
-          ),
-        );
-    await tester.pump();
+    Finder inDialog(String text) => find
+        .descendant(of: find.byType(BulkLabelDialog), matching: find.text(text))
+        .first;
+    await tester.tap(inDialog('No fraude'));
+    await tester.pumpAndSettle();
+    await tester.tap(inDialog('Alta'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Aplicar a 2 transacciones'));
     await tester.pumpAndSettle();
     expect(find.text('1 etiqueta nueva'), findsOneWidget);

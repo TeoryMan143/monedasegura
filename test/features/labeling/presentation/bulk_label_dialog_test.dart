@@ -6,10 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:monedasegura/core/catalogs/catalog_repository.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
-import 'package:monedasegura/core/domain/confidence_level.dart';
 import 'package:monedasegura/core/domain/fraud_type.dart';
-import 'package:monedasegura/core/domain/severity.dart';
-import 'package:monedasegura/core/domain/verdict.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/core/ui/kit.dart';
@@ -18,11 +15,8 @@ import 'package:monedasegura/features/auth/presentation/controllers/session_cont
 import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
 import 'package:monedasegura/features/labeling/data/label_writer.dart';
 import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
-import 'package:monedasegura/features/labeling/domain/label_form.dart';
 import 'package:monedasegura/features/labeling/presentation/bulk_label_confirm_dialog.dart';
 import 'package:monedasegura/features/labeling/presentation/bulk_label_dialog.dart';
-import 'package:monedasegura/features/labeling/presentation/controllers/bulk_label_controller.dart';
-import 'package:monedasegura/features/labeling/presentation/controllers/transaction_selection_controller.dart';
 import 'package:monedasegura/features/transactions/data/fake_transactions_repository.dart';
 import 'package:monedasegura/features/transactions/data/transactions_repository.dart';
 import 'package:monedasegura/features/transactions/presentation/transactions_screen.dart';
@@ -35,13 +29,6 @@ class _SignedIn extends SessionController {
     fullName: 'Laura Gómez',
   );
 }
-
-const _structuring = LabelForm(
-  verdict: Verdict.fraud,
-  fraudTypes: [FraudType.laundering],
-  confidence: ConfidenceLevel.high,
-  severity: Severity.critical,
-);
 
 /// A-03 from A-01 (HU-05): the six rows of the prototype list, three of them labeled.
 void main() {
@@ -102,11 +89,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Fills the form as the shared form fields would.
-  void fillForm(WidgetTester tester, LabelForm form) =>
-      ProviderScope.containerOf(tester.element(find.byType(BulkLabelDialog)))
-          .read(bulkLabelProvider(SelectionScope.transactions).notifier)
-          .setForm(form);
+  Finder inDialog(Finder finder) =>
+      find.descendant(of: find.byType(BulkLabelDialog), matching: finder);
+
+  Future<void> tapInDialog(WidgetTester tester, Finder finder) async {
+    final target = inDialog(finder).first;
+    await tester.ensureVisible(target);
+    await tester.tap(target);
+    await tester.pumpAndSettle();
+  }
+
+  /// Fills A-03 for the structuring case: Fraude · LAV · Alta · Crítica.
+  Future<void> fillStructuring(WidgetTester tester) async {
+    await tapInDialog(tester, find.text('Fraude'));
+    await tapInDialog(
+      tester,
+      find.textContaining(FraudType.laundering.code, findRichText: true),
+    );
+    // Confidence comes before severity, which also has «Alta».
+    await tapInDialog(tester, find.text('Alta'));
+    await tapInDialog(tester, find.text('Crítica'));
+  }
 
   Finder inConfirmation(Finder finder) => find.descendant(
     of: find.byType(BulkLabelConfirmDialog),
@@ -142,6 +145,8 @@ void main() {
     await tapApply(tester);
 
     expect(find.byType(BulkLabelConfirmDialog), findsNothing);
+    expect(inDialog(find.text('Elige un veredicto.')), findsOneWidget);
+    expect(inDialog(find.text('Elige un nivel de confianza.')), findsOneWidget);
     expect(store.labeledTransactionIds, isEmpty);
   });
 
@@ -150,8 +155,7 @@ void main() {
   ) async {
     await pumpList(tester);
     await openDialog(tester);
-    fillForm(tester, _structuring);
-    await tester.pump();
+    await fillStructuring(tester);
 
     await tapApply(tester);
     expect(
@@ -190,8 +194,7 @@ void main() {
   testWidgets('cancelling the confirmation saves nothing', (tester) async {
     await pumpList(tester);
     await openDialog(tester);
-    fillForm(tester, _structuring);
-    await tester.pump();
+    await fillStructuring(tester);
 
     await tapApply(tester);
     await tester.tap(inConfirmation(find.text('Cancelar')));
@@ -205,8 +208,7 @@ void main() {
   testWidgets('a failed save keeps A-03 open with the error', (tester) async {
     await pumpList(tester, failing: {48219});
     await openDialog(tester);
-    fillForm(tester, _structuring);
-    await tester.pump();
+    await fillStructuring(tester);
 
     await tapApply(tester);
     await tester.tap(inConfirmation(find.text('Aplicar a 6 transacciones')));

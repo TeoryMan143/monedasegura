@@ -13,7 +13,7 @@ part of 'bulk_label_controller.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$BulkLabelState implements DiagnosticableTreeMixin {
+mixin _$BulkLabelState {
 
  LabelForm get form;/// Fields the analyst changed: only those show their error before applying.
  Set<LabelField> get touched;/// True after the first «Aplicar»: from then on every error shows.
@@ -26,13 +26,6 @@ mixin _$BulkLabelState implements DiagnosticableTreeMixin {
 $BulkLabelStateCopyWith<BulkLabelState> get copyWith => _$BulkLabelStateCopyWithImpl<BulkLabelState>(this as BulkLabelState, _$identity);
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  final _this = this as BulkLabelState;
-  properties
-    ..add(DiagnosticsProperty('type', 'BulkLabelState'))
-    ..add(DiagnosticsProperty('form', _this.form))..add(DiagnosticsProperty('touched', _this.touched))..add(DiagnosticsProperty('submitted', _this.submitted))..add(DiagnosticsProperty('saveState', _this.saveState))..add(DiagnosticsProperty('failure', _this.failure));
-}
 
 @override
 bool operator ==(Object other) {
@@ -48,7 +41,7 @@ int get hashCode {
 }
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   final _this = this as BulkLabelState;
   return 'BulkLabelState(form: ${_this.form}, touched: ${_this.touched}, submitted: ${_this.submitted}, saveState: ${_this.saveState}, failure: ${_this.failure})';
 }
@@ -246,7 +239,7 @@ return $default(_that.form,_that.touched,_that.submitted,_that.saveState,_that.f
 /// @nodoc
 
 
-class _BulkLabelState extends BulkLabelState with DiagnosticableTreeMixin {
+class _BulkLabelState extends BulkLabelState {
   const _BulkLabelState({this.form = const LabelForm(),  Set<LabelField> touched = const <LabelField>{}, this.submitted = false, this.saveState = SaveState.idle, this.failure}): _touched = touched,super._();
   
 
@@ -273,12 +266,6 @@ class _BulkLabelState extends BulkLabelState with DiagnosticableTreeMixin {
 _$BulkLabelStateCopyWith<_BulkLabelState> get copyWith => __$BulkLabelStateCopyWithImpl<_BulkLabelState>(this, _$identity);
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties
-    ..add(DiagnosticsProperty('type', 'BulkLabelState'))
-    ..add(DiagnosticsProperty('form', form))..add(DiagnosticsProperty('touched', touched))..add(DiagnosticsProperty('submitted', submitted))..add(DiagnosticsProperty('saveState', saveState))..add(DiagnosticsProperty('failure', failure));
-}
 
 @override
 bool operator ==(Object other) {
@@ -292,7 +279,7 @@ int get hashCode {
 }
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
     return 'BulkLabelState(form: $form, touched: $touched, submitted: $submitted, saveState: $saveState, failure: $failure)';
 }
 

@@ -7,6 +7,7 @@ import '../../../core/ui/kit.dart';
 import '../domain/transaction_selection.dart';
 import 'bulk_label_confirm_dialog.dart';
 import 'controllers/bulk_label_controller.dart';
+import 'widgets/label_form_fields.dart';
 
 /// Opens A-03 for the checked transactions of the table of [scope] (HU-05).
 ///
@@ -114,8 +115,15 @@ class _BulkLabelDialogState extends ConsumerState<BulkLabelDialog> {
             ),
             const SizedBox(height: AppSpace.xl),
           ],
-          // The shared label form (LabelFormFields, HU-04 · HU-05 · HU-08) goes here,
-          // bound to `state.form` and BulkLabelController.setForm.
+          // One form for every selected transaction, the same one as N-02.
+          LabelFormFields(
+            form: state.form,
+            errors: state.visibleErrors,
+            enabled: !state.isSaving,
+            onChanged: (form, field) => ref
+                .read(bulkLabelProvider(widget.scope).notifier)
+                .change(form, field),
+          ),
         ],
       ),
       footerLeading: Align(

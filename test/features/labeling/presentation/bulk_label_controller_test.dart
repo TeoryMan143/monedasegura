@@ -89,22 +89,29 @@ void main() {
     expect(state().saveState, SaveState.idle);
   });
 
-  test('setForm keeps the form and marks only the fields that changed', () {
-    notifier().setForm(const LabelForm(verdict: Verdict.fraud));
+  test('change keeps the form and marks the field the analyst changed', () {
+    notifier().change(
+      const LabelForm(verdict: Verdict.fraud),
+      LabelField.verdict,
+    );
 
     expect(state().form.verdict, Verdict.fraud);
     expect(state().touched, {LabelField.verdict});
     // Fraude without a type: that error waits until the types are touched.
     expect(state().visibleErrors.keys, isNot(contains(LabelField.fraudTypes)));
 
-    notifier().setForm(
+    notifier().change(
       const LabelForm(verdict: Verdict.fraud, fraudTypes: [FraudType.phishing]),
+      LabelField.fraudTypes,
     );
     expect(state().touched, {LabelField.verdict, LabelField.fraudTypes});
   });
 
   test('review shows every error of an incomplete form', () {
-    notifier().setForm(const LabelForm(verdict: Verdict.fraud));
+    notifier().change(
+      const LabelForm(verdict: Verdict.fraud),
+      LabelField.verdict,
+    );
 
     expect(notifier().review(), isFalse);
     expect(state().submitted, isTrue);
@@ -119,7 +126,7 @@ void main() {
   });
 
   test('review passes a complete form', () {
-    notifier().setForm(_structuring);
+    notifier().change(_structuring, LabelField.verdict);
 
     expect(notifier().review(), isTrue);
   });
@@ -128,7 +135,7 @@ void main() {
     'apply labels every selected transaction and clears the selection',
     () async {
       final selection = select([1, 2, 3]);
-      notifier().setForm(_structuring);
+      notifier().change(_structuring, LabelField.verdict);
 
       final applied = await notifier().apply(selection);
 
@@ -143,7 +150,10 @@ void main() {
 
   test('apply does not save an incomplete form', () async {
     final selection = select([1, 2]);
-    notifier().setForm(const LabelForm(verdict: Verdict.uncertain));
+    notifier().change(
+      const LabelForm(verdict: Verdict.uncertain),
+      LabelField.verdict,
+    );
 
     expect(await notifier().apply(selection), isFalse);
     expect(store.labelFor(1), isNull);
@@ -155,7 +165,7 @@ void main() {
     'a failed save keeps the form and the selection for the retry',
     () async {
       final selection = select([1, 99]);
-      notifier().setForm(_structuring);
+      notifier().change(_structuring, LabelField.verdict);
 
       expect(await notifier().apply(selection), isFalse);
 
@@ -170,7 +180,7 @@ void main() {
   test('without a session it fails as unauthorized', () async {
     container = createContainer(signedIn: false);
     final selection = select([1]);
-    notifier().setForm(_structuring);
+    notifier().change(_structuring, LabelField.verdict);
 
     expect(await notifier().apply(selection), isFalse);
     expect(state().failure, isA<UnauthorizedFailure>());
