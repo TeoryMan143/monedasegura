@@ -31,6 +31,14 @@ typedef LabelFormChanged = void Function(LabelForm form, LabelField field);
 /// - [lockedFraudTypes] stay selected and cannot be removed (A-06 «Confirmar» fixes the
 ///   suggested type; the analyst can still add others).
 ///
+/// A-06 shows the label part of its own form: it hides what its action already decides
+/// ([showVerdict], [showFraudTypes]), places confidence and severity side by side
+/// ([sideBySide]) and sets its own [confidenceLabel], [justificationRequired] and
+/// justification texts.
+///
+/// Next to «Confianza» and «Severidad» a [HelpTip] explains the four levels, with the text
+/// of the `ConfidenceLevel` and `Severity` enums.
+///
 /// ```dart
 /// LabelFormFields(
 ///   form: state.form, // LabelForm(verdict: Verdict.fraud, fraudTypes: [suggested])
@@ -49,6 +57,15 @@ class LabelFormFields extends StatefulWidget {
     this.enabled = true,
     this.lockVerdict = false,
     this.lockedFraudTypes = const {},
+    this.showVerdict = true,
+    this.showFraudTypes = true,
+    this.sideBySide = false,
+    this.confidenceLabel = 'Nivel de confianza',
+    this.justificationRequired,
+    this.justificationHint = 'Qué indicios viste',
+    this.justificationHelperText =
+        'Obligatoria con confianza Baja o veredicto Incierto.',
+    this.fieldFocus = const {},
     super.key,
   });
 
@@ -60,6 +77,27 @@ class LabelFormFields extends StatefulWidget {
   final bool enabled;
   final bool lockVerdict;
   final Set<FraudType> lockedFraudTypes;
+
+  /// False hides the verdict selector, when the caller already fixed it in [form].
+  final bool showVerdict;
+
+  /// False hides the fraud types, when the caller shows them elsewhere.
+  final bool showFraudTypes;
+
+  /// Confidence and severity in two columns instead of one under the other.
+  final bool sideBySide;
+  final String confidenceLabel;
+
+  /// Forces the justification to be required (or optional). Null follows the label rules:
+  /// required with confidence Baja or verdict Incierto.
+  final bool? justificationRequired;
+  final String justificationHint;
+  final String? justificationHelperText;
+
+  /// Optional anchors the caller can use to move the focus to a field (for example the
+  /// first one with an error). Each node wraps its field and cannot take focus itself:
+  /// focus its first focusable descendant.
+  final Map<LabelField, FocusNode> fieldFocus;
 
   @override
   State<LabelFormFields> createState() => _LabelFormFieldsState();
@@ -84,6 +122,11 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
   void dispose() {
     _justification.dispose();
     super.dispose();
+  }
+
+  Widget _anchor(LabelField field, Widget child) {
+    final node = widget.fieldFocus[field];
+    return node == null ? child : Focus(focusNode: node, child: child);
   }
 
   void _change(LabelField field, LabelForm form) =>
@@ -116,60 +159,53 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
     final confidence = form.confidence;
     final severity = form.severity;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppSegmented<Verdict>(
-          label: 'Veredicto',
-          required: true,
-          value: form.verdict,
-          onChanged: enabled && !widget.lockVerdict ? _setVerdict : null,
-          segments: [
-            for (final verdict in Verdict.values)
-              AppSegment(
-                value: verdict,
-                label: verdict.label,
-                icon: verdict.icon,
-              ),
-          ],
-        ),
-        _Error(errors[LabelField.verdict]),
-        if (!isNotFraud) ...[
-          const SizedBox(height: AppSpace.lg),
-          FieldLabel(
-            'Tipo(s) de fraude',
-            required: form.verdict == Verdict.fraud,
+    final confidenceField = _anchor(
+      LabelField.confidence,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSegmented<ConfidenceLevel>(
+            label: widget.confidenceLabel,
+            labelTrailing: HelpTip(
+              label: 'Ayuda: ${widget.confidenceLabel.toLowerCase()}',
+              message: [
+                for (final level in ConfidenceLevel.values)
+                  '${level.label}: ${level.criteria}',
+              ].join('\n'),
+            ),
+            required: true,
+            value: confidence,
+            onChanged: enabled
+                ? (level) => _change(
+                    LabelField.confidence,
+                    form.copyWith(confidence: level),
+                  )
+                : null,
+            segments: [
+              for (final level in ConfidenceLevel.values)
+                AppSegment(value: level, label: level.label),
+            ],
           ),
-          const SizedBox(height: AppSpace.xs),
-          _FraudTypes(
-            selected: form.fraudTypes,
-            locked: widget.lockedFraudTypes,
-            onToggle: enabled ? _toggleFraudType : null,
-          ),
-          _Error(errors[LabelField.fraudTypes]),
+          if (confidence != null) FieldMessage(confidence.criteria),
+          _Error(errors[LabelField.confidence]),
         ],
-        const SizedBox(height: AppSpace.lg),
-        AppSegmented<ConfidenceLevel>(
-          label: 'Nivel de confianza',
-          required: true,
-          value: confidence,
-          onChanged: enabled
-              ? (level) => _change(
-                  LabelField.confidence,
-                  form.copyWith(confidence: level),
-                )
-              : null,
-          segments: [
-            for (final level in ConfidenceLevel.values)
-              AppSegment(value: level, label: level.label),
-          ],
-        ),
-        if (confidence != null) FieldMessage(confidence.criteria),
-        _Error(errors[LabelField.confidence]),
-        if (!isNotFraud) ...[
-          const SizedBox(height: AppSpace.lg),
+      ),
+    );
+
+    final severityField = _anchor(
+      LabelField.severity,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           AppSegmented<Severity>(
             label: 'Severidad',
+            labelTrailing: HelpTip(
+              label: 'Ayuda: severidad',
+              message: [
+                for (final level in Severity.values)
+                  '${level.label}: ${level.description}',
+              ].join('\n'),
+            ),
             required: form.verdict == Verdict.fraud,
             value: severity,
             onChanged: enabled
@@ -186,19 +222,78 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
           if (severity != null) FieldMessage(severity.description),
           _Error(errors[LabelField.severity]),
         ],
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.showVerdict) ...[
+          AppSegmented<Verdict>(
+            label: 'Veredicto',
+            required: true,
+            value: form.verdict,
+            onChanged: enabled && !widget.lockVerdict ? _setVerdict : null,
+            segments: [
+              for (final verdict in Verdict.values)
+                AppSegment(
+                  value: verdict,
+                  label: verdict.label,
+                  icon: verdict.icon,
+                ),
+            ],
+          ),
+          _Error(errors[LabelField.verdict]),
+        ],
+        if (!isNotFraud && widget.showFraudTypes) ...[
+          if (widget.showVerdict) const SizedBox(height: AppSpace.lg),
+          FieldLabel(
+            'Tipo(s) de fraude',
+            required: form.verdict == Verdict.fraud,
+          ),
+          const SizedBox(height: AppSpace.xs),
+          _FraudTypes(
+            selected: form.fraudTypes,
+            locked: widget.lockedFraudTypes,
+            onToggle: enabled ? _toggleFraudType : null,
+          ),
+          _Error(errors[LabelField.fraudTypes]),
+        ],
+        if (widget.showVerdict || (!isNotFraud && widget.showFraudTypes))
+          const SizedBox(height: AppSpace.lg),
+        if (widget.sideBySide && !isNotFraud)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: confidenceField),
+              const SizedBox(width: AppSpace.lg),
+              Expanded(child: severityField),
+            ],
+          )
+        else ...[
+          confidenceField,
+          if (!isNotFraud) ...[
+            const SizedBox(height: AppSpace.lg),
+            severityField,
+          ],
+        ],
         const SizedBox(height: AppSpace.lg),
-        AppTextArea(
-          label: 'Justificación',
-          hint: 'Qué indicios viste',
-          controller: _justification,
-          enabled: enabled,
-          maxLength: maxJustificationLength,
-          required: _justificationRequired(form),
-          helperText: 'Obligatoria con confianza Baja o veredicto Incierto.',
-          errorText: errors[LabelField.justification],
-          onChanged: (text) => _change(
-            LabelField.justification,
-            form.copyWith(justification: text),
+        _anchor(
+          LabelField.justification,
+          AppTextArea(
+            label: 'Justificación',
+            hint: widget.justificationHint,
+            controller: _justification,
+            enabled: enabled,
+            maxLength: maxJustificationLength,
+            required:
+                widget.justificationRequired ?? _justificationRequired(form),
+            helperText: widget.justificationHelperText,
+            errorText: errors[LabelField.justification],
+            onChanged: (text) => _change(
+              LabelField.justification,
+              form.copyWith(justification: text),
+            ),
           ),
         ),
       ],

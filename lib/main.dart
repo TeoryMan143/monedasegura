@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app/app.dart';
 import 'app/config_error_app.dart';
+import 'app/demo_fail_once.dart';
 import 'core/config/env.dart';
 
 Future<void> main() async {
@@ -30,7 +31,12 @@ Future<void> main() async {
     );
   }
 
-  runApp(const ProviderScope(child: MonedaSeguraApp()));
+  runApp(
+    ProviderScope(
+      overrides: demoFailOnceOverrides(),
+      child: const MonedaSeguraApp(),
+    ),
+  );
 }
 
 /// Minimum size 1280×720 and the window title (ARCHITECTURAL_SPINE.md · Desktop).

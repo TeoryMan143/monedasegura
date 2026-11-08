@@ -17,6 +17,10 @@ abstract final class Env {
   /// `--dart-define=SIMULATE_RECONNECT=true`.
   static const simulateReconnect = bool.fromEnvironment('SIMULATE_RECONNECT');
 
+  /// Demo mode: the first read of each alert and statistic fails and the next works, to
+  /// show the error state and «Reintentar». Run with `--dart-define=DEMO_FAIL_ONCE=true`.
+  static const demoFailOnce = bool.fromEnvironment('DEMO_FAIL_ONCE');
+
   /// Names of the required values that were not provided at build time.
   static List<String> get missingKeys => [
     if (supabaseUrl.isEmpty) 'SUPABASE_URL',

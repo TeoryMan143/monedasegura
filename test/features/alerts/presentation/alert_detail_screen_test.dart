@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,8 +22,19 @@ import 'package:monedasegura/features/alerts/domain/alert_reason.dart';
 import 'package:monedasegura/features/alerts/domain/alert_transaction.dart';
 import 'package:monedasegura/features/alerts/presentation/alert_detail_screen.dart';
 import 'package:monedasegura/features/alerts/presentation/controllers/alerts_providers.dart';
+import 'package:monedasegura/features/alerts/presentation/widgets/alert_detail_skeleton.dart';
+import 'package:monedasegura/features/auth/domain/analyst.dart';
+import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
+
+import '../../../helpers/icon_button_tooltips.dart';
 
 class _MockRepository extends Mock implements AlertsRepository {}
+
+class _SignedIn extends SessionController {
+  @override
+  Analyst? build() =>
+      const Analyst(id: 'me', email: 'laura@banco.co', fullName: 'Laura Gómez');
+}
 
 const _reasons = [
   AlertReason(
@@ -106,7 +120,11 @@ void main() {
     opened = [];
   });
 
-  Future<void> pumpScreen(WidgetTester tester, {bool canResolve = true}) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    bool canResolve = true,
+    bool settle = true,
+  }) async {
     tester.view
       ..physicalSize = const Size(1280, 720)
       ..devicePixelRatio = 1;
@@ -115,6 +133,7 @@ void main() {
       ProviderScope(
         overrides: [
           alertsRepositoryProvider.overrideWithValue(repository),
+          sessionProvider.overrideWith(_SignedIn.new),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
         ],
         child: MaterialApp(
@@ -136,7 +155,11 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
 
   testWidgets('shows the header with breadcrumbs, title and status', (
@@ -242,7 +265,8 @@ void main() {
 
     await pumpScreen(tester);
 
-    expect(find.text('Resuelta por Diana Ortiz'), findsNothing);
+    expect(find.text('Esta alerta la resolvió otro analista'), findsNothing);
+    expect(find.text('Resolviste esta alerta'), findsNothing);
     await tester.tap(find.text('Resolver alerta'));
     await tester.pump();
     expect(opened, ['resolve']);
@@ -260,29 +284,86 @@ void main() {
     expect(opened, isEmpty);
   });
 
-  testWidgets('a resolved alert disables the button and says who resolved it', (
-    tester,
-  ) async {
-    final resolved = _detail.copyWith(
+  group('a resolved alert', () {
+    AlertDetail resolvedBy({
+      String? by,
+      AlertStatus status = AlertStatus.confirmed,
+      FraudType? type = FraudType.accountTakeover,
+    }) => _detail.copyWith(
       alert: _detail.alert.copyWith(
-        status: AlertStatus.confirmed,
+        status: status,
+        resolvedBy: by ?? 'other',
         resolvedByName: 'Diana Ortiz',
         resolvedAt: DateTime(2026, 11, 6, 18, 20),
-        finalType: FraudType.accountTakeover,
+        finalType: type,
       ),
     );
-    when(() => repository.getById('a1')).thenAnswer((_) async => resolved);
+
+    testWidgets('by another analyst says so and disables the button', (
+      tester,
+    ) async {
+      when(() => repository.getById('a1'))
+          .thenAnswer((_) async => resolvedBy());
+
+      await pumpScreen(tester);
+
+      expect(
+        find.text('Esta alerta la resolvió otro analista'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Diana Ortiz la confirmó como Fraude · Robo de cuenta el '
+          '06 nov 2026, 18:20. Ya no se puede resolver.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Pendiente de verificación'), findsNothing);
+
+      await tester.tap(find.text('Resolver alerta'));
+      await tester.pump();
+      expect(opened, isEmpty);
+    });
+
+    testWidgets('the disabled button explains why on hover', (tester) async {
+      when(() => repository.getById('a1'))
+          .thenAnswer((_) async => resolvedBy());
+      await pumpScreen(tester);
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('Resolver alerta')));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Esta alerta ya fue resuelta'), findsOneWidget);
+    });
+
+    testWidgets('by the signed-in analyst says «Resolviste»', (tester) async {
+      when(() => repository.getById('a1')).thenAnswer(
+        (_) async =>
+            resolvedBy(by: 'me', status: AlertStatus.rejected, type: null),
+      );
+
+      await pumpScreen(tester);
+
+      expect(find.text('Resolviste esta alerta'), findsOneWidget);
+      expect(find.text('Esta alerta la resolvió otro analista'), findsNothing);
+      expect(
+        find.text(
+          'La rechazaste como No fraude el 06 nov 2026, 18:20. '
+          'Ya no se puede resolver.',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
+  testWidgets('every icon-only button has a tooltip', (tester) async {
+    when(() => repository.getById('a1')).thenAnswer((_) async => _detail);
 
     await pumpScreen(tester);
 
-    expect(find.text('Resuelta por Diana Ortiz'), findsOneWidget);
-    expect(find.textContaining('Confirmada el 06 nov 2026'), findsOneWidget);
-    expect(find.textContaining('Tipo final: ATO'), findsOneWidget);
-    expect(find.textContaining('Pendiente de verificación'), findsNothing);
-
-    await tester.tap(find.text('Resolver alerta'));
-    await tester.pump();
-    expect(opened, isEmpty);
+    expectIconButtonsHaveTooltips(tester);
   });
 
   testWidgets('an error offers to retry and recovers', (tester) async {
@@ -298,11 +379,31 @@ void main() {
     expect(find.text('Alerta AL-1042 · Juan Pérez'), findsOneWidget);
   });
 
+  testWidgets('while it loads it shows a skeleton shaped like the screen', (
+    tester,
+  ) async {
+    final completer = Completer<AlertDetail>();
+    when(() => repository.getById('a1')).thenAnswer((_) => completer.future);
+
+    await pumpScreen(tester, settle: false);
+
+    expect(find.byType(AlertDetailSkeleton), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    completer.complete(_detail);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDetailSkeleton), findsNothing);
+    expect(find.text('Alerta AL-1042 · Juan Pérez'), findsOneWidget);
+  });
+
   testWidgets('an alert that does not exist says so', (tester) async {
     when(() => repository.getById('a1')).thenThrow(const Failure.notFound());
 
     await pumpScreen(tester);
 
-    expect(find.text('No encontramos lo que buscas'), findsOneWidget);
+    expect(find.text('No encontramos esta alerta'), findsOneWidget);
+    expect(find.text('Reintentar'), findsNothing);
+    await tester.tap(find.text('Volver a la bandeja'));
+    expect(backs, 1);
   });
 }

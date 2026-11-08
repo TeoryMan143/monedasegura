@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,6 +21,8 @@ import 'package:monedasegura/features/alerts/domain/alerts_query.dart';
 import 'package:monedasegura/features/alerts/presentation/alerts_screen.dart';
 import 'package:monedasegura/features/alerts/presentation/controllers/alerts_providers.dart';
 import 'package:monedasegura/features/alerts/presentation/controllers/alerts_query_controller.dart';
+
+import '../../../helpers/icon_button_tooltips.dart';
 
 class _MockRepository extends Mock implements AlertsRepository {}
 
@@ -55,7 +59,7 @@ void main() {
     opened = [];
   });
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(WidgetTester tester, {bool settle = true}) async {
     tester.view
       ..physicalSize = const Size(1280, 720)
       ..devicePixelRatio = 1;
@@ -75,7 +79,11 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
 
   testWidgets('shows the alerts in the order received, with their score', (
@@ -107,6 +115,44 @@ void main() {
         tester.getTopLeft(find.text(name)).dy,
     ];
     expect(top, [...top]..sort());
+  });
+
+  testWidgets('while it loads it shows skeleton rows and keeps the footer', (
+    tester,
+  ) async {
+    final completer = Completer<PageResult<AiAlert>>();
+    when(() => repository.list(any())).thenAnswer((_) => completer.future);
+
+    await pumpScreen(tester, settle: false);
+
+    expect(find.byType(SkeletonRow), findsWidgets);
+    expect(find.text('Cargando alertas…'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    completer.complete(
+      PageResult(
+        items: [_alert('1', 'Juan Pérez', 92, FraudType.accountTakeover)],
+        total: 1,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SkeletonRow), findsNothing);
+    expect(find.text('Juan Pérez'), findsOneWidget);
+  });
+
+  testWidgets('every icon-only button has a tooltip', (tester) async {
+    when(() => repository.list(any())).thenAnswer(
+      (_) async => PageResult(
+        items: [_alert('1', 'Juan Pérez', 92, FraudType.accountTakeover)],
+        total: 60,
+      ),
+    );
+
+    await pumpScreen(tester);
+
+    // The pagination arrows.
+    expect(expectIconButtonsHaveTooltips(tester), greaterThanOrEqualTo(2));
   });
 
   testWidgets('shows the empty state when there are no pending alerts', (

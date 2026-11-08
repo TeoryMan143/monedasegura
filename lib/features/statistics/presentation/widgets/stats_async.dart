@@ -19,6 +19,7 @@ class StatsAsync<T> extends StatelessWidget {
     required this.loading,
     required this.builder,
     this.isEmpty,
+    this.empty,
     this.stateHeight = statsStateHeight,
     super.key,
   });
@@ -30,6 +31,9 @@ class StatsAsync<T> extends StatelessWidget {
   final Widget loading;
   final Widget Function(BuildContext context, T data) builder;
   final bool Function(T data)? isEmpty;
+
+  /// Replaces the default «Sin datos en este rango» ([StatsEmpty]).
+  final Widget? empty;
   final double stateHeight;
 
   @override
@@ -40,7 +44,7 @@ class StatsAsync<T> extends StatelessWidget {
       value: value,
       onRetry: onRetry,
       isEmpty: isEmpty,
-      empty: const StatsEmpty(),
+      empty: empty ?? const StatsEmpty(),
       loading: loading,
       builder: builder,
     );

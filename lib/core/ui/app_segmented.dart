@@ -36,6 +36,7 @@ class AppSegmented<T> extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.label,
+    this.labelTrailing,
     this.required = false,
     this.small = false,
     this.expand = true,
@@ -50,6 +51,9 @@ class AppSegmented<T> extends StatelessWidget {
   /// Null disables the control.
   final ValueChanged<T>? onChanged;
   final String? label;
+
+  /// Widget at the right end of the label, e.g. a `HelpTip`.
+  final Widget? labelTrailing;
   final bool required;
 
   /// 28 px instead of 36 px, for chart toolbars.
@@ -87,7 +91,7 @@ class AppSegmented<T> extends StatelessWidget {
           : CrossAxisAlignment.start,
       children: [
         if (label != null) ...[
-          FieldLabel(label!, required: required),
+          FieldLabel(label!, required: required, trailing: labelTrailing),
           const SizedBox(height: AppSpace.xs),
         ],
         Semantics(container: true, label: label, child: track),

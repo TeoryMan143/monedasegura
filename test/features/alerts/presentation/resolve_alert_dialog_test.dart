@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:monedasegura/core/catalogs/catalog_repository.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
 import 'package:monedasegura/core/domain/alert_status.dart';
+import 'package:monedasegura/core/domain/confidence_level.dart';
 import 'package:monedasegura/core/domain/fraud_type.dart';
 import 'package:monedasegura/core/errors/failure.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
@@ -17,6 +18,8 @@ import 'package:monedasegura/features/alerts/domain/alert_transaction.dart';
 import 'package:monedasegura/features/alerts/domain/resolve_alert_input.dart';
 import 'package:monedasegura/features/alerts/presentation/controllers/alerts_providers.dart';
 import 'package:monedasegura/features/alerts/presentation/resolve_alert_dialog.dart';
+
+import '../../../helpers/icon_button_tooltips.dart';
 
 /// A-06 (HU-08): an alert of two transactions, the first one already labeled.
 final _detail = AlertDetail(
@@ -65,7 +68,10 @@ void main() {
   late List<ResolveAlertInput> sent;
   Failure? failToThrow;
 
-  Future<void> openDialog(WidgetTester tester) async {
+  Future<void> openDialog(
+    WidgetTester tester, {
+    bool focusOpener = false,
+  }) async {
     sent = [];
     failToThrow = null;
     tester.view
@@ -102,6 +108,11 @@ void main() {
         ),
       ),
     );
+    if (focusOpener) {
+      // Like a keyboard user who reached the button with Tab.
+      Focus.of(tester.element(find.text('Abrir'))).requestFocus();
+      await tester.pump();
+    }
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
   }
@@ -245,6 +256,13 @@ void main() {
     expect(find.text('Cancelar'), findsNothing);
   });
 
+  testWidgets('every icon-only button has a tooltip', (tester) async {
+    await openDialog(tester);
+
+    // At least the × of the dialog.
+    expect(expectIconButtonsHaveTooltips(tester), greaterThanOrEqualTo(1));
+  });
+
   testWidgets('Esc closes the dialog', (tester) async {
     await openDialog(tester);
 
@@ -252,5 +270,115 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AppDialog), findsNothing);
+  });
+
+  group('keyboard and focus', () {
+    Future<void> ctrlEnter(WidgetTester tester) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+    }
+
+    /// Focus on the dialog itself, not on a button: where a plain Enter sends.
+    void focusDialog(WidgetTester tester) {
+      FocusScope.of(tester.element(find.byType(AppDialog))).requestFocus();
+    }
+
+    Future<void> fillConfidenceAndSeverity(WidgetTester tester) async {
+      await tapText(tester, 'Muy alta');
+      await tapText(tester, 'Crítica');
+    }
+
+    testWidgets('opens with the focus on the first control, not on the ×', (
+      tester,
+    ) async {
+      await openDialog(tester);
+
+      final focused = FocusManager.instance.primaryFocus?.context;
+      expect(
+        focused
+            ?.findAncestorWidgetOfExactType<AppSegmented<ResolveAlertAction>>(),
+        isNotNull,
+      );
+    });
+
+    testWidgets('Enter with a valid form sends once', (tester) async {
+      await openDialog(tester);
+      await fillConfidenceAndSeverity(tester);
+      focusDialog(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(sent, hasLength(1));
+    });
+
+    testWidgets('Ctrl+Enter sends from any control', (tester) async {
+      await openDialog(tester);
+      await fillConfidenceAndSeverity(tester);
+
+      await ctrlEnter(tester);
+
+      expect(sent, hasLength(1));
+    });
+
+    testWidgets('Enter with errors sends nothing and focuses the first one', (
+      tester,
+    ) async {
+      await openDialog(tester);
+      focusDialog(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(sent, isEmpty);
+      expect(find.text('Elige un nivel de confianza.'), findsOneWidget);
+      final focused = FocusManager.instance.primaryFocus?.context;
+      // Confianza is the first field with an error (the type is fixed on «Confirmar»).
+      expect(
+        focused?.findAncestorWidgetOfExactType<AppSegmented<ConfidenceLevel>>(),
+        isNotNull,
+      );
+    });
+
+    testWidgets(
+      'Enter inside the justification adds a line and sends nothing',
+      (tester) async {
+        await openDialog(tester);
+        await fillConfidenceAndSeverity(tester);
+        await tester.tap(find.byType(TextField));
+        await tester.pump();
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(sent, isEmpty);
+        expect(find.byType(AppDialog), findsOneWidget);
+      },
+    );
+
+    testWidgets('Ctrl+Enter inside the justification sends', (tester) async {
+      await openDialog(tester);
+      await fillConfidenceAndSeverity(tester);
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+
+      await ctrlEnter(tester);
+
+      expect(sent, hasLength(1));
+    });
+
+    testWidgets('Esc closes it and gives the focus back to «Abrir»', (
+      tester,
+    ) async {
+      await openDialog(tester, focusOpener: true);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppDialog), findsNothing);
+      final focused = FocusManager.instance.primaryFocus?.context;
+      expect(focused?.findAncestorWidgetOfExactType<TextButton>(), isNotNull);
+    });
   });
 }

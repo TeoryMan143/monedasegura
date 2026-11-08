@@ -31,6 +31,7 @@ export 'error_state.dart';
 export 'failure_message.dart';
 export 'field_label.dart';
 export 'field_message.dart';
+export 'help_tip.dart';
 export 'inline_banner.dart';
 export 'kpi_card.dart';
 export 'notification_item.dart';

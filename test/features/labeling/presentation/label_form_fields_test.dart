@@ -9,6 +9,7 @@ import 'package:monedasegura/core/domain/fraud_type.dart';
 import 'package:monedasegura/core/domain/severity.dart';
 import 'package:monedasegura/core/domain/verdict.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
+import 'package:monedasegura/core/ui/help_tip.dart';
 import 'package:monedasegura/features/labeling/domain/label_form.dart';
 import 'package:monedasegura/features/labeling/domain/label_validator.dart';
 import 'package:monedasegura/features/labeling/presentation/widgets/label_form_fields.dart';
@@ -214,4 +215,69 @@ void main() {
       ]);
     },
   );
+
+  group('help next to confidence and severity', () {
+    Future<void> tabToHelp(WidgetTester tester, String label) async {
+      for (var i = 0; i < 40; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        final focused = FocusManager.instance.primaryFocus?.context;
+        if (focused?.findAncestorWidgetOfExactType<HelpTip>()?.label == label) {
+          await tester.pump();
+          return;
+        }
+      }
+      fail('Tab never reached «$label»');
+    }
+
+    testWidgets(
+      'the confidence icon explains the four levels from the keyboard',
+      (tester) async {
+        await pump(
+          tester,
+          const _Host(initial: LabelForm(verdict: Verdict.fraud)),
+        );
+
+        await tabToHelp(tester, 'Ayuda: nivel de confianza');
+
+        for (final level in ConfidenceLevel.values) {
+          expect(
+            find.textContaining('${level.label}: ${level.criteria}'),
+            findsOneWidget,
+          );
+        }
+      },
+    );
+
+    testWidgets(
+      'the severity icon explains the four levels from the keyboard',
+      (tester) async {
+        await pump(
+          tester,
+          const _Host(initial: LabelForm(verdict: Verdict.fraud)),
+        );
+
+        await tabToHelp(tester, 'Ayuda: severidad');
+
+        for (final level in Severity.values) {
+          expect(
+            find.textContaining('${level.label}: ${level.description}'),
+            findsOneWidget,
+          );
+        }
+      },
+    );
+
+    testWidgets('No fraude has no severity help', (tester) async {
+      await pump(
+        tester,
+        const _Host(initial: LabelForm(verdict: Verdict.notFraud)),
+      );
+
+      expect(find.bySemanticsLabel('Ayuda: severidad'), findsNothing);
+      expect(
+        find.bySemanticsLabel('Ayuda: nivel de confianza'),
+        findsOneWidget,
+      );
+    });
+  });
 }
