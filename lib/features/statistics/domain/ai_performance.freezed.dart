@@ -15,11 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AiPerformance {
 
-/// Alerts where the analyst agreed with the AI.
- int get confirmed;/// Alerts the analyst discarded as not fraud.
- int get rejected;/// Alerts where it was fraud, but of another type than the AI said.
- int get reclassified;/// One entry per fraud type the AI suggested.
- List<TypePrecision> get precisionByType;
+ int get confirmed; int get rejected; int get reclassified; List<TypePrecision> get precisionByType;
 /// Create a copy of AiPerformance
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -222,15 +218,10 @@ class _AiPerformance extends AiPerformance {
   const _AiPerformance({required this.confirmed, required this.rejected, required this.reclassified,  List<TypePrecision> precisionByType = const <TypePrecision>[]}): _precisionByType = precisionByType,super._();
   
 
-/// Alerts where the analyst agreed with the AI.
 @override final  int confirmed;
-/// Alerts the analyst discarded as not fraud.
 @override final  int rejected;
-/// Alerts where it was fraud, but of another type than the AI said.
 @override final  int reclassified;
-/// One entry per fraud type the AI suggested.
  final  List<TypePrecision> _precisionByType;
-/// One entry per fraud type the AI suggested.
 @override@JsonKey() List<TypePrecision> get precisionByType {
   if (_precisionByType is EqualUnmodifiableListView) return _precisionByType;
   // ignore: implicit_dynamic_type

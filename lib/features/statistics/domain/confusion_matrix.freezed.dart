@@ -15,10 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConfusionMatrix {
 
-/// Codes of the suggested types, one per row.
- List<String> get rows;/// Codes of the final types, with [noFraudKey] last.
- List<String> get columns;/// `cells[row][column]` is how many alerts fall there.
- List<List<int>> get cells;
+ List<String> get rows; List<String> get columns; List<List<int>> get cells;
 /// Create a copy of ConfusionMatrix
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -220,27 +217,21 @@ class _ConfusionMatrix extends ConfusionMatrix {
   const _ConfusionMatrix({required  List<String> rows, required  List<String> columns, required  List<List<int>> cells}): _rows = rows,_columns = columns,_cells = cells,super._();
   
 
-/// Codes of the suggested types, one per row.
  final  List<String> _rows;
-/// Codes of the suggested types, one per row.
 @override List<String> get rows {
   if (_rows is EqualUnmodifiableListView) return _rows;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_rows);
 }
 
-/// Codes of the final types, with [noFraudKey] last.
  final  List<String> _columns;
-/// Codes of the final types, with [noFraudKey] last.
 @override List<String> get columns {
   if (_columns is EqualUnmodifiableListView) return _columns;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_columns);
 }
 
-/// `cells[row][column]` is how many alerts fall there.
  final  List<List<int>> _cells;
-/// `cells[row][column]` is how many alerts fall there.
 @override List<List<int>> get cells {
   if (_cells is EqualUnmodifiableListView) return _cells;
   // ignore: implicit_dynamic_type

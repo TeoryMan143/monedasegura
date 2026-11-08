@@ -62,34 +62,41 @@ void main() {
     });
   });
 
-  test('the analysis has the timeline, the map and the impossible trips', () {
+  group('two places 6 minutes apart and a burst', () {
     const medellin = (6.2442, -75.5812);
     const bogota = (4.7110, -74.0721);
-    final analysis = analyzeActivity(
-      CustomerActivity(
-        transactions: [
-          _tx(1, _at(3, 12, 0), place: medellin),
-          _tx(2, _at(3, 12, 6), place: bogota),
-          _tx(3, _at(3, 12, 10)),
-          _tx(4, _at(4, 12, 0), place: bogota),
-        ],
-        securityEvents: const [],
-        truncated: true,
-      ),
-      customerAccounts: _mine,
+    final activity = CustomerActivity(
+      transactions: [
+        _tx(1, _at(3, 12, 0), place: medellin),
+        _tx(2, _at(3, 12, 6), place: bogota),
+        _tx(3, _at(3, 12, 10)),
+        _tx(4, _at(4, 12, 0), place: bogota),
+      ],
+      securityEvents: const [],
+      truncated: true,
     );
 
-    expect(analysis.timeline, hasLength(4));
-    expect(analysis.mapPoints.map((p) => p.transaction.id), [1, 2, 4]);
-    expect(analysis.withoutPlace, 1);
-    expect(analysis.trips.single.to.transaction.id, 2);
-    expect(analysis.bursts.single.count, 3);
-    expect(analysis.anomaliesOf(2), contains(ActivityAnomaly.burst));
-    expect(analysis.anomaliesOf(4), isEmpty);
-    expect(analysis.truncated, isTrue);
+    test('the timeline has every mark and the burst band', () {
+      final timeline = analyzeTimeline(activity, customerAccounts: _mine);
+
+      expect(timeline.timeline, hasLength(4));
+      expect(timeline.bursts.single.count, 3);
+      expect(timeline.truncated, isTrue);
+    });
+
+    test('the map has the placed markers and the impossible trip', () {
+      final map = analyzeMap(activity, customerAccounts: _mine);
+
+      expect(map.points.map((p) => p.transaction.id), [1, 2, 4]);
+      expect(map.withoutPlace, 1);
+      expect(map.trips.single.to.transaction.id, 2);
+      expect(map.anomaliesOf(2), contains(ActivityAnomaly.burst));
+      expect(map.anomaliesOf(4), isEmpty);
+      expect(map.truncated, isTrue);
+    });
   });
 
-  test('10,000 transactions are analysed in well under a second', () {
+  test('10,000 transactions are analysed for both tabs in well under a second', () {
     final start = DateTime(2026, 8);
     final activity = CustomerActivity(
       transactions: [
@@ -105,9 +112,11 @@ void main() {
     );
 
     final watch = Stopwatch()..start();
-    final analysis = analyzeActivity(activity, customerAccounts: _mine);
+    final timeline = analyzeTimeline(activity, customerAccounts: _mine);
+    final map = analyzeMap(activity, customerAccounts: _mine);
 
-    expect(analysis.timeline, hasLength(10000));
+    expect(timeline.timeline, hasLength(10000));
+    expect(map.points, hasLength(10000));
     // Generous on purpose: it guards against a quadratic rule, not a benchmark.
     expect(watch.elapsed, lessThan(const Duration(seconds: 1)));
   });

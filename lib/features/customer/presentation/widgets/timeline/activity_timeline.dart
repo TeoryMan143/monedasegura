@@ -21,7 +21,7 @@ class ActivityTimeline extends StatefulWidget {
     super.key,
   });
 
-  final ActivityAnalysis analysis;
+  final TimelineAnalysis analysis;
   final DateTimeRange window;
   final TimelinePoint? selected;
   final ValueChanged<TimelinePoint> onSelect;
@@ -55,7 +55,7 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
     );
   }
 
-  ActivityAnalysis? _analysis;
+  TimelineAnalysis? _analysis;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(

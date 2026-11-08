@@ -283,48 +283,47 @@ as int,
 }
 
 /// @nodoc
-mixin _$ActivityAnalysis {
+mixin _$TimelineAnalysis {
 
-/// Oldest first.
- List<TimelinePoint> get timeline; List<BurstWindow> get bursts;/// The transactions with a place, oldest first.
- List<MapPoint> get mapPoints; List<ImpossibleTravel> get trips;/// Transactions without a place, which the map cannot show.
- int get withoutPlace; bool get truncated;
-/// Create a copy of ActivityAnalysis
+/// Transactions with their anomalies and security events, oldest first.
+ List<TimelinePoint> get timeline; List<BurstWindow> get bursts;/// The range had more activity than was read (see [CustomerActivity.truncated]).
+ bool get truncated;
+/// Create a copy of TimelineAnalysis
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ActivityAnalysisCopyWith<ActivityAnalysis> get copyWith => _$ActivityAnalysisCopyWithImpl<ActivityAnalysis>(this as ActivityAnalysis, _$identity);
+$TimelineAnalysisCopyWith<TimelineAnalysis> get copyWith => _$TimelineAnalysisCopyWithImpl<TimelineAnalysis>(this as TimelineAnalysis, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  final _this = this as ActivityAnalysis;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActivityAnalysis&&const DeepCollectionEquality().equals(other.timeline, _this.timeline)&&const DeepCollectionEquality().equals(other.bursts, _this.bursts)&&const DeepCollectionEquality().equals(other.mapPoints, _this.mapPoints)&&const DeepCollectionEquality().equals(other.trips, _this.trips)&&(identical(other.withoutPlace, _this.withoutPlace) || other.withoutPlace == _this.withoutPlace)&&(identical(other.truncated, _this.truncated) || other.truncated == _this.truncated));
+  final _this = this as TimelineAnalysis;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TimelineAnalysis&&const DeepCollectionEquality().equals(other.timeline, _this.timeline)&&const DeepCollectionEquality().equals(other.bursts, _this.bursts)&&(identical(other.truncated, _this.truncated) || other.truncated == _this.truncated));
 }
 
 
 @override
 int get hashCode {
-  final _this = this as ActivityAnalysis;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.timeline),const DeepCollectionEquality().hash(_this.bursts),const DeepCollectionEquality().hash(_this.mapPoints),const DeepCollectionEquality().hash(_this.trips),_this.withoutPlace,_this.truncated);
+  final _this = this as TimelineAnalysis;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.timeline),const DeepCollectionEquality().hash(_this.bursts),_this.truncated);
 }
 
 @override
 String toString() {
-  final _this = this as ActivityAnalysis;
-  return 'ActivityAnalysis(timeline: ${_this.timeline}, bursts: ${_this.bursts}, mapPoints: ${_this.mapPoints}, trips: ${_this.trips}, withoutPlace: ${_this.withoutPlace}, truncated: ${_this.truncated})';
+  final _this = this as TimelineAnalysis;
+  return 'TimelineAnalysis(timeline: ${_this.timeline}, bursts: ${_this.bursts}, truncated: ${_this.truncated})';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ActivityAnalysisCopyWith<$Res>  {
-  factory $ActivityAnalysisCopyWith(ActivityAnalysis value, $Res Function(ActivityAnalysis) _then) = _$ActivityAnalysisCopyWithImpl;
+abstract mixin class $TimelineAnalysisCopyWith<$Res>  {
+  factory $TimelineAnalysisCopyWith(TimelineAnalysis value, $Res Function(TimelineAnalysis) _then) = _$TimelineAnalysisCopyWithImpl;
 @useResult
 $Res call({
- List<TimelinePoint> timeline, List<BurstWindow> bursts, List<MapPoint> mapPoints, List<ImpossibleTravel> trips, int withoutPlace, bool truncated
+ List<TimelinePoint> timeline, List<BurstWindow> bursts, bool truncated
 });
 
 
@@ -332,23 +331,20 @@ $Res call({
 
 }
 /// @nodoc
-class _$ActivityAnalysisCopyWithImpl<$Res>
-    implements $ActivityAnalysisCopyWith<$Res> {
-  _$ActivityAnalysisCopyWithImpl(this._self, this._then);
+class _$TimelineAnalysisCopyWithImpl<$Res>
+    implements $TimelineAnalysisCopyWith<$Res> {
+  _$TimelineAnalysisCopyWithImpl(this._self, this._then);
 
-  final ActivityAnalysis _self;
-  final $Res Function(ActivityAnalysis) _then;
+  final TimelineAnalysis _self;
+  final $Res Function(TimelineAnalysis) _then;
 
-/// Create a copy of ActivityAnalysis
+/// Create a copy of TimelineAnalysis
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? timeline = null,Object? bursts = null,Object? mapPoints = null,Object? trips = null,Object? withoutPlace = null,Object? truncated = null,}) {
-  return _then(ActivityAnalysis(
+@pragma('vm:prefer-inline') @override $Res call({Object? timeline = null,Object? bursts = null,Object? truncated = null,}) {
+  return _then(TimelineAnalysis(
 timeline: null == timeline ? _self.timeline : timeline // ignore: cast_nullable_to_non_nullable
 as List<TimelinePoint>,bursts: null == bursts ? _self.bursts : bursts // ignore: cast_nullable_to_non_nullable
-as List<BurstWindow>,mapPoints: null == mapPoints ? _self.mapPoints : mapPoints // ignore: cast_nullable_to_non_nullable
-as List<MapPoint>,trips: null == trips ? _self.trips : trips // ignore: cast_nullable_to_non_nullable
-as List<ImpossibleTravel>,withoutPlace: null == withoutPlace ? _self.withoutPlace : withoutPlace // ignore: cast_nullable_to_non_nullable
-as int,truncated: null == truncated ? _self.truncated : truncated // ignore: cast_nullable_to_non_nullable
+as List<BurstWindow>,truncated: null == truncated ? _self.truncated : truncated // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -356,8 +352,8 @@ as bool,
 }
 
 
-/// Adds pattern-matching-related methods to [ActivityAnalysis].
-extension ActivityAnalysisPatterns on ActivityAnalysis {
+/// Adds pattern-matching-related methods to [TimelineAnalysis].
+extension TimelineAnalysisPatterns on TimelineAnalysis {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -370,10 +366,10 @@ extension ActivityAnalysisPatterns on ActivityAnalysis {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ActivityAnalysis value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TimelineAnalysis value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _ActivityAnalysis() when $default != null:
+case _TimelineAnalysis() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -392,10 +388,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ActivityAnalysis value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TimelineAnalysis value)  $default,){
 final _that = this;
 switch (_that) {
-case _ActivityAnalysis():
+case _TimelineAnalysis():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -413,10 +409,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ActivityAnalysis value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TimelineAnalysis value)?  $default,){
 final _that = this;
 switch (_that) {
-case _ActivityAnalysis() when $default != null:
+case _TimelineAnalysis() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -434,10 +430,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  List<MapPoint> mapPoints,  List<ImpossibleTravel> trips,  int withoutPlace,  bool truncated)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  bool truncated)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _ActivityAnalysis() when $default != null:
-return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.withoutPlace,_that.truncated);case _:
+case _TimelineAnalysis() when $default != null:
+return $default(_that.timeline,_that.bursts,_that.truncated);case _:
   return orElse();
 
 }
@@ -455,10 +451,10 @@ return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.wi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  List<MapPoint> mapPoints,  List<ImpossibleTravel> trips,  int withoutPlace,  bool truncated)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  bool truncated)  $default,) {final _that = this;
 switch (_that) {
-case _ActivityAnalysis():
-return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.withoutPlace,_that.truncated);case _:
+case _TimelineAnalysis():
+return $default(_that.timeline,_that.bursts,_that.truncated);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -475,10 +471,10 @@ return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.wi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  List<MapPoint> mapPoints,  List<ImpossibleTravel> trips,  int withoutPlace,  bool truncated)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<TimelinePoint> timeline,  List<BurstWindow> bursts,  bool truncated)?  $default,) {final _that = this;
 switch (_that) {
-case _ActivityAnalysis() when $default != null:
-return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.withoutPlace,_that.truncated);case _:
+case _TimelineAnalysis() when $default != null:
+return $default(_that.timeline,_that.bursts,_that.truncated);case _:
   return null;
 
 }
@@ -489,13 +485,13 @@ return $default(_that.timeline,_that.bursts,_that.mapPoints,_that.trips,_that.wi
 /// @nodoc
 
 
-class _ActivityAnalysis extends ActivityAnalysis {
-  const _ActivityAnalysis({required  List<TimelinePoint> timeline, required  List<BurstWindow> bursts, required  List<MapPoint> mapPoints, required  List<ImpossibleTravel> trips, required this.withoutPlace, this.truncated = false}): _timeline = timeline,_bursts = bursts,_mapPoints = mapPoints,_trips = trips,super._();
+class _TimelineAnalysis extends TimelineAnalysis {
+  const _TimelineAnalysis({required  List<TimelinePoint> timeline, required  List<BurstWindow> bursts, this.truncated = false}): _timeline = timeline,_bursts = bursts,super._();
   
 
-/// Oldest first.
+/// Transactions with their anomalies and security events, oldest first.
  final  List<TimelinePoint> _timeline;
-/// Oldest first.
+/// Transactions with their anomalies and security events, oldest first.
 @override List<TimelinePoint> get timeline {
   if (_timeline is EqualUnmodifiableListView) return _timeline;
   // ignore: implicit_dynamic_type
@@ -509,13 +505,288 @@ class _ActivityAnalysis extends ActivityAnalysis {
   return EqualUnmodifiableListView(_bursts);
 }
 
+/// The range had more activity than was read (see [CustomerActivity.truncated]).
+@override@JsonKey() final  bool truncated;
+
+/// Create a copy of TimelineAnalysis
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$TimelineAnalysisCopyWith<_TimelineAnalysis> get copyWith => __$TimelineAnalysisCopyWithImpl<_TimelineAnalysis>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TimelineAnalysis&&const DeepCollectionEquality().equals(other.timeline, _timeline)&&const DeepCollectionEquality().equals(other.bursts, _bursts)&&(identical(other.truncated, truncated) || other.truncated == truncated));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_timeline),const DeepCollectionEquality().hash(_bursts),truncated);
+}
+
+@override
+String toString() {
+    return 'TimelineAnalysis(timeline: $timeline, bursts: $bursts, truncated: $truncated)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$TimelineAnalysisCopyWith<$Res> implements $TimelineAnalysisCopyWith<$Res> {
+  factory _$TimelineAnalysisCopyWith(_TimelineAnalysis value, $Res Function(_TimelineAnalysis) _then) = __$TimelineAnalysisCopyWithImpl;
+@override @useResult
+$Res call({
+ List<TimelinePoint> timeline, List<BurstWindow> bursts, bool truncated
+});
+
+
+
+
+}
+/// @nodoc
+class __$TimelineAnalysisCopyWithImpl<$Res>
+    implements _$TimelineAnalysisCopyWith<$Res> {
+  __$TimelineAnalysisCopyWithImpl(this._self, this._then);
+
+  final _TimelineAnalysis _self;
+  final $Res Function(_TimelineAnalysis) _then;
+
+/// Create a copy of TimelineAnalysis
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? timeline = null,Object? bursts = null,Object? truncated = null,}) {
+  return _then(_TimelineAnalysis(
+timeline: null == timeline ? _self._timeline : timeline // ignore: cast_nullable_to_non_nullable
+as List<TimelinePoint>,bursts: null == bursts ? _self._bursts : bursts // ignore: cast_nullable_to_non_nullable
+as List<BurstWindow>,truncated: null == truncated ? _self.truncated : truncated // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$MapAnalysis {
+
 /// The transactions with a place, oldest first.
- final  List<MapPoint> _mapPoints;
+ List<MapPoint> get points; List<ImpossibleTravel> get trips;/// Anomalies by transaction id, for the detail card. Ids without any are left out.
+ Map<int, Set<ActivityAnomaly>> get anomalies;/// Transactions without a place, which the map cannot show.
+ int get withoutPlace;/// The range had more activity than was read (see [CustomerActivity.truncated]).
+ bool get truncated;
+/// Create a copy of MapAnalysis
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MapAnalysisCopyWith<MapAnalysis> get copyWith => _$MapAnalysisCopyWithImpl<MapAnalysis>(this as MapAnalysis, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as MapAnalysis;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MapAnalysis&&const DeepCollectionEquality().equals(other.points, _this.points)&&const DeepCollectionEquality().equals(other.trips, _this.trips)&&const DeepCollectionEquality().equals(other.anomalies, _this.anomalies)&&(identical(other.withoutPlace, _this.withoutPlace) || other.withoutPlace == _this.withoutPlace)&&(identical(other.truncated, _this.truncated) || other.truncated == _this.truncated));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as MapAnalysis;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.points),const DeepCollectionEquality().hash(_this.trips),const DeepCollectionEquality().hash(_this.anomalies),_this.withoutPlace,_this.truncated);
+}
+
+@override
+String toString() {
+  final _this = this as MapAnalysis;
+  return 'MapAnalysis(points: ${_this.points}, trips: ${_this.trips}, anomalies: ${_this.anomalies}, withoutPlace: ${_this.withoutPlace}, truncated: ${_this.truncated})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MapAnalysisCopyWith<$Res>  {
+  factory $MapAnalysisCopyWith(MapAnalysis value, $Res Function(MapAnalysis) _then) = _$MapAnalysisCopyWithImpl;
+@useResult
+$Res call({
+ List<MapPoint> points, List<ImpossibleTravel> trips, Map<int, Set<ActivityAnomaly>> anomalies, int withoutPlace, bool truncated
+});
+
+
+
+
+}
+/// @nodoc
+class _$MapAnalysisCopyWithImpl<$Res>
+    implements $MapAnalysisCopyWith<$Res> {
+  _$MapAnalysisCopyWithImpl(this._self, this._then);
+
+  final MapAnalysis _self;
+  final $Res Function(MapAnalysis) _then;
+
+/// Create a copy of MapAnalysis
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? points = null,Object? trips = null,Object? anomalies = null,Object? withoutPlace = null,Object? truncated = null,}) {
+  return _then(MapAnalysis(
+points: null == points ? _self.points : points // ignore: cast_nullable_to_non_nullable
+as List<MapPoint>,trips: null == trips ? _self.trips : trips // ignore: cast_nullable_to_non_nullable
+as List<ImpossibleTravel>,anomalies: null == anomalies ? _self.anomalies : anomalies // ignore: cast_nullable_to_non_nullable
+as Map<int, Set<ActivityAnomaly>>,withoutPlace: null == withoutPlace ? _self.withoutPlace : withoutPlace // ignore: cast_nullable_to_non_nullable
+as int,truncated: null == truncated ? _self.truncated : truncated // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [MapAnalysis].
+extension MapAnalysisPatterns on MapAnalysis {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MapAnalysis value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _MapAnalysis() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MapAnalysis value)  $default,){
+final _that = this;
+switch (_that) {
+case _MapAnalysis():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MapAnalysis value)?  $default,){
+final _that = this;
+switch (_that) {
+case _MapAnalysis() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MapPoint> points,  List<ImpossibleTravel> trips,  Map<int, Set<ActivityAnomaly>> anomalies,  int withoutPlace,  bool truncated)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _MapAnalysis() when $default != null:
+return $default(_that.points,_that.trips,_that.anomalies,_that.withoutPlace,_that.truncated);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MapPoint> points,  List<ImpossibleTravel> trips,  Map<int, Set<ActivityAnomaly>> anomalies,  int withoutPlace,  bool truncated)  $default,) {final _that = this;
+switch (_that) {
+case _MapAnalysis():
+return $default(_that.points,_that.trips,_that.anomalies,_that.withoutPlace,_that.truncated);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MapPoint> points,  List<ImpossibleTravel> trips,  Map<int, Set<ActivityAnomaly>> anomalies,  int withoutPlace,  bool truncated)?  $default,) {final _that = this;
+switch (_that) {
+case _MapAnalysis() when $default != null:
+return $default(_that.points,_that.trips,_that.anomalies,_that.withoutPlace,_that.truncated);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _MapAnalysis extends MapAnalysis {
+  const _MapAnalysis({required  List<MapPoint> points, required  List<ImpossibleTravel> trips, required  Map<int, Set<ActivityAnomaly>> anomalies, required this.withoutPlace, this.truncated = false}): _points = points,_trips = trips,_anomalies = anomalies,super._();
+  
+
 /// The transactions with a place, oldest first.
-@override List<MapPoint> get mapPoints {
-  if (_mapPoints is EqualUnmodifiableListView) return _mapPoints;
+ final  List<MapPoint> _points;
+/// The transactions with a place, oldest first.
+@override List<MapPoint> get points {
+  if (_points is EqualUnmodifiableListView) return _points;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_mapPoints);
+  return EqualUnmodifiableListView(_points);
 }
 
  final  List<ImpossibleTravel> _trips;
@@ -525,43 +796,53 @@ class _ActivityAnalysis extends ActivityAnalysis {
   return EqualUnmodifiableListView(_trips);
 }
 
+/// Anomalies by transaction id, for the detail card. Ids without any are left out.
+ final  Map<int, Set<ActivityAnomaly>> _anomalies;
+/// Anomalies by transaction id, for the detail card. Ids without any are left out.
+@override Map<int, Set<ActivityAnomaly>> get anomalies {
+  if (_anomalies is EqualUnmodifiableMapView) return _anomalies;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_anomalies);
+}
+
 /// Transactions without a place, which the map cannot show.
 @override final  int withoutPlace;
+/// The range had more activity than was read (see [CustomerActivity.truncated]).
 @override@JsonKey() final  bool truncated;
 
-/// Create a copy of ActivityAnalysis
+/// Create a copy of MapAnalysis
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$ActivityAnalysisCopyWith<_ActivityAnalysis> get copyWith => __$ActivityAnalysisCopyWithImpl<_ActivityAnalysis>(this, _$identity);
+_$MapAnalysisCopyWith<_MapAnalysis> get copyWith => __$MapAnalysisCopyWithImpl<_MapAnalysis>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActivityAnalysis&&const DeepCollectionEquality().equals(other.timeline, _timeline)&&const DeepCollectionEquality().equals(other.bursts, _bursts)&&const DeepCollectionEquality().equals(other.mapPoints, _mapPoints)&&const DeepCollectionEquality().equals(other.trips, _trips)&&(identical(other.withoutPlace, withoutPlace) || other.withoutPlace == withoutPlace)&&(identical(other.truncated, truncated) || other.truncated == truncated));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MapAnalysis&&const DeepCollectionEquality().equals(other.points, _points)&&const DeepCollectionEquality().equals(other.trips, _trips)&&const DeepCollectionEquality().equals(other.anomalies, _anomalies)&&(identical(other.withoutPlace, withoutPlace) || other.withoutPlace == withoutPlace)&&(identical(other.truncated, truncated) || other.truncated == truncated));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_timeline),const DeepCollectionEquality().hash(_bursts),const DeepCollectionEquality().hash(_mapPoints),const DeepCollectionEquality().hash(_trips),withoutPlace,truncated);
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_points),const DeepCollectionEquality().hash(_trips),const DeepCollectionEquality().hash(_anomalies),withoutPlace,truncated);
 }
 
 @override
 String toString() {
-    return 'ActivityAnalysis(timeline: $timeline, bursts: $bursts, mapPoints: $mapPoints, trips: $trips, withoutPlace: $withoutPlace, truncated: $truncated)';
+    return 'MapAnalysis(points: $points, trips: $trips, anomalies: $anomalies, withoutPlace: $withoutPlace, truncated: $truncated)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$ActivityAnalysisCopyWith<$Res> implements $ActivityAnalysisCopyWith<$Res> {
-  factory _$ActivityAnalysisCopyWith(_ActivityAnalysis value, $Res Function(_ActivityAnalysis) _then) = __$ActivityAnalysisCopyWithImpl;
+abstract mixin class _$MapAnalysisCopyWith<$Res> implements $MapAnalysisCopyWith<$Res> {
+  factory _$MapAnalysisCopyWith(_MapAnalysis value, $Res Function(_MapAnalysis) _then) = __$MapAnalysisCopyWithImpl;
 @override @useResult
 $Res call({
- List<TimelinePoint> timeline, List<BurstWindow> bursts, List<MapPoint> mapPoints, List<ImpossibleTravel> trips, int withoutPlace, bool truncated
+ List<MapPoint> points, List<ImpossibleTravel> trips, Map<int, Set<ActivityAnomaly>> anomalies, int withoutPlace, bool truncated
 });
 
 
@@ -569,22 +850,21 @@ $Res call({
 
 }
 /// @nodoc
-class __$ActivityAnalysisCopyWithImpl<$Res>
-    implements _$ActivityAnalysisCopyWith<$Res> {
-  __$ActivityAnalysisCopyWithImpl(this._self, this._then);
+class __$MapAnalysisCopyWithImpl<$Res>
+    implements _$MapAnalysisCopyWith<$Res> {
+  __$MapAnalysisCopyWithImpl(this._self, this._then);
 
-  final _ActivityAnalysis _self;
-  final $Res Function(_ActivityAnalysis) _then;
+  final _MapAnalysis _self;
+  final $Res Function(_MapAnalysis) _then;
 
-/// Create a copy of ActivityAnalysis
+/// Create a copy of MapAnalysis
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? timeline = null,Object? bursts = null,Object? mapPoints = null,Object? trips = null,Object? withoutPlace = null,Object? truncated = null,}) {
-  return _then(_ActivityAnalysis(
-timeline: null == timeline ? _self._timeline : timeline // ignore: cast_nullable_to_non_nullable
-as List<TimelinePoint>,bursts: null == bursts ? _self._bursts : bursts // ignore: cast_nullable_to_non_nullable
-as List<BurstWindow>,mapPoints: null == mapPoints ? _self._mapPoints : mapPoints // ignore: cast_nullable_to_non_nullable
+@override @pragma('vm:prefer-inline') $Res call({Object? points = null,Object? trips = null,Object? anomalies = null,Object? withoutPlace = null,Object? truncated = null,}) {
+  return _then(_MapAnalysis(
+points: null == points ? _self._points : points // ignore: cast_nullable_to_non_nullable
 as List<MapPoint>,trips: null == trips ? _self._trips : trips // ignore: cast_nullable_to_non_nullable
-as List<ImpossibleTravel>,withoutPlace: null == withoutPlace ? _self.withoutPlace : withoutPlace // ignore: cast_nullable_to_non_nullable
+as List<ImpossibleTravel>,anomalies: null == anomalies ? _self._anomalies : anomalies // ignore: cast_nullable_to_non_nullable
+as Map<int, Set<ActivityAnomaly>>,withoutPlace: null == withoutPlace ? _self.withoutPlace : withoutPlace // ignore: cast_nullable_to_non_nullable
 as int,truncated: null == truncated ? _self.truncated : truncated // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
