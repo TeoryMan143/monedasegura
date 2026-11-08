@@ -1,10 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../../../core/domain/confidence_level.dart';
-import '../../../../core/domain/fraud_type.dart';
-import '../../../../core/domain/severity.dart';
-import '../../../../core/domain/verdict.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/ui/save_status.dart';
 import '../../../auth/presentation/controllers/session_controller.dart';
@@ -41,10 +37,8 @@ abstract class ClassificationState with _$ClassificationState {
 
   /// The errors to show now: all of them after a save attempt, otherwise only the
   /// ones of fields the analyst touched.
-  Map<LabelField, String> get visibleErrors => {
-    for (final MapEntry(:key, :value) in errors.entries)
-      if (submitted || touched.contains(key)) key: value,
-  };
+  Map<LabelField, String> get visibleErrors =>
+      visibleLabelErrors(form, touched: touched, submitted: submitted);
 
   bool get isSaving => saveState == SaveState.saving;
 }
@@ -72,32 +66,21 @@ class ClassificationController extends AsyncNotifier<ClassificationState> {
     );
   }
 
-  /// No fraude takes no types and no severity, so choosing it clears them.
-  void setVerdict(Verdict verdict) => _edit(
-    LabelField.verdict,
-    (form) => verdict == Verdict.notFraud
-        ? form.copyWith(verdict: verdict, fraudTypes: const [], severity: null)
-        : form.copyWith(verdict: verdict),
-  );
-
-  void toggleFraudType(FraudType type) => _edit(LabelField.fraudTypes, (form) {
-    final types = [...form.fraudTypes];
-    types.contains(type) ? types.remove(type) : types.add(type);
-    return form.copyWith(fraudTypes: types);
-  });
-
-  void setConfidence(ConfidenceLevel confidence) => _edit(
-    LabelField.confidence,
-    (form) => form.copyWith(confidence: confidence),
-  );
-
-  void setSeverity(Severity severity) =>
-      _edit(LabelField.severity, (form) => form.copyWith(severity: severity));
-
-  void setJustification(String text) => _edit(
-    LabelField.justification,
-    (form) => form.copyWith(justification: text),
-  );
+  /// The new [form] from `LabelFormFields`, after the analyst changed [field].
+  void change(LabelForm form, LabelField field) {
+    final current = state.value;
+    if (current == null || current.isSaving) return;
+    state = AsyncData(
+      current.copyWith(
+        form: form,
+        touched: {...current.touched, field},
+        // A change after «Guardado» is unsaved again; an error stays until the retry.
+        saveState: current.saveState == SaveState.error
+            ? SaveState.error
+            : SaveState.idle,
+      ),
+    );
+  }
 
   /// Saves the label. Returns true when it was saved.
   ///
@@ -151,20 +134,5 @@ class ClassificationController extends AsyncNotifier<ClassificationState> {
       );
       return false;
     }
-  }
-
-  void _edit(LabelField field, LabelForm Function(LabelForm) update) {
-    final current = state.value;
-    if (current == null || current.isSaving) return;
-    state = AsyncData(
-      current.copyWith(
-        form: update(current.form),
-        touched: {...current.touched, field},
-        // A change after «Guardado» is unsaved again; an error stays until the retry.
-        saveState: current.saveState == SaveState.error
-            ? SaveState.error
-            : SaveState.idle,
-      ),
-    );
   }
 }

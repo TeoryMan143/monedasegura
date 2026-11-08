@@ -64,3 +64,14 @@ Map<LabelField, String> validateLabel(LabelForm form) {
 
   return errors;
 }
+
+/// The errors of [form] a form shows now: all of them after a save attempt
+/// ([submitted]), otherwise only those of the fields the analyst [touched].
+Map<LabelField, String> visibleLabelErrors(
+  LabelForm form, {
+  required Set<LabelField> touched,
+  required bool submitted,
+}) => {
+  for (final MapEntry(:key, :value) in validateLabel(form).entries)
+    if (submitted || touched.contains(key)) key: value,
+};
