@@ -94,8 +94,12 @@ void main() {
       'latitude': 10.409404,
       'longitude': -75,
       'city_name': 'Cartagena',
+      'customer_local_at': '2026-09-03T18:28:11',
     });
 
+    // The customer's wall time, whatever the analyst's time zone.
+    expect(row.customerLocalAt!.hour, 18);
+    expect(row.customerLocalAt!.minute, 28);
     expect(row.latitude, 10.409404);
     expect(row.longitude, -75.0);
     expect(row.cityName, 'Cartagena');

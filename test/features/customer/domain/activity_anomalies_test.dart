@@ -139,6 +139,21 @@ void main() {
       );
     });
 
+    test("the night is the customer's night, not the analyst's", () {
+      // 03:00 for the customer abroad, 13:00 on the analyst's clock: unusual.
+      final abroad = _tx(
+        1,
+        _at(1, 13),
+      ).copyWith(customerLocalAt: DateTime(2026, 3, 1, 3));
+      // 03:00 on the analyst's clock, 10:00 for the customer: usual.
+      final home = _tx(
+        2,
+        _at(2, 3),
+      ).copyWith(customerLocalAt: DateTime(2026, 3, 2, 10));
+
+      expect(detectUnusualHours([abroad, home], customerAccounts: _mine), {1});
+    });
+
     test('without enough history, only the night counts', () {
       final rows = [_tx(1, _at(1, 10)), _tx(2, _at(2, 19, 30))];
 

@@ -6,7 +6,8 @@ import 'timeline_layout.dart';
 import 'timeline_painter.dart';
 
 /// C-11 · The two lanes of the customer timeline (HU-10) for the time [window]: hover a
-/// mark for its tooltip, click it to select it ([onSelect]).
+/// mark for its tooltip, click it to select it ([onSelect]). In a dense window the
+/// transactions are bars per slice of time; clicking one zooms in on it ([onZoomTo]).
 ///
 /// One [CustomPaint] draws every mark, so thousands of transactions cost one paint and
 /// no widgets. Hover is local, ephemeral state of this widget.
@@ -16,6 +17,7 @@ class ActivityTimeline extends StatefulWidget {
     required this.window,
     required this.selected,
     required this.onSelect,
+    required this.onZoomTo,
     super.key,
   });
 
@@ -24,12 +26,16 @@ class ActivityTimeline extends StatefulWidget {
   final TimelinePoint? selected;
   final ValueChanged<TimelinePoint> onSelect;
 
+  /// Receives the middle of the clicked slice of a dense window.
+  final ValueChanged<DateTime> onZoomTo;
+
   @override
   State<ActivityTimeline> createState() => _ActivityTimelineState();
 }
 
 class _ActivityTimelineState extends State<ActivityTimeline> {
-  PlacedMark? _hovered;
+  /// A [PlacedMark], a [DensityBin] or null.
+  Object? _hovered;
   TimelineLayout? _layout;
 
   /// The layout only changes with the data, the window or the width; hovering reuses it.
@@ -55,7 +61,8 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final layout = _layoutFor(constraints.maxWidth);
-      final hovered = _hovered != null && layout.marks.contains(_hovered)
+      final hovered =
+          layout.marks.contains(_hovered) || layout.bins.contains(_hovered)
           ? _hovered
           : null;
       return MouseRegion(
@@ -67,8 +74,14 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
         onExit: (_) => setState(() => _hovered = null),
         child: GestureDetector(
           onTapUp: (details) {
-            final mark = layout.hit(details.localPosition);
-            if (mark != null) widget.onSelect(mark.point);
+            switch (layout.hit(details.localPosition)) {
+              case final PlacedMark mark:
+                widget.onSelect(mark.point);
+              case final DensityBin bin:
+                widget.onZoomTo(
+                  bin.start.add(bin.end.difference(bin.start) ~/ 2),
+                );
+            }
           },
           child: Stack(
             children: [
@@ -84,7 +97,10 @@ class _ActivityTimelineState extends State<ActivityTimeline> {
               ),
               Positioned.fill(
                 child: CustomPaint(
-                  painter: TimelineHoverPainter(hovered: hovered),
+                  painter: TimelineHoverPainter(
+                    hovered: hovered,
+                    layout: layout,
+                  ),
                 ),
               ),
             ],

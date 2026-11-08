@@ -29,6 +29,7 @@ void main() {
     WidgetTester tester, {
     String customerId = FakeCustomerRepository.customerId,
     String? transactionId,
+    String? at,
     bool withReport = false,
   }) async {
     backs = 0;
@@ -53,6 +54,7 @@ void main() {
             body: CustomerScreen(
               customerId: customerId,
               transactionId: transactionId,
+              at: at,
               onBack: () => backs++,
               onOpenReport: withReport ? reports.add : null,
             ),
@@ -154,6 +156,18 @@ void main() {
     tester,
   ) async {
     await pumpScreen(tester, transactionId: '48308');
+
+    expect(find.text('Claro Colombia'), findsOneWidget);
+  });
+
+  testWidgets('?at= from an alert moves the range to that day', (tester) async {
+    final day = DateTime.now().subtract(const Duration(days: 45));
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    await pumpScreen(
+      tester,
+      at: '${day.year}-${two(day.month)}-${two(day.day)}',
+    );
 
     expect(find.text('Claro Colombia'), findsOneWidget);
   });

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../../core/domain/label_status.dart';
+import '../../../../../core/domain/verdict.dart';
 import '../../../../../core/formatting/date_time.dart';
 import '../../../../../core/formatting/money.dart';
 import '../../../../../core/theme/app_theme.dart';
@@ -29,16 +31,14 @@ class TimelinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     _paintGrid(canvas);
     _paintBursts(canvas);
-    if (layout.dense) {
-      _paintDense(canvas);
-    } else {
-      for (final mark in layout.marks) {
-        switch (mark.point) {
-          case TransactionPoint(:final transaction, :final anomalies):
-            _paintTransaction(canvas, mark, transaction.labelTone, anomalies);
-          case SecurityEventPoint():
-            _paintEvent(canvas, mark);
-        }
+    if (layout.dense) _paintBins(canvas);
+    // In a dense window the marks are only the security events.
+    for (final mark in layout.marks) {
+      switch (mark.point) {
+        case TransactionPoint(:final transaction, :final anomalies):
+          _paintTransaction(canvas, mark, transaction.labelTone, anomalies);
+        case SecurityEventPoint():
+          _paintEvent(canvas, mark);
       }
     }
     for (final mark in layout.marks) {
@@ -52,41 +52,47 @@ class TimelinePainter extends CustomPainter {
     }
   }
 
-  /// Thousands of marks: one path per colour instead of a draw call per mark, no white
-  /// outline, and the unusual-hour bars in one path too.
-  void _paintDense(Canvas canvas) {
-    final byColor = <Color, Path>{};
-    final unusual = Path();
-    final spikes = Path();
-    for (final mark in layout.marks) {
-      final c = mark.center;
-      final r = mark.radius;
-      switch (mark.point) {
-        case TransactionPoint(:final transaction, :final anomalies):
-          byColor
-              .putIfAbsent(transaction.labelTone.solid, Path.new)
-              .addOval(Rect.fromCircle(center: c, radius: r));
-          if (anomalies.contains(ActivityAnomaly.unusualHour)) {
-            unusual.addRect(Rect.fromLTWH(c.dx - r, c.dy + r + 4, 2 * r, 3));
-          }
-          if (anomalies.contains(ActivityAnomaly.amountSpike)) {
-            spikes.addOval(Rect.fromCircle(center: c, radius: r + 3));
-          }
-        case SecurityEventPoint():
-          byColor
-              .putIfAbsent(StatusTone.high.solid, Path.new)
-              .addPath(_diamond(c, r), Offset.zero);
+  /// A dense window: one bar per slice of time, stacked by label, with a high-tone cap
+  /// on the slices that hold an anomaly. Clicking a bar zooms in.
+  void _paintBins(Canvas canvas) {
+    final cap = Paint()..color = StatusTone.high.solid;
+    for (final bin in layout.bins) {
+      if (bin.total == 0) continue;
+      var top = layout.barBaseline;
+      for (final tone in DensityBin.order) {
+        final count = bin.counts[tone] ?? 0;
+        if (count == 0) continue;
+        final height = layout.barHeight(count);
+        canvas.drawRect(
+          Rect.fromLTRB(
+            bin.bounds.left + 0.5,
+            top - height,
+            bin.bounds.right - 0.5,
+            top,
+          ),
+          Paint()..color = tone.solid,
+        );
+        top -= height;
+      }
+      if (bin.withAnomalies > 0) {
+        canvas.drawRect(
+          Rect.fromLTRB(
+            bin.bounds.left + 0.5,
+            top - 4,
+            bin.bounds.right - 0.5,
+            top - 1,
+          ),
+          cap,
+        );
       }
     }
-    for (final MapEntry(key: color, value: path) in byColor.entries) {
-      canvas.drawPath(path, Paint()..color = color);
-    }
-    canvas
-      ..drawPath(
-        unusual,
-        Paint()..color = ActivityAnomaly.unusualHour.tone.solid,
-      )
-      ..drawPath(spikes, _stroke(ActivityAnomaly.amountSpike.tone.solid, 2));
+    _text(
+      canvas,
+      'Transacciones por franja · clic para acercar',
+      _axisStyle,
+      Offset(layout.plotRight, TimelineLayout.transactionsTop + 2),
+      anchor: Alignment.topRight,
+    );
   }
 
   void _paintGrid(Canvas canvas) {
@@ -234,36 +240,83 @@ class TimelinePainter extends CustomPainter {
       old.layout != layout || old.selected != selected;
 }
 
-/// The tooltip of the hovered mark of the timeline: code, amount, date, label and
-/// anomalies, or the event and its result (DESIGN.md · tooltip).
+/// The tooltip of what is under the mouse: a transaction (code, amount, date, label,
+/// customer's clock, anomalies), a security event (type, date, result) or a slice of a
+/// dense timeline (its counts) (DESIGN.md · tooltip).
 class TimelineHoverPainter extends CustomPainter {
-  TimelineHoverPainter({required this.hovered});
+  TimelineHoverPainter({required this.hovered, required this.layout});
 
-  final PlacedMark? hovered;
+  /// A [PlacedMark], a [DensityBin] or null.
+  final Object? hovered;
+  final TimelineLayout layout;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (hovered case final mark?) _paintTooltip(canvas, mark, size);
+    switch (hovered) {
+      case final PlacedMark mark:
+        _paintTooltip(canvas, _markLines(mark), mark.center, mark.radius, size);
+      case final DensityBin bin:
+        final top = layout.barBaseline - layout.barHeight(bin.total);
+        _paintTooltip(
+          canvas,
+          _binLines(bin),
+          Offset(bin.bounds.center.dx, top),
+          0,
+          size,
+        );
+    }
   }
 
-  void _paintTooltip(Canvas canvas, PlacedMark mark, Size size) {
-    final lines = switch (mark.point) {
-      TransactionPoint(:final transaction, :final anomalies) => [
-        '${transaction.code} · '
-            '${formatMoney(transaction.amount, transaction.currency)}',
-        '${formatDateTime(transaction.occurredAt)} · ${transaction.labelText}',
-        if (anomalies.isNotEmpty)
-          [
-            for (final anomaly in ActivityAnomaly.values)
-              if (anomalies.contains(anomaly)) anomaly.label,
-          ].join(' · '),
-      ],
-      SecurityEventPoint(:final event) => [
-        event.type.label,
-        formatDateTime(event.occurredAt),
-        if (!event.succeeded) 'Fallido',
-      ],
+  static List<String> _markLines(PlacedMark mark) => switch (mark.point) {
+    TransactionPoint(:final transaction, :final anomalies) => [
+      '${transaction.code} · '
+          '${formatMoney(transaction.amount, transaction.currency)}',
+      '${formatDateTime(transaction.occurredAt)} · ${transaction.labelText}',
+      if (transaction.customerClock case final clock?)
+        'Hora del cliente: $clock',
+      if (anomalies.isNotEmpty)
+        [
+          for (final anomaly in ActivityAnomaly.values)
+            if (anomalies.contains(anomaly)) anomaly.label,
+        ].join(' · '),
+    ],
+    SecurityEventPoint(:final event) => [
+      event.type.label,
+      formatDateTime(event.occurredAt),
+      if (!event.succeeded) 'Fallido',
+    ],
+  };
+
+  static List<String> _binLines(DensityBin bin) {
+    final sameDay = formatDate(bin.start) == formatDate(bin.end);
+    final labels = {
+      StatusTone.danger: Verdict.fraud.label,
+      StatusTone.warning: Verdict.uncertain.label,
+      StatusTone.success: Verdict.notFraud.label,
+      StatusTone.neutral: LabelStatus.unlabeled.label,
     };
+    return [
+      sameDay
+          ? '${formatDateTime(bin.start)}–${formatTime(bin.end)}'
+          : '${formatDateTime(bin.start)} – ${formatDateTime(bin.end)}',
+      bin.total == 1 ? '1 transacción' : '${bin.total} transacciones',
+      [
+        for (final tone in DensityBin.order)
+          if ((bin.counts[tone] ?? 0) > 0)
+            '${labels[tone]} ${bin.counts[tone]}',
+      ].join(' · '),
+      if (bin.withAnomalies > 0) '${bin.withAnomalies} con anomalías',
+      'Clic para acercar',
+    ];
+  }
+
+  void _paintTooltip(
+    Canvas canvas,
+    List<String> lines,
+    Offset anchor,
+    double radius,
+    Size size,
+  ) {
     final text = TextPainter(
       text: TextSpan(
         text: lines.join('\n'),
@@ -273,9 +326,9 @@ class TimelineHoverPainter extends CustomPainter {
     )..layout(maxWidth: AppSizes.tooltipMaxWidth);
     const pad = AppSpace.sm;
     final boxSize = Size(text.width + 2 * pad, text.height + 2 * pad);
-    final above = mark.center.dy - mark.radius - AppSpace.sm - boxSize.height;
-    final top = above >= 0 ? above : mark.center.dy + mark.radius + AppSpace.sm;
-    final left = (mark.center.dx - boxSize.width / 2)
+    final above = anchor.dy - radius - AppSpace.sm - boxSize.height;
+    final top = above >= 0 ? above : anchor.dy + radius + AppSpace.sm;
+    final left = (anchor.dx - boxSize.width / 2)
         .clamp(0, math.max(0, size.width - boxSize.width))
         .toDouble();
     final box = Offset(left, top) & boxSize;
@@ -287,5 +340,6 @@ class TimelineHoverPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(TimelineHoverPainter old) => old.hovered != hovered;
+  bool shouldRepaint(TimelineHoverPainter old) =>
+      old.hovered != hovered || old.layout != layout;
 }

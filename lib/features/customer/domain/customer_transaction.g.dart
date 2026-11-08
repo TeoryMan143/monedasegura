@@ -21,6 +21,7 @@ _CustomerTransaction _$CustomerTransactionFromJson(Map<String, dynamic> json) =>
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       cityName: json['city_name'] as String?,
+      customerLocalAt: _wallTimeOrNull(json['customer_local_at'] as String?),
       alertScore: (json['alert_score'] as num?)?.toInt(),
       isLabeled: json['is_labeled'] as bool,
       verdict: _verdictOrNull(json['verdict'] as String?),

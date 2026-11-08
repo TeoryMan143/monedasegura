@@ -52,7 +52,9 @@ Set<int> detectAmountSpikes(
 /// transactions; with fewer, only the night counts.
 ///
 /// Only money the customer sends counts: they do not choose when a credit arrives.
-/// Hours are read in the analyst's time zone, like the rest of the app.
+/// Hours are read on the customer's clock ([CustomerTransaction.customerLocalAt]): 02:45
+/// in Bogotá is night even if the analyst is somewhere else. Without it, on the analyst's
+/// clock.
 Set<int> detectUnusualHours(
   List<CustomerTransaction> transactions, {
   required Set<String> customerAccounts,
@@ -65,7 +67,9 @@ Set<int> detectUnusualHours(
     for (final transaction in transactions)
       if (!transaction.isIncomingFor(customerAccounts)) transaction,
   ];
-  final minutes = [for (final row in own) _minuteOfDay(row.occurredAt)];
+  final minutes = [
+    for (final row in own) _minuteOfDay(row.customerLocalAt ?? row.occurredAt),
+  ];
   final checkPattern = own.length >= minHistory;
 
   bool atNight(int minute) {
@@ -181,6 +185,8 @@ num _median(List<num> values) {
 
 const _minutesPerDay = 24 * 60;
 
+/// Minute of the day of [instant] on its own clock: a wall time stays as it is, a UTC
+/// instant goes to the analyst's time zone.
 int _minuteOfDay(DateTime instant) {
   final local = instant.toLocal();
   return local.hour * 60 + local.minute;

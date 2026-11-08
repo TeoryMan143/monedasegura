@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../../../../core/domain/label_status.dart';
+import '../../../../core/formatting/date_time.dart';
 import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/status_tone.dart';
 import '../../domain/customer_transaction.dart';
@@ -12,6 +13,16 @@ extension TransactionLabelStyle on CustomerTransaction {
   StatusTone get labelTone => verdict?.tone ?? LabelStatus.unlabeled.tone;
   String get labelText => verdict?.label ?? LabelStatus.unlabeled.label;
   AppIcons get labelIcon => verdict?.icon ?? LabelStatus.unlabeled.icon;
+
+  /// The customer's clock when it is not the analyst's: «16:53», or the full date when
+  /// the day changes too. Null when both clocks agree or it is unknown.
+  String? get customerClock {
+    final theirs = customerLocalAt;
+    if (theirs == null) return null;
+    final mine = occurredAt.toLocal();
+    if (theirs.hour == mine.hour && theirs.minute == mine.minute) return null;
+    return theirs.day == mine.day ? formatTime(theirs) : formatDateTime(theirs);
+  }
 }
 
 /// Spanish name, tone and icon of each anomaly of the timeline (HU-10).

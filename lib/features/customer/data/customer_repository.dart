@@ -34,7 +34,8 @@ class CustomerRepository {
       'id, code, occurred_at, type, channel_code, amount, currency_code, '
       'source_account_id, destination_account_id, merchant_name, alert_score, '
       'is_labeled, verdict';
-  static const _activityColumns = '$_columns, latitude, longitude, city_name';
+  static const _activityColumns =
+      '$_columns, latitude, longitude, city_name, customer_local_at';
   static const _securityEventColumns =
       'id, type, occurred_at, channel_code, succeeded, latitude, longitude, '
       'city:cities(name)';

@@ -16,7 +16,8 @@ export 'widgets/customer_header.dart'
 /// date range, to classify them with context.
 ///
 /// [transactionId] (`?tx=`) is the selected transaction: the range moves to show it if
-/// needed. [onBack] goes back to the list, and [onOpenReport] opens the customer report,
+/// needed. [at] (`?at=2026-09-03`, from an alert) moves the range to show that day the
+/// same way, without selecting anything. [onBack] goes back to the list, and [onOpenReport] opens the customer report,
 /// or is null while that route does not exist. The router passes both, so this feature
 /// does not depend on the app's routes.
 class CustomerScreen extends ConsumerStatefulWidget {
@@ -24,12 +25,14 @@ class CustomerScreen extends ConsumerStatefulWidget {
     required this.customerId,
     required this.onBack,
     this.transactionId,
+    this.at,
     this.onOpenReport,
     super.key,
   });
 
   final String customerId;
   final String? transactionId;
+  final String? at;
   final VoidCallback onBack;
   final OpenCustomerReport? onOpenReport;
 
@@ -45,6 +48,16 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
     super.initState();
     final transactionId = int.tryParse(widget.transactionId ?? '');
     _selected = transactionId;
+    if (DateTime.tryParse(widget.at ?? '') case final day?
+        when transactionId == null) {
+      // After this build: a provider cannot change while the tree is building.
+      Future.microtask(() {
+        if (!mounted) return;
+        ref
+            .read(customerDateRangeProvider(widget.customerId).notifier)
+            .show(day);
+      });
+    }
     if (transactionId == null) return;
     ref.listenManual(customerTransactionDateProvider(transactionId), (_, next) {
       final date = next.value;

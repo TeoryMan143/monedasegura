@@ -128,7 +128,8 @@ void main() {
               onBack: () => backs++,
               onOpenTransaction: (customerId, transactionId) =>
                   opened.add('$customerId?tx=$transactionId'),
-              onOpenCustomer: opened.add,
+              onOpenCustomer: (customerId, at) =>
+                  opened.add('$customerId@${at.day}/${at.month}'),
               onResolve: canResolve ? () => opened.add('resolve') : null,
             ),
           ),
@@ -233,7 +234,7 @@ void main() {
     await tester.tap(find.text('Ver cliente'));
     await tester.pump();
 
-    expect(opened, ['c1']);
+    expect(opened, ['c1@5/11']);
   });
 
   testWidgets('a pending alert can be resolved', (tester) async {

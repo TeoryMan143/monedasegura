@@ -7,6 +7,7 @@ import '../../../../core/ui/kit.dart';
 import '../../domain/impossible_travel.dart';
 import '../../domain/map_point.dart';
 import 'activity_style.dart';
+import 'map_cluster_layer.dart';
 
 /// OpenStreetMap tiles: free and without an API key. Their usage policy asks for a
 /// real User-Agent, the attribution on the map and no bulk downloads; flutter_map keeps
@@ -17,9 +18,9 @@ const _userAgentPackage = 'co.edu.icesi.monedasegura';
 /// A leg longer than this gets a label with the time between both transactions.
 const _labelledLegKm = 100.0;
 
-/// With more markers than this, they are painted circles instead of widgets with an
-/// icon: thousands of widgets made panning drop to about 8 fps in the load test. Real
-/// customers have about a hundred at most, so they keep the icons.
+/// With more markers than this, nearby ones join in clusters ([MapClusterLayer]): one
+/// widget per transaction made panning drop to about 8 fps with 5,000 in the load test.
+/// Real customers have about a hundred at most, so they see every pin.
 const _maxPinWidgets = 300;
 
 /// Leg labels only while they can be read: more trips than this are counted in the
@@ -53,18 +54,8 @@ class CustomerMap extends StatefulWidget {
 }
 
 class _CustomerMapState extends State<CustomerMap> {
-  /// Which painted circle is under the pointer, for the dense map.
-  final LayerHitNotifier<MapPoint> _hit = ValueNotifier(null);
-
   static const _markerSize = 24.0;
   static const _selectedSize = 32.0;
-  static const _circleRadius = 5.0;
-
-  @override
-  void dispose() {
-    _hit.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,52 +106,15 @@ class _CustomerMapState extends State<CustomerMap> {
           ],
         ),
         if (dense)
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () {
-                if (_hit.value?.hitValues.firstOrNull case final point?) {
-                  widget.onSelect(point);
-                }
-              },
-              child: CircleLayer<MapPoint>(
-                hitNotifier: _hit,
-                circles: [
-                  for (final point in points)
-                    CircleMarker(
-                      point: _latLng(point),
-                      radius: _circleRadius,
-                      color: point.transaction.labelTone.solid,
-                      borderColor: point.transaction.id == widget.selectedId
-                          ? AppColors.azul500
-                          : AppColors.bgSurface,
-                      borderStrokeWidth:
-                          point.transaction.id == widget.selectedId ? 3 : 1,
-                      hitValue: point,
-                    ),
-                ],
-              ),
-            ),
+          MapClusterLayer(
+            points: points,
+            selectedId: widget.selectedId,
+            pinBuilder: _pin,
           ),
         MarkerLayer(
           markers: [
             ..._legLabels(impossibleIds),
-            for (final point in points)
-              if (!dense || point.transaction.id == widget.selectedId)
-                Marker(
-                  point: _latLng(point),
-                  width: point.transaction.id == widget.selectedId
-                      ? _selectedSize
-                      : _markerSize,
-                  height: point.transaction.id == widget.selectedId
-                      ? _selectedSize
-                      : _markerSize,
-                  child: _Pin(
-                    point: point,
-                    selected: point.transaction.id == widget.selectedId,
-                    onTap: () => widget.onSelect(point),
-                  ),
-                ),
+            if (!dense) ...points.map(_pin),
           ],
         ),
         const RichAttributionWidget(
@@ -216,6 +170,20 @@ class _CustomerMapState extends State<CustomerMap> {
       ),
     ),
   );
+
+  Marker _pin(MapPoint point) {
+    final selected = point.transaction.id == widget.selectedId;
+    return Marker(
+      point: _latLng(point),
+      width: selected ? _selectedSize : _markerSize,
+      height: selected ? _selectedSize : _markerSize,
+      child: _Pin(
+        point: point,
+        selected: selected,
+        onTap: () => widget.onSelect(point),
+      ),
+    );
+  }
 
   static LatLng _latLng(MapPoint point) =>
       LatLng(point.latitude, point.longitude);

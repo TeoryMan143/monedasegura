@@ -1144,7 +1144,8 @@ as String,
 /// @nodoc
 mixin _$CatalogCountry {
 
- String get code; String get name; String get currencyCode; String get primaryDocumentType; String get phonePrefix;
+ String get code; String get name; String get currencyCode; String get primaryDocumentType; String get phonePrefix;/// IANA time zone, e.g. `America/Bogota`: the customer's clock for unusual hours.
+ String get timeZone;
 /// Create a copy of CatalogCountry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1158,20 +1159,20 @@ $CatalogCountryCopyWith<CatalogCountry> get copyWith => _$CatalogCountryCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as CatalogCountry;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CatalogCountry&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.currencyCode, _this.currencyCode) || other.currencyCode == _this.currencyCode)&&(identical(other.primaryDocumentType, _this.primaryDocumentType) || other.primaryDocumentType == _this.primaryDocumentType)&&(identical(other.phonePrefix, _this.phonePrefix) || other.phonePrefix == _this.phonePrefix));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CatalogCountry&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.currencyCode, _this.currencyCode) || other.currencyCode == _this.currencyCode)&&(identical(other.primaryDocumentType, _this.primaryDocumentType) || other.primaryDocumentType == _this.primaryDocumentType)&&(identical(other.phonePrefix, _this.phonePrefix) || other.phonePrefix == _this.phonePrefix)&&(identical(other.timeZone, _this.timeZone) || other.timeZone == _this.timeZone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as CatalogCountry;
-  return Object.hash(runtimeType,_this.code,_this.name,_this.currencyCode,_this.primaryDocumentType,_this.phonePrefix);
+  return Object.hash(runtimeType,_this.code,_this.name,_this.currencyCode,_this.primaryDocumentType,_this.phonePrefix,_this.timeZone);
 }
 
 @override
 String toString() {
   final _this = this as CatalogCountry;
-  return 'CatalogCountry(code: ${_this.code}, name: ${_this.name}, currencyCode: ${_this.currencyCode}, primaryDocumentType: ${_this.primaryDocumentType}, phonePrefix: ${_this.phonePrefix})';
+  return 'CatalogCountry(code: ${_this.code}, name: ${_this.name}, currencyCode: ${_this.currencyCode}, primaryDocumentType: ${_this.primaryDocumentType}, phonePrefix: ${_this.phonePrefix}, timeZone: ${_this.timeZone})';
 }
 
 
@@ -1182,7 +1183,7 @@ abstract mixin class $CatalogCountryCopyWith<$Res>  {
   factory $CatalogCountryCopyWith(CatalogCountry value, $Res Function(CatalogCountry) _then) = _$CatalogCountryCopyWithImpl;
 @useResult
 $Res call({
- String code, String name, String currencyCode, String primaryDocumentType, String phonePrefix
+ String code, String name, String currencyCode, String primaryDocumentType, String phonePrefix, String timeZone
 });
 
 
@@ -1199,13 +1200,14 @@ class _$CatalogCountryCopyWithImpl<$Res>
 
 /// Create a copy of CatalogCountry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? code = null,Object? name = null,Object? currencyCode = null,Object? primaryDocumentType = null,Object? phonePrefix = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? code = null,Object? name = null,Object? currencyCode = null,Object? primaryDocumentType = null,Object? phonePrefix = null,Object? timeZone = null,}) {
   return _then(CatalogCountry(
 code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,currencyCode: null == currencyCode ? _self.currencyCode : currencyCode // ignore: cast_nullable_to_non_nullable
 as String,primaryDocumentType: null == primaryDocumentType ? _self.primaryDocumentType : primaryDocumentType // ignore: cast_nullable_to_non_nullable
 as String,phonePrefix: null == phonePrefix ? _self.phonePrefix : phonePrefix // ignore: cast_nullable_to_non_nullable
+as String,timeZone: null == timeZone ? _self.timeZone : timeZone // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -1291,10 +1293,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix,  String timeZone)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CatalogCountry() when $default != null:
-return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix);case _:
+return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix,_that.timeZone);case _:
   return orElse();
 
 }
@@ -1312,10 +1314,10 @@ return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentTy
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix,  String timeZone)  $default,) {final _that = this;
 switch (_that) {
 case _CatalogCountry():
-return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix);case _:
+return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix,_that.timeZone);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1332,10 +1334,10 @@ return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentTy
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String code,  String name,  String currencyCode,  String primaryDocumentType,  String phonePrefix,  String timeZone)?  $default,) {final _that = this;
 switch (_that) {
 case _CatalogCountry() when $default != null:
-return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix);case _:
+return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentType,_that.phonePrefix,_that.timeZone);case _:
   return null;
 
 }
@@ -1347,7 +1349,7 @@ return $default(_that.code,_that.name,_that.currencyCode,_that.primaryDocumentTy
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _CatalogCountry implements CatalogCountry {
-  const _CatalogCountry({required this.code, required this.name, required this.currencyCode, required this.primaryDocumentType, required this.phonePrefix});
+  const _CatalogCountry({required this.code, required this.name, required this.currencyCode, required this.primaryDocumentType, required this.phonePrefix, required this.timeZone});
   factory _CatalogCountry.fromJson(Map<String, dynamic> json) => _$CatalogCountryFromJson(json);
 
 @override final  String code;
@@ -1355,6 +1357,8 @@ class _CatalogCountry implements CatalogCountry {
 @override final  String currencyCode;
 @override final  String primaryDocumentType;
 @override final  String phonePrefix;
+/// IANA time zone, e.g. `America/Bogota`: the customer's clock for unusual hours.
+@override final  String timeZone;
 
 /// Create a copy of CatalogCountry
 /// with the given fields replaced by the non-null parameter values.
@@ -1369,18 +1373,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CatalogCountry&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.currencyCode, currencyCode) || other.currencyCode == currencyCode)&&(identical(other.primaryDocumentType, primaryDocumentType) || other.primaryDocumentType == primaryDocumentType)&&(identical(other.phonePrefix, phonePrefix) || other.phonePrefix == phonePrefix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CatalogCountry&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.currencyCode, currencyCode) || other.currencyCode == currencyCode)&&(identical(other.primaryDocumentType, primaryDocumentType) || other.primaryDocumentType == primaryDocumentType)&&(identical(other.phonePrefix, phonePrefix) || other.phonePrefix == phonePrefix)&&(identical(other.timeZone, timeZone) || other.timeZone == timeZone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,code,name,currencyCode,primaryDocumentType,phonePrefix);
+    return Object.hash(runtimeType,code,name,currencyCode,primaryDocumentType,phonePrefix,timeZone);
 }
 
 @override
 String toString() {
-    return 'CatalogCountry(code: $code, name: $name, currencyCode: $currencyCode, primaryDocumentType: $primaryDocumentType, phonePrefix: $phonePrefix)';
+    return 'CatalogCountry(code: $code, name: $name, currencyCode: $currencyCode, primaryDocumentType: $primaryDocumentType, phonePrefix: $phonePrefix, timeZone: $timeZone)';
 }
 
 
@@ -1391,7 +1395,7 @@ abstract mixin class _$CatalogCountryCopyWith<$Res> implements $CatalogCountryCo
   factory _$CatalogCountryCopyWith(_CatalogCountry value, $Res Function(_CatalogCountry) _then) = __$CatalogCountryCopyWithImpl;
 @override @useResult
 $Res call({
- String code, String name, String currencyCode, String primaryDocumentType, String phonePrefix
+ String code, String name, String currencyCode, String primaryDocumentType, String phonePrefix, String timeZone
 });
 
 
@@ -1408,13 +1412,14 @@ class __$CatalogCountryCopyWithImpl<$Res>
 
 /// Create a copy of CatalogCountry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? code = null,Object? name = null,Object? currencyCode = null,Object? primaryDocumentType = null,Object? phonePrefix = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? code = null,Object? name = null,Object? currencyCode = null,Object? primaryDocumentType = null,Object? phonePrefix = null,Object? timeZone = null,}) {
   return _then(_CatalogCountry(
 code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,currencyCode: null == currencyCode ? _self.currencyCode : currencyCode // ignore: cast_nullable_to_non_nullable
 as String,primaryDocumentType: null == primaryDocumentType ? _self.primaryDocumentType : primaryDocumentType // ignore: cast_nullable_to_non_nullable
 as String,phonePrefix: null == phonePrefix ? _self.phonePrefix : phonePrefix // ignore: cast_nullable_to_non_nullable
+as String,timeZone: null == timeZone ? _self.timeZone : timeZone // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

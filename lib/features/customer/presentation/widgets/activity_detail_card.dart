@@ -70,6 +70,8 @@ class _Transaction extends StatelessWidget {
       ),
       const SizedBox(height: AppSpace.md),
       _Field('Fecha', formatDateTime(transaction.occurredAt)),
+      if (transaction.customerClock case final clock?)
+        _Field('Hora del cliente', clock),
       _Field(
         'Tipo · canal',
         '${transaction.type.label} · ${transaction.channel.label}',

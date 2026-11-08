@@ -108,8 +108,15 @@ class _ReportTimelineTabState extends ConsumerState<ReportTimelineTab> {
     );
   });
 
+  /// The overview strip: the same zoom (a day from the whole range) around [instant].
   void _jump(DateTime instant) => setState(() {
     if (_zoom == _Zoom.range) _zoom = _Zoom.day;
+    _windowStart = _alignedStart(_zoom, instant);
+  });
+
+  /// A bar of a dense window: one zoom level closer around [instant].
+  void _zoomIn(DateTime instant) => setState(() {
+    _zoom = _zoom == _Zoom.range ? _Zoom.day : _Zoom.hour;
     _windowStart = _alignedStart(_zoom, instant);
   });
 
@@ -170,6 +177,7 @@ class _ReportTimelineTabState extends ConsumerState<ReportTimelineTab> {
                         window: window,
                         selected: _selected,
                         onSelect: (point) => setState(() => _selected = point),
+                        onZoomTo: _zoomIn,
                       ),
                       const SizedBox(height: AppSpace.md),
                       TimelineOverview(
