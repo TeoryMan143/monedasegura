@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/failure.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
+import '../../audit/presentation/label_history_dialog.dart';
 import 'controllers/classification_controller.dart';
 import 'widgets/classification_summary.dart';
 import 'widgets/label_form_fields.dart';
@@ -13,8 +14,7 @@ import 'widgets/label_form_fields.dart';
 ///
 /// The customer view (A-02) embeds it over its table. [onClose] is the ×, [onNext]
 /// moves to the next transaction («Siguiente») and [onSaved] lets the caller refresh its
-/// own data after a save. [onOpenHistory] opens N-03 (HU-15); while it is null, «Ver
-/// historial» is disabled.
+/// own data after a save. «Ver historial» opens the label history (N-03, HU-15).
 ///
 /// A failed save (E-03) shows inside the panel with «Reintentar» and keeps the form.
 class ClassificationPanel extends ConsumerStatefulWidget {
@@ -23,7 +23,6 @@ class ClassificationPanel extends ConsumerStatefulWidget {
     required this.onClose,
     this.onNext,
     this.onSaved,
-    this.onOpenHistory,
     super.key,
   });
 
@@ -31,7 +30,6 @@ class ClassificationPanel extends ConsumerStatefulWidget {
   final VoidCallback onClose;
   final VoidCallback? onNext;
   final VoidCallback? onSaved;
-  final VoidCallback? onOpenHistory;
 
   @override
   ConsumerState<ClassificationPanel> createState() =>
@@ -71,7 +69,11 @@ class _ClassificationPanelState extends ConsumerState<ClassificationPanel> {
           children: [
             ClassificationSummary(
               target: state.target,
-              onOpenHistory: widget.onOpenHistory,
+              onOpenHistory: () => showLabelHistoryDialog(
+                context: context,
+                transactionId: widget.transactionId,
+                transactionCode: state.target.code,
+              ),
             ),
             const SizedBox(height: AppSpace.xl),
             LabelFormFields(

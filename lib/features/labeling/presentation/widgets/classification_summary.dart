@@ -19,7 +19,7 @@ class ClassificationSummary extends StatelessWidget {
 
   final ClassificationTarget target;
 
-  /// Opens the label history (N-03). Null while it does not exist.
+  /// Opens the label history (N-03). Null disables «Ver historial».
   final VoidCallback? onOpenHistory;
 
   @override

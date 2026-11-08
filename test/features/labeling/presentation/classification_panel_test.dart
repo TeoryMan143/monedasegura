@@ -8,6 +8,8 @@ import 'package:monedasegura/core/catalogs/catalog_repository.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
+import 'package:monedasegura/features/audit/data/audit_repository.dart';
+import 'package:monedasegura/features/audit/data/fake_audit_repository.dart';
 import 'package:monedasegura/features/auth/domain/analyst.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
 import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dart';
@@ -64,6 +66,7 @@ void main() {
             FakeLabelingRepository(LocalLabelWriter(store)),
           ),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          auditRepositoryProvider.overrideWithValue(FakeAuditRepository(store)),
           sessionProvider.overrideWith(_SignedIn.new),
         ],
         child: MaterialApp(
@@ -172,6 +175,18 @@ void main() {
     expect(find.text('Actualizar etiqueta'), findsOneWidget);
     expect(
       find.text('Cambio de clave y dispositivo nuevo minutos antes.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Ver historial opens N-03 with the changes', (tester) async {
+    await pumpPanel(tester, labeled);
+
+    await tapText(tester, 'Ver historial');
+
+    expect(find.text('Historial de la etiqueta'), findsOneWidget);
+    expect(
+      find.textContaining('Etiqueta editada', findRichText: true),
       findsOneWidget,
     );
   });
