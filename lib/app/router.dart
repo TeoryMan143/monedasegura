@@ -124,8 +124,8 @@ GoRouter _buildRouter(Ref ref) {
                     onBack: () => context.canPop()
                         ? context.pop()
                         : context.go(AppRoutes.transactions),
-                    // «Ver perfil» → summary, «Reportes» → timeline. push: A-02 stays
-                    // below with its range and page.
+                    // «Ver perfil» → summary. push: A-02 stays below with its range and
+                    // page.
                     onOpenReport: (tab) => context.push(
                       AppRoutes.customerReport(
                         state.pathParameters['customerId']!,

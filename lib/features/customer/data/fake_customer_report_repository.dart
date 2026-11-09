@@ -132,35 +132,6 @@ class FakeCustomerReportRepository implements CustomerReportRepository {
   }
 
   @override
-  Future<List<MonthlyActivity>> fetchMonthlyActivity(
-    String customerId,
-    DateRange range,
-  ) async {
-    _check(customerId);
-    const counts = [18, 22, 15, 27, 19, 31];
-    const amounts = [
-      4200000.0,
-      5100000.0,
-      3800000.0,
-      9700000.0,
-      4600000.0,
-      11200000.0,
-    ];
-    return [
-      for (var i = 0; i < counts.length; i++)
-        if (DateTime(_now.year, _now.month - (counts.length - 1 - i))
-            case final month
-            when !month.isBefore(DateTime(range.from.year, range.from.month)))
-          MonthlyActivity(
-            month: month,
-            currency: Currency.cop,
-            transactionCount: counts[i],
-            totalAmount: amounts[i],
-          ),
-    ];
-  }
-
-  @override
   Future<CustomerHistory> fetchHistory(
     String customerId,
     DateRange range,

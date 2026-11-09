@@ -7,10 +7,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
 import '../../domain/customer_report.dart';
 import '../controllers/customer_report_controller.dart';
-import 'report_activity_chart.dart';
 
-/// C-08 · «Resumen» of the customer report (HU-09): personal data, segment and risk, the
-/// monthly activity and the labels and alerts of the range.
+/// C-08 · «Resumen» of the customer report (HU-09): personal data, segment and risk, and
+/// the labels and alerts of the range.
 class ReportSummaryTab extends ConsumerWidget {
   const ReportSummaryTab({required this.customerId, super.key});
 
@@ -37,8 +36,6 @@ class ReportSummaryTab extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpace.lg),
-            ReportActivityChart(customerId: customerId),
             const SizedBox(height: AppSpace.lg),
             ScreenState(
               value: ref.watch(historyProvider),

@@ -126,16 +126,3 @@ abstract class AlertHistoryItem with _$AlertHistoryItem {
     required DateTime generatedAt,
   }) = _AlertHistoryItem;
 }
-
-/// Transactions and amount of the customer in one month and currency, from the
-/// `customer_monthly_activity` RPC (HU-09).
-@freezed
-abstract class MonthlyActivity with _$MonthlyActivity {
-  const factory MonthlyActivity({
-    /// The first day of the month.
-    required DateTime month,
-    required Currency currency,
-    required int transactionCount,
-    required double totalAmount,
-  }) = _MonthlyActivity;
-}
