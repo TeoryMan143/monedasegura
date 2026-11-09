@@ -362,6 +362,37 @@ void main() {
     expect(dim, findsNothing);
   });
 
+  testWidgets(
+    'on a short window N-02 shrinks to fit: no scroll, nothing under the actions',
+    (tester) async {
+      await pumpScreen(tester, transactionId: '48302');
+      final next = inPanel(find.text('Siguiente'));
+      final lastLine = inPanel(
+        find.text('Obligatoria con confianza Baja o veredicto Incierto.'),
+      );
+      final amount = inPanel(find.textContaining('182.400'));
+
+      // With Fraude the form gets its types and severity, the tallest it gets.
+      await tester.tap(inPanel(find.text('Fraude')));
+      await tester.pumpAndSettle();
+      tester.view.physicalSize = const Size(1280, 500);
+      await tester.pumpAndSettle();
+
+      expect(inPanel(find.byType(SingleChildScrollView)), findsNothing);
+      // Everything shows: the top of the summary, the end of the form, the actions.
+      expect(tester.getTopLeft(amount).dy, greaterThan(0));
+      expect(
+        tester.getBottomLeft(lastLine).dy,
+        lessThan(tester.getTopLeft(next).dy),
+      );
+      expect(tester.getBottomLeft(next).dy, lessThanOrEqualTo(500));
+      // The form still takes taps once scaled down.
+      await tester.tap(inPanel(find.text('Media')).first);
+      await tester.pumpAndSettle();
+      expect(inPanel(find.textContaining('Dos o más indicios')), findsWidgets);
+    },
+  );
+
   testWidgets('a page pushed over A-02 hides the panel until it comes back', (
     tester,
   ) async {

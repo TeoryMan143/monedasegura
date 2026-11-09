@@ -59,7 +59,7 @@ class ClassificationSummary extends StatelessWidget {
             style: AppText.bodyM.copyWith(color: AppColors.textSecondary),
           ),
         if (label != null) ...[
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppSpace.sm,
@@ -79,7 +79,7 @@ class ClassificationSummary extends StatelessWidget {
           ),
         ],
         if (alert != null) ...[
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
           InlineBanner(
             title:
                 'Alerta IA ${alert.code} · sugiere ${alert.suggestedType.label}',
