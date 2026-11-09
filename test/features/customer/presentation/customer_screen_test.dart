@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,6 +21,9 @@ import 'package:monedasegura/features/labeling/data/fake_labeling_repository.dar
 import 'package:monedasegura/features/labeling/data/label_writer.dart';
 import 'package:monedasegura/features/labeling/data/labeling_repository.dart';
 import 'package:monedasegura/features/labeling/presentation/bulk_label_dialog.dart';
+
+/// Width of the side menu of the test shell.
+const _menuWidth = 200.0;
 
 class _SignedIn extends SessionController {
   @override
@@ -52,6 +57,7 @@ void main() {
     String? transactionId,
     String? at,
     bool withReport = false,
+    bool withMenu = false,
   }) async {
     backs = 0;
     reports = [];
@@ -64,30 +70,53 @@ void main() {
       if (transactionId != null) 'tx=$transactionId',
       if (at != null) 'at=$at',
     ];
+    final routes = [
+      GoRoute(
+        path: '/customers/:customerId',
+        builder: (context, state) {
+          final id = state.pathParameters['customerId']!;
+          return Scaffold(
+            body: CustomerScreen(
+              customerId: id,
+              transactionId: state.uri.queryParameters['tx'],
+              at: state.uri.queryParameters['at'],
+              onSelectTransaction: (tx) => context.replace(
+                tx == null ? '/customers/$id' : '/customers/$id?tx=$tx',
+              ),
+              onBack: () => backs++,
+              onOpenReport: withReport ? reports.add : null,
+            ),
+          );
+        },
+      ),
+      // A page pushed over A-02, like the customer report.
+      GoRoute(
+        path: '/other',
+        builder: (context, state) =>
+            const Scaffold(body: Text('Otra pantalla')),
+      ),
+    ];
     router = GoRouter(
       initialLocation: query.isEmpty
           ? '/customers/$customerId'
           : '/customers/$customerId?${query.join('&')}',
-      routes: [
-        GoRoute(
-          path: '/customers/:customerId',
-          builder: (context, state) {
-            final id = state.pathParameters['customerId']!;
-            return Scaffold(
-              body: CustomerScreen(
-                customerId: id,
-                transactionId: state.uri.queryParameters['tx'],
-                at: state.uri.queryParameters['at'],
-                onSelectTransaction: (tx) => context.replace(
-                  tx == null ? '/customers/$id' : '/customers/$id?tx=$tx',
+      routes: withMenu
+          // Like the app's shell: a side menu left of the pages' own navigator.
+          ? [
+              ShellRoute(
+                builder: (context, state, child) => Row(
+                  children: [
+                    const SizedBox(
+                      width: _menuWidth,
+                      child: Material(child: Center(child: Text('Menú'))),
+                    ),
+                    Expanded(child: child),
+                  ],
                 ),
-                onBack: () => backs++,
-                onOpenReport: withReport ? reports.add : null,
+                routes: routes,
               ),
-            );
-          },
-        ),
-      ],
+            ]
+          : routes,
     );
     addTearDown(router.dispose);
     await tester.pumpWidget(
@@ -312,6 +341,40 @@ void main() {
 
     expect(openTransaction(), isNull);
     expect(find.byType(SidePanel), findsNothing);
+  });
+
+  testWidgets('the open panel dims the whole window, side menu included', (
+    tester,
+  ) async {
+    await pumpScreen(tester, transactionId: '48302', withMenu: true);
+
+    final dim = find.byWidgetPredicate(
+      (widget) => widget is ColoredBox && widget.color == AppColors.bgOverlay,
+    );
+    expect(tester.getRect(dim), Offset.zero & const Size(1280, 720));
+
+    // A click on the dimmed menu closes the panel, as on the rest of the dimmed area.
+    await tester.tapAt(const Offset(_menuWidth / 2, 360));
+    await tester.pumpAndSettle();
+
+    expect(openTransaction(), isNull);
+    expect(find.byType(SidePanel), findsNothing);
+    expect(dim, findsNothing);
+  });
+
+  testWidgets('a page pushed over A-02 hides the panel until it comes back', (
+    tester,
+  ) async {
+    await pumpScreen(tester, transactionId: '48302', withMenu: true);
+
+    unawaited(router.push('/other'));
+    await tester.pumpAndSettle();
+    expect(find.text('Otra pantalla'), findsOneWidget);
+    expect(find.byType(SidePanel), findsNothing);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(inPanel(find.text('TX-48302')), findsOneWidget);
   });
 
   testWidgets('a save changes the badge of the row and the progress', (
