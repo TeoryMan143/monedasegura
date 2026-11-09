@@ -49,6 +49,8 @@ Future<void> _setUpWindow() async {
     center: true,
   );
   await windowManager.waitUntilReadyToShow(options, () async {
+    // Maximised so the 1440×900 default never pushes the title bar off a smaller screen.
+    await windowManager.maximize();
     await windowManager.show();
     await windowManager.focus();
   });
