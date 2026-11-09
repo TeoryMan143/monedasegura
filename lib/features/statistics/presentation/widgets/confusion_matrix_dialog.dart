@@ -39,6 +39,7 @@ class ConfusionMatrixDialog extends ConsumerWidget {
       actions: [
         AppButton(
           label: 'Cerrar',
+          autofocus: true,
           variant: AppButtonVariant.secondary,
           onPressed: () => close(),
         ),
@@ -48,6 +49,13 @@ class ConfusionMatrixDialog extends ConsumerWidget {
         onRetry: () => ref.invalidate(confusionMatrixProvider(filter)),
         stateHeight: _skeletonHeight,
         isEmpty: (matrix) => matrix.isEmpty,
+        empty: const EmptyState(
+          title: 'Sin alertas resueltas en el rango',
+          message:
+              'La matriz compara el tipo sugerido por la IA con el resultado '
+              'final del analista, y aún no hay alertas resueltas para los '
+              'filtros actuales.',
+        ),
         loading: const _MatrixSkeleton(),
         builder: (context, matrix) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

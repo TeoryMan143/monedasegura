@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -25,6 +27,8 @@ import 'package:monedasegura/features/statistics/domain/time_series_point.dart';
 import 'package:monedasegura/features/statistics/domain/type_precision.dart';
 import 'package:monedasegura/features/statistics/presentation/controllers/statistics_providers.dart';
 import 'package:monedasegura/features/statistics/presentation/statistics_screen.dart';
+
+import '../../../helpers/icon_button_tooltips.dart';
 
 class _MockRepository extends Mock implements StatisticsRepository {}
 
@@ -69,7 +73,7 @@ void main() {
     );
   });
 
-  Future<GoRouter> pumpScreen(WidgetTester tester) async {
+  Future<GoRouter> pumpScreen(WidgetTester tester, {bool settle = true}) async {
     tester.view
       ..physicalSize = const Size(1280, 720)
       ..devicePixelRatio = 1;
@@ -106,7 +110,11 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
     return router;
   }
 
@@ -201,6 +209,42 @@ void main() {
     expect(order, [...order]..sort());
   });
 
+  testWidgets('while loading every card and panel shows its own skeleton', (
+    tester,
+  ) async {
+    final kpisDone = Completer<FraudKpis>();
+    final seriesDone = Completer<List<TimeSeriesPoint>>();
+    final groupedDone = Completer<List<GroupedCount>>();
+    when(() => repository.fraudKpis(any())).thenAnswer((_) => kpisDone.future);
+    when(() => repository.fraudOverTime(any()))
+        .thenAnswer((_) => seriesDone.future);
+    when(() => repository.fraudGrouped(any(), any()))
+        .thenAnswer((_) => groupedDone.future);
+
+    await pumpScreen(tester, settle: false);
+
+    expect(find.bySemanticsLabel('Cargando'), findsWidgets);
+    expect(find.byType(SkeletonBox), findsWidgets);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    // One panel answers while the others still load: it does not wait for them.
+    kpisDone.complete(kpis);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('1.084'), findsOneWidget);
+    expect(find.byType(SkeletonBox), findsWidgets);
+
+    seriesDone.complete(const []);
+    groupedDone.complete(const []);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('A-07 has no icon-only button without a tooltip', (tester) async {
+    await pumpScreen(tester);
+
+    expectIconButtonsHaveTooltips(tester);
+  });
+
   testWidgets('a failing panel shows «Reintentar» and leaves the others', (
     tester,
   ) async {
@@ -280,6 +324,14 @@ void main() {
       expect(find.text('—'), findsNWidgets(3));
       expect(find.text('0 %'), findsNothing);
       expect(find.text('Sin datos en este rango'), findsOneWidget);
+    });
+
+    testWidgets('A-08 has no icon-only button without a tooltip', (
+      tester,
+    ) async {
+      await openAiTab(tester);
+
+      expectIconButtonsHaveTooltips(tester);
     });
 
     testWidgets('an error shows «Reintentar» in the cards and the panel', (
@@ -400,6 +452,28 @@ void main() {
       await tester.tap(find.text('Ver matriz de confusión'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cerrar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Matriz de confusión'), findsNothing);
+    });
+
+    testWidgets('N-04 has its × with a tooltip', (tester) async {
+      await openMatrix(tester);
+
+      expect(expectIconButtonsHaveTooltips(tester), greaterThanOrEqualTo(1));
+    });
+
+    testWidgets('opens with the focus on «Cerrar» and Enter closes it', (
+      tester,
+    ) async {
+      await openMatrix(tester);
+
+      final focused = FocusManager.instance.primaryFocus?.context;
+      expect(
+        focused?.findAncestorWidgetOfExactType<AppButton>()?.label,
+        'Cerrar',
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(find.text('Matriz de confusión'), findsNothing);
     });

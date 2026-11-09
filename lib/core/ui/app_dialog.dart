@@ -46,7 +46,8 @@ Future<T?> showAppDialog<T>({
 /// with the secondary action left of the primary (DESIGN.md · Dialogs).
 ///
 /// Radius `xl`, `modal` shadow, M 560 / L 800 px. [onSubmit] runs on Enter, which
-/// should be the same callback as the primary action.
+/// should be the same callback as the primary action. In a multi-line text field Enter
+/// adds a line and Ctrl/Cmd+Enter runs [onSubmit].
 ///
 /// ```dart
 /// showAppDialog<void>(
@@ -184,13 +185,40 @@ class AppDialog extends StatelessWidget {
       ),
     );
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): close,
-        const SingleActivator(LogicalKeyboardKey.enter): ?submit,
-        const SingleActivator(LogicalKeyboardKey.numpadEnter): ?submit,
+    // Not a CallbackShortcuts: it would swallow Enter even in a text area, where Enter
+    // must add a line.
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.escape) {
+          close();
+          return KeyEventResult.handled;
+        }
+        final isEnter =
+            key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter;
+        if (!isEnter || submit == null) return KeyEventResult.ignored;
+        final keyboard = HardwareKeyboard.instance;
+        final withModifier =
+            keyboard.isControlPressed || keyboard.isMetaPressed;
+        // In a text area Enter adds a line; Ctrl/Cmd+Enter sends.
+        if (_focusIsInTextArea() && !withModifier) {
+          return KeyEventResult.ignored;
+        }
+        submit();
+        return KeyEventResult.handled;
       },
       child: FocusScope(autofocus: true, child: dialog),
     );
   }
+}
+
+/// True when the focused widget is a multi-line text field.
+bool _focusIsInTextArea() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  final editable = context?.findAncestorStateOfType<EditableTextState>();
+  return editable != null && editable.widget.maxLines != 1;
 }

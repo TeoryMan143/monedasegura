@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/failure.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/kit.dart';
+import '../../auth/presentation/controllers/session_controller.dart';
 import '../domain/alert_detail.dart';
 import 'controllers/alerts_providers.dart';
 import 'widgets/alert_customer_card.dart';
 import 'widgets/alert_detail_header.dart';
+import 'widgets/alert_detail_skeleton.dart';
 import 'widgets/alert_reasons_panel.dart';
 import 'widgets/alert_resolution_banner.dart';
 import 'widgets/alert_score_card.dart';
@@ -48,9 +51,23 @@ class AlertDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(alertDetailProvider(alertId));
 
+    // A missing alert is not an error to retry: it will not appear by asking again.
+    if (detail.hasError &&
+        !detail.isLoading &&
+        detail.error is NotFoundFailure) {
+      return EmptyState(
+        title: 'No encontramos esta alerta',
+        message: 'Puede que se haya eliminado o que el enlace no sea correcto.',
+        icon: AppIcons.search,
+        actionLabel: 'Volver a la bandeja',
+        onAction: onBack,
+      );
+    }
+
     return ScreenState<AlertDetail>(
       value: detail,
       onRetry: () => ref.invalidate(alertDetailProvider(alertId)),
+      loading: const AlertDetailSkeleton(),
       builder: (context, detail) => SingleChildScrollView(
         padding: const EdgeInsets.all(AppLayout.contentPadding),
         child: Column(
@@ -63,7 +80,12 @@ class AlertDetailScreen extends ConsumerWidget {
             ),
             if (detail.alert.isResolved) ...[
               const SizedBox(height: AppSpace.lg),
-              AlertResolutionBanner(alert: detail.alert),
+              AlertResolutionBanner(
+                alert: detail.alert,
+                resolvedByMe:
+                    detail.alert.resolvedBy != null &&
+                    detail.alert.resolvedBy == ref.watch(sessionProvider)?.id,
+              ),
             ],
             const SizedBox(height: AppLayout.blockGap),
             Row(

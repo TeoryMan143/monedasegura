@@ -69,12 +69,30 @@ class AlertDetailHeader extends StatelessWidget {
       children: [
         Expanded(child: info),
         const SizedBox(width: AppSpace.lg),
-        AppButton(
-          label: 'Resolver alerta',
-          icon: AppIcons.check,
-          onPressed: alert.status == AlertStatus.pending ? onResolve : null,
-        ),
+        _ResolveButton(alert: alert, onResolve: onResolve),
       ],
     );
+  }
+}
+
+/// «Resolver alerta», disabled once the alert is resolved. A disabled button says why on
+/// hover, so it is not a dead end.
+class _ResolveButton extends StatelessWidget {
+  const _ResolveButton({required this.alert, required this.onResolve});
+
+  final AiAlert alert;
+  final VoidCallback? onResolve;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = alert.status == AlertStatus.pending;
+    final button = AppButton(
+      label: 'Resolver alerta',
+      icon: AppIcons.check,
+      onPressed: pending ? onResolve : null,
+    );
+    return pending
+        ? button
+        : AppTooltip(message: 'Esta alerta ya fue resuelta', child: button);
   }
 }
