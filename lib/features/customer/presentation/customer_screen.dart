@@ -118,19 +118,32 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
     // whole window (side menu and top bar too), like a dialog. It only shows while this
     // page is the visible one: not under the report pushed on top, nor in another tab.
     final visible =
-        selected != null &&
         (ModalRoute.isCurrentOf(context) ?? true) &&
         TickerMode.valuesOf(context).enabled;
     return OverlayPortal(
       overlayLocation: OverlayChildLocation.rootOverlay,
       controller: _panelOverlay,
-      overlayChildBuilder: (context) =>
-          visible ? _panel(id, selected) : const SizedBox.shrink(),
+      overlayChildBuilder: (context) => selected == null
+          ? const SizedBox.shrink()
+          : _panel(id, selected, visible: visible),
       child: _content(id),
     );
   }
 
-  Widget _panel(String id, int selected) => SizedBox.expand(
+  /// While this page is hidden the panel stays mounted, so the unsaved form survives a
+  /// trip to the report and back, but it is not painted and takes no click or key
+  /// (Esc must not close it from the page on top).
+  Widget _panel(String id, int selected, {required bool visible}) =>
+      ExcludeFocus(
+        excluding: !visible,
+        child: Visibility(
+          visible: visible,
+          maintainState: true,
+          child: _panelLayer(id, selected),
+        ),
+      );
+
+  Widget _panelLayer(String id, int selected) => SizedBox.expand(
     child: Stack(
       children: [
         Positioned.fill(

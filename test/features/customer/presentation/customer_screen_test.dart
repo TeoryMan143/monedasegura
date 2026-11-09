@@ -393,20 +393,33 @@ void main() {
     },
   );
 
-  testWidgets('a page pushed over A-02 hides the panel until it comes back', (
-    tester,
-  ) async {
-    await pumpScreen(tester, transactionId: '48302', withMenu: true);
+  testWidgets(
+    'a page pushed over A-02 hides the panel and keeps its unsaved form',
+    (tester) async {
+      await pumpScreen(tester, transactionId: '48302', withMenu: true);
+      // An unsaved justification, to check that the trip keeps it.
+      await tester.enterText(
+        inPanel(find.byType(EditableText)),
+        'Cliente avisó',
+      );
+      await tester.pump();
 
-    unawaited(router.push('/other'));
-    await tester.pumpAndSettle();
-    expect(find.text('Otra pantalla'), findsOneWidget);
-    expect(find.byType(SidePanel), findsNothing);
+      unawaited(router.push('/other'));
+      await tester.pumpAndSettle();
+      expect(find.text('Otra pantalla'), findsOneWidget);
+      expect(find.byType(SidePanel), findsNothing);
 
-    router.pop();
-    await tester.pumpAndSettle();
-    expect(inPanel(find.text('TX-48302')), findsOneWidget);
-  });
+      // Hidden, the panel takes no keys: Esc on the page on top does not close it.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(openTransaction(), '48302');
+      expect(inPanel(find.text('TX-48302')), findsOneWidget);
+      expect(inPanel(find.text('Cliente avisó')), findsOneWidget);
+    },
+  );
 
   testWidgets('a save changes the badge of the row and the progress', (
     tester,
