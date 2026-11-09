@@ -49,6 +49,9 @@ class CustomerScreen extends ConsumerStatefulWidget {
 class _CustomerScreenState extends ConsumerState<CustomerScreen> {
   ProviderSubscription<AsyncValue<DateTime?>>? _dateSubscription;
 
+  /// Always shown: [build] decides whether the overlay holds the panel.
+  final _panelOverlay = OverlayPortalController()..show();
+
   int? get _selected => int.tryParse(widget.transactionId ?? '');
 
   @override
@@ -111,36 +114,62 @@ class _CustomerScreenState extends ConsumerState<CustomerScreen> {
     // table is built, e.g. when `?tx=` moves it while the customer still loads.
     ref.listen(customerDateRangeProvider(id), (_, _) {});
     final selected = _selected;
-    return Stack(
-      children: [
-        _content(id),
-        // N-02 opens over the table on the selected row (HU-04).
-        if (selected != null) ...[
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _closePanel,
-              child: const ColoredBox(color: AppColors.bgOverlay),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: AppLayout.sidePanelWidth,
-            child: ClassificationPanel(
-              key: ValueKey(selected),
-              transactionId: selected,
-              onClose: _closePanel,
-              onNext: () => _openNext(selected),
-              onSaved: () => ref
-                ..invalidate(customerTransactionsPageProvider(id))
-                ..invalidate(customerLabelProgressProvider(id)),
-            ),
-          ),
-        ],
-      ],
+    // N-02 opens on the selected row (HU-04). It goes to the root overlay, so it dims the
+    // whole window (side menu and top bar too), like a dialog. It only shows while this
+    // page is the visible one: not under the report pushed on top, nor in another tab.
+    final visible =
+        (ModalRoute.isCurrentOf(context) ?? true) &&
+        TickerMode.valuesOf(context).enabled;
+    return OverlayPortal(
+      overlayLocation: OverlayChildLocation.rootOverlay,
+      controller: _panelOverlay,
+      overlayChildBuilder: (context) => selected == null
+          ? const SizedBox.shrink()
+          : _panel(id, selected, visible: visible),
+      child: _content(id),
     );
   }
+
+  /// While this page is hidden the panel stays mounted, so the unsaved form survives a
+  /// trip to the report and back, but it is not painted and takes no click or key
+  /// (Esc must not close it from the page on top).
+  Widget _panel(String id, int selected, {required bool visible}) =>
+      ExcludeFocus(
+        excluding: !visible,
+        child: Visibility(
+          visible: visible,
+          maintainState: true,
+          child: _panelLayer(id, selected),
+        ),
+      );
+
+  Widget _panelLayer(String id, int selected) => SizedBox.expand(
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _closePanel,
+            child: const ColoredBox(color: AppColors.bgOverlay),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: AppLayout.sidePanelWidth,
+          child: ClassificationPanel(
+            key: ValueKey(selected),
+            transactionId: selected,
+            onClose: _closePanel,
+            onNext: () => _openNext(selected),
+            onSaved: () => ref
+              ..invalidate(customerTransactionsPageProvider(id))
+              ..invalidate(customerLabelProgressProvider(id)),
+          ),
+        ),
+      ],
+    ),
+  );
 
   void _closePanel() => widget.onSelectTransaction(null);
 

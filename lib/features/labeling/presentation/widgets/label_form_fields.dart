@@ -60,6 +60,7 @@ class LabelFormFields extends StatefulWidget {
     this.showVerdict = true,
     this.showFraudTypes = true,
     this.sideBySide = false,
+    this.dense = false,
     this.confidenceLabel = 'Nivel de confianza',
     this.justificationRequired,
     this.justificationHint = 'Qué indicios viste',
@@ -86,6 +87,10 @@ class LabelFormFields extends StatefulWidget {
 
   /// Confidence and severity in two columns instead of one under the other.
   final bool sideBySide;
+
+  /// Less space between the fields and a two-line justification that grows as it is
+  /// written, so the form fits a short window (N-02 on a small screen).
+  final bool dense;
   final String confidenceLabel;
 
   /// Forces the justification to be required (or optional). Null follows the label rules:
@@ -158,6 +163,7 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
     final isNotFraud = form.verdict == Verdict.notFraud;
     final confidence = form.confidence;
     final severity = form.severity;
+    final gap = widget.dense ? AppSpace.sm : AppSpace.lg;
 
     final confidenceField = _anchor(
       LabelField.confidence,
@@ -246,7 +252,7 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
           _Error(errors[LabelField.verdict]),
         ],
         if (!isNotFraud && widget.showFraudTypes) ...[
-          if (widget.showVerdict) const SizedBox(height: AppSpace.lg),
+          if (widget.showVerdict) SizedBox(height: gap),
           FieldLabel(
             'Tipo(s) de fraude',
             required: form.verdict == Verdict.fraud,
@@ -260,24 +266,21 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
           _Error(errors[LabelField.fraudTypes]),
         ],
         if (widget.showVerdict || (!isNotFraud && widget.showFraudTypes))
-          const SizedBox(height: AppSpace.lg),
+          SizedBox(height: gap),
         if (widget.sideBySide && !isNotFraud)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: confidenceField),
-              const SizedBox(width: AppSpace.lg),
+              SizedBox(width: gap),
               Expanded(child: severityField),
             ],
           )
         else ...[
           confidenceField,
-          if (!isNotFraud) ...[
-            const SizedBox(height: AppSpace.lg),
-            severityField,
-          ],
+          if (!isNotFraud) ...[SizedBox(height: gap), severityField],
         ],
-        const SizedBox(height: AppSpace.lg),
+        SizedBox(height: gap),
         _anchor(
           LabelField.justification,
           AppTextArea(
@@ -286,6 +289,7 @@ class _LabelFormFieldsState extends State<LabelFormFields> {
             controller: _justification,
             enabled: enabled,
             maxLength: maxJustificationLength,
+            minLines: widget.dense ? 2 : 3,
             required:
                 widget.justificationRequired ?? _justificationRequired(form),
             helperText: widget.justificationHelperText,

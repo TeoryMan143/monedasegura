@@ -58,6 +58,7 @@ class SidePanel extends StatelessWidget {
     required this.body,
     this.subtitle,
     this.footer,
+    this.scrollBody = true,
     this.headerTrailing,
     this.onClose,
     super.key,
@@ -71,6 +72,10 @@ class SidePanel extends StatelessWidget {
 
   /// Sticky actions at the bottom, e.g. «Siguiente» + «Guardar etiqueta».
   final Widget? footer;
+
+  /// True (default): the body scrolls when it is taller than the panel. False: the body
+  /// gets the panel's height as a bound and must fit it by itself (e.g. scaling down).
+  final bool scrollBody;
 
   /// Extra content before the close button (a status badge…).
   final Widget? headerTrailing;
@@ -138,10 +143,18 @@ class SidePanel extends StatelessWidget {
                 ),
                 const Divider(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppSpace.xl),
-                    child: body,
-                  ),
+                  child: scrollBody
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.all(AppSpace.xl),
+                          child: body,
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(AppSpace.xl),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: body,
+                          ),
+                        ),
                 ),
                 if (footer != null) ...[
                   const Divider(),

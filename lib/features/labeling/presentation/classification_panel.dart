@@ -8,6 +8,7 @@ import '../../audit/presentation/label_history_dialog.dart';
 import 'controllers/classification_controller.dart';
 import 'widgets/classification_summary.dart';
 import 'widgets/label_form_fields.dart';
+import 'widgets/shrink_to_fit.dart';
 
 /// N-02 · Classification side panel (HU-04): the transaction, its AI alert and its label
 /// form, with live validation and the save.
@@ -60,84 +61,92 @@ class _ClassificationPanelState extends ConsumerState<ClassificationPanel> {
       title: 'Clasificar transacción',
       subtitle: state?.target.code,
       onClose: widget.onClose,
-      body: ScreenState(
-        value: value,
-        onRetry: () => ref.invalidate(provider),
-        errorTitle: 'No se pudo abrir la transacción',
-        builder: (context, state) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClassificationSummary(
-              target: state.target,
-              onOpenHistory: () => showLabelHistoryDialog(
-                context: context,
-                transactionId: widget.transactionId,
-                transactionCode: state.target.code,
-              ),
-            ),
-            const SizedBox(height: AppSpace.xl),
-            LabelFormFields(
-              form: state.form,
-              errors: state.visibleErrors,
-              enabled: !state.isSaving,
-              onChanged: ref.read(provider.notifier).change,
-            ),
-            if (state.failure case final failure?) ...[
-              const SizedBox(height: AppSpace.lg),
-              InlineBanner(
-                title: 'No se guardó la etiqueta',
-                message: '${_failureText(failure)} Tus datos siguen aquí.',
-                tone: StatusTone.danger,
-                icon: AppIcons.error,
-                action: AppButton(
-                  label: 'Reintentar',
-                  variant: AppButtonVariant.secondary,
-                  size: AppButtonSize.s,
-                  onPressed: state.isSaving ? null : _save,
+      // No scroll bar: on a short window the whole body scales down to fit above the
+      // fixed actions, so nothing hides under them.
+      scrollBody: false,
+      body: ShrinkToFit(
+        child: ScreenState(
+          value: value,
+          onRetry: () => ref.invalidate(provider),
+          errorTitle: 'No se pudo abrir la transacción',
+          builder: (context, state) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClassificationSummary(
+                target: state.target,
+                onOpenHistory: () => showLabelHistoryDialog(
+                  context: context,
+                  transactionId: widget.transactionId,
+                  transactionCode: state.target.code,
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
-      footer: state == null
-          ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (state.saveState != SaveState.idle) ...[
-                  SaveStatus(state: state.saveState, onRetry: _save),
-                  const SizedBox(height: AppSpace.sm),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        label: 'Siguiente',
-                        variant: AppButtonVariant.secondary,
-                        expand: true,
-                        onPressed: state.isSaving ? null : widget.onNext,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpace.sm),
-                    Expanded(
-                      flex: 2,
-                      child: AppButton(
-                        label: state.target.label == null
-                            ? 'Guardar etiqueta'
-                            : 'Actualizar etiqueta',
-                        expand: true,
-                        loading: state.isSaving,
-                        onPressed: state.isSaving ? null : _save,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: AppSpace.md),
+              // Dense: the whole form should fit a short window above the fixed actions.
+              LabelFormFields(
+                dense: true,
+                form: state.form,
+                errors: state.visibleErrors,
+                enabled: !state.isSaving,
+                onChanged: ref.read(provider.notifier).change,
+              ),
+              if (state.failure case final failure?) ...[
+                const SizedBox(height: AppSpace.sm),
+                InlineBanner(
+                  title: 'No se guardó la etiqueta',
+                  message: '${_failureText(failure)} Tus datos siguen aquí.',
+                  tone: StatusTone.danger,
+                  icon: AppIcons.error,
+                  action: AppButton(
+                    label: 'Reintentar',
+                    variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.s,
+                    onPressed: state.isSaving ? null : _save,
+                  ),
                 ),
               ],
-            ),
+            ],
+          ),
+        ),
+      ),
+      // Fixed at the bottom, always in view.
+      footer: state == null ? null : _actions(state),
     );
   }
+
+  Widget _actions(ClassificationState state) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      if (state.saveState != SaveState.idle) ...[
+        SaveStatus(state: state.saveState, onRetry: _save),
+        const SizedBox(height: AppSpace.sm),
+      ],
+      Row(
+        children: [
+          Expanded(
+            child: AppButton(
+              label: 'Siguiente',
+              variant: AppButtonVariant.secondary,
+              expand: true,
+              onPressed: state.isSaving ? null : widget.onNext,
+            ),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            flex: 2,
+            child: AppButton(
+              label: state.target.label == null
+                  ? 'Guardar etiqueta'
+                  : 'Actualizar etiqueta',
+              expand: true,
+              loading: state.isSaving,
+              onPressed: state.isSaving ? null : _save,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 String _failureText(Failure failure) => switch (failure) {
