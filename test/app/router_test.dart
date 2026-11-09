@@ -17,6 +17,7 @@ import 'package:monedasegura/features/alerts/presentation/controllers/alerts_pro
 import 'package:monedasegura/features/auth/data/auth_repository.dart';
 import 'package:monedasegura/features/auth/data/fake_auth_repository.dart';
 import 'package:monedasegura/features/auth/presentation/controllers/session_controller.dart';
+import 'package:monedasegura/features/search/presentation/widgets/global_search_button.dart';
 import 'package:monedasegura/features/statistics/presentation/statistics_screen.dart';
 import 'package:monedasegura/features/transactions/presentation/transactions_screen.dart';
 
@@ -99,6 +100,16 @@ void main() {
     await _pumpApp(tester, signedIn: true);
 
     expect(find.byType(TransactionsScreen), findsOneWidget);
+  });
+
+  testWidgets('the search sits in the middle of the top bar', (tester) async {
+    await _pumpApp(tester, signedIn: true);
+
+    // The top bar spans from the side menu to the right edge of the window.
+    const barCenter = (AppLayout.sideMenuWidth + 1280) / 2;
+    final search = tester.getCenter(find.byType(GlobalSearchButton));
+    expect(search.dx, closeTo(barCenter, 1));
+    expect(search.dy, closeTo(AppLayout.topBarHeight / 2, 1));
   });
 
   testWidgets('the side menu switches branches', (tester) async {

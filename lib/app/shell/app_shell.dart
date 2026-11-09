@@ -96,18 +96,24 @@ class _TopBar extends StatelessWidget {
         color: AppColors.bgSurface,
         border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
-      child: Row(
-        children: [
-          GlobalSearchButton(onOpen: onOpenCustomer),
-          const Spacer(),
-          const _ConnectionStatus(),
-          const SizedBox(width: AppSpace.sm),
-          NotificationBell(
-            onOpenAlert: (alertId) => context.go(AppRoutes.alert(alertId)),
-          ),
-          const SizedBox(width: AppSpace.sm),
-          const UserMenu(),
-        ],
+      // The search sits in the middle of the bar. If the right side grows (e.g.
+      // «Reconectando…» on a narrow window) the toolbar moves it left instead of
+      // letting the two overlap.
+      child: NavigationToolbar(
+        middleSpacing: AppSpace.lg,
+        middle: GlobalSearchButton(onOpen: onOpenCustomer),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _ConnectionStatus(),
+            const SizedBox(width: AppSpace.sm),
+            NotificationBell(
+              onOpenAlert: (alertId) => context.go(AppRoutes.alert(alertId)),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            const UserMenu(),
+          ],
+        ),
       ),
     );
   }
