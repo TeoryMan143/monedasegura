@@ -326,8 +326,8 @@ Use the same rules for statistics (A-07, A-08, N-04), the customer summary chart
 - **List pages (A-01, A-04):** header → search field + "Ordenar por" dropdown (always visible)
   → table card with "Filtros", chips, count → pagination.
 - **Customer view (A-02 + N-02):**
-  - Compact header: breadcrumbs, name, progress bar, pending-alerts chip, "Ver perfil" and
-    "Reportes" buttons.
+  - Compact header: breadcrumbs, name, progress bar, pending-alerts chip and the "Ver perfil"
+    button (it opens the report on "Resumen"; its tabs lead to the timeline and the map).
   - Then the table card with the account filter, date range and in / out / net totals per
     currency.
   - The classification panel opens over it. Inside the panel: amount (`h2`), meta, "Etiquetada

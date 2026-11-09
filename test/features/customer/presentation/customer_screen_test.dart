@@ -284,7 +284,7 @@ void main() {
     expect(find.text('1 seleccionada'), findsNothing);
   });
 
-  testWidgets('the report buttons wait for the report route', (tester) async {
+  testWidgets('«Ver perfil» waits for the report route', (tester) async {
     await pumpScreen(tester);
 
     final viewProfile = tester.widget<AppButton>(
@@ -293,18 +293,18 @@ void main() {
     expect(viewProfile.onPressed, isNull);
     expect(
       find.byTooltip('Disponible cuando exista el reporte del cliente'),
-      findsNWidgets(2),
+      findsOneWidget,
     );
   });
 
-  testWidgets('with the report route, the buttons open its tabs', (
+  testWidgets('with the report route, «Ver perfil» opens «Resumen»', (
     tester,
   ) async {
     await pumpScreen(tester, withReport: true);
 
+    expect(find.text('Reportes'), findsNothing);
     await tester.tap(find.text('Ver perfil'));
-    await tester.tap(find.text('Reportes'));
-    expect(reports, [CustomerReportTab.summary, CustomerReportTab.timeline]);
+    expect(reports, [CustomerReportTab.summary]);
   });
 
   testWidgets('a click on a row opens N-02 on it and writes ?tx=', (

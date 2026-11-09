@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -80,8 +79,7 @@ void main() {
     expect(find.text('CC 1.020.456.789'), findsOneWidget);
     expect(find.text('Riesgo medio'), findsOneWidget);
     expect(find.text('Exportar PDF'), findsOneWidget);
-    expect(find.text('Actividad por mes'), findsOneWidget);
-    expect(find.byType(BarChart), findsOneWidget);
+    expect(find.text('Actividad por mes'), findsNothing);
     expect(find.text('TX-48219'), findsOneWidget);
     expect(find.textContaining('AL-1042'), findsOneWidget);
   });

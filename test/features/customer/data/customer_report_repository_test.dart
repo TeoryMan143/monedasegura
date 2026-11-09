@@ -146,18 +146,4 @@ void main() {
     expect(merged.analystName, 'Juan Camilo Borrero');
     expect(store.labeledTransactionIds, [47022]);
   });
-
-  test('reads a row of customer_monthly_activity', () {
-    final activity = monthlyActivityFromRow({
-      'month': '2026-09-01',
-      'currency_code': 'COP',
-      'transaction_count': 14,
-      'total_amount': 8250000.00,
-    });
-
-    expect(activity.month, DateTime(2026, 9));
-    expect(activity.currency, Currency.cop);
-    expect(activity.transactionCount, 14);
-    expect(activity.totalAmount, 8250000);
-  });
 }

@@ -96,18 +96,7 @@ class CustomerHeader extends ConsumerWidget {
                 tone: StatusTone.info,
                 icon: AppIcons.ai,
               ),
-            _ReportButton(
-              label: 'Ver perfil',
-              icon: AppIcons.user,
-              tab: CustomerReportTab.summary,
-              onOpenReport: onOpenReport,
-            ),
-            _ReportButton(
-              label: 'Reportes',
-              icon: AppIcons.document,
-              tab: CustomerReportTab.timeline,
-              onOpenReport: onOpenReport,
-            ),
+            _ProfileButton(onOpenReport: onOpenReport),
           ],
         ),
       ],
@@ -115,29 +104,22 @@ class CustomerHeader extends ConsumerWidget {
   }
 }
 
-/// «Ver perfil» and «Reportes»: disabled, with the reason, until the report exists.
-class _ReportButton extends StatelessWidget {
-  const _ReportButton({
-    required this.label,
-    required this.icon,
-    required this.tab,
-    required this.onOpenReport,
-  });
+/// «Ver perfil»: opens the report on «Resumen», whose tabs lead to the rest. Disabled,
+/// with the reason, until the report exists.
+class _ProfileButton extends StatelessWidget {
+  const _ProfileButton({required this.onOpenReport});
 
-  final String label;
-  final AppIcons icon;
-  final CustomerReportTab tab;
   final OpenCustomerReport? onOpenReport;
 
   @override
   Widget build(BuildContext context) {
     final open = onOpenReport;
     final button = AppButton(
-      label: label,
-      icon: icon,
+      label: 'Ver perfil',
+      icon: AppIcons.user,
       variant: AppButtonVariant.secondary,
       size: AppButtonSize.s,
-      onPressed: open == null ? null : () => open(tab),
+      onPressed: open == null ? null : () => open(CustomerReportTab.summary),
     );
     if (open != null) return button;
     return AppTooltip(

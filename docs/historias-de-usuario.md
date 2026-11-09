@@ -184,7 +184,7 @@ Como analista, quiero ver, filtrar y ordenar todas las transacciones, para elegi
 
 **HU-03 · Vista de cliente** · M · 8 pts
 Como analista, quiero ver las transacciones de un cliente en un rango de fechas, para clasificarlas con contexto.
-- Encabezado compacto: nombre, avance del etiquetado (etiquetadas / total), alertas pendientes y botones «Ver perfil» (reporte del cliente) y «Reportes» (línea de tiempo y mapa).
+- Encabezado compacto: nombre, avance del etiquetado (etiquetadas / total), alertas pendientes y botón «Ver perfil», que abre el reporte del cliente en Resumen (desde sus pestañas se llega a la línea de tiempo y al mapa).
 - Tabla de las transacciones de todas sus cuentas con filtro por cuenta y por rango de fechas.
 - Junto al conteo se muestran los totales del rango: entradas, salidas y neto por moneda.
 - Las transacciones con alerta de IA se marcan visualmente.
@@ -235,7 +235,7 @@ El reporte es **una sola pantalla con pestañas**: Resumen · Cuentas · Línea 
 
 **HU-09 · Reporte de cliente** · M · 5 pts
 Como analista, quiero consultar el perfil de un cliente, para entenderlo antes de clasificar.
-- Pestaña **Resumen**: datos personales, segmento, nivel de riesgo, actividad por mes (cantidad y monto) e historial de etiquetas y alertas.
+- Pestaña **Resumen**: datos personales, segmento, nivel de riesgo e historial de etiquetas y alertas.
 - Pestaña **Cuentas**: cuentas, tarjetas y dispositivos con su estado y saldo.
 - El rango de fechas se muestra como chip y aplica a todas las pestañas.
 
