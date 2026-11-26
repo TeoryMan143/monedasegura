@@ -716,10 +716,14 @@ note as N_rules
     fraud types atomically; analyst_id and updated_at are set by the database.
   • <b>Bulk labeling:</b> RPC <i>label_transactions(ids[], ...)</i> applies one label to
     many transactions in a single transaction and returns how many were overwritten.
-  • <b>Shared alert inbox:</b> RPC <i>resolve_alert(alert_id, action, ...)</i> locks the row
+  • <b>Shared alert inbox:</b> RPC <i>resolve_alert(alert_id, action, confidence,
+    final_type_id, severity, justification, excluded_transaction_ids[])</i> locks the row
     (<i>SELECT ... FOR UPDATE</i>) and fails if status <> 'pending', so the first analyst
-    wins. It creates/replaces the label of each alert transaction (source = 'alert'):
-    confirm → fraud + suggested type; reject → not_fraud; reclassify → fraud + other type.
+    wins. It creates/replaces the label of each alert transaction not excluded
+    (source = 'alert'): confirm → fraud + suggested type; reject → not_fraud;
+    reclassify → fraud + other type. Excluded transactions keep their label.
+  • <b>RPC errors</b> are stable keys: errcode P0001, message = key
+    (e.g. alert_already_resolved, fraud_type_required).
   • <b>Fixed taxonomy:</b> fraud_types, confidence_levels, severity_levels,
     severity_thresholds and exchange_rates are loaded by the seed; the app only reads them.
   • <b>Audit:</b> AFTER INSERT/UPDATE triggers on labels and ai_alerts write to

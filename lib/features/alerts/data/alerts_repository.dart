@@ -202,7 +202,7 @@ class AlertsRepository {
 
   /// The label every involved transaction gets, as `resolve_alert` would write it.
   LabelValues _labelValues(ResolveAlertInput input, FraudType? finalType) {
-    // The RPC defaults the confidence to «Alta».
+    // The RPC requires a confidence; until the dialog sends one, «Alta».
     final confidence = input.confidence ?? ConfidenceLevel.high;
     final justification = input.justification?.trim();
     if (confidence.requiresJustification &&
