@@ -498,7 +498,7 @@ package "Labeling" as labeling #FFF7FB {
     * confidence : smallint <<FK>>
     severity : severity <<FK>>
     justification : text
-    * analyst_id : uuid <<FK>>  <color:#64748B><i>// last analyst who saved it</i></color>
+    * analyst_id : uuid <<FK>> = auth.uid()  <color:#64748B><i>// last analyst who saved it</i></color>
     * created_at : timestamptz
     * updated_at : timestamptz
     * version : int = 1  <color:#64748B><i>// "edited N times"</i></color>
@@ -735,7 +735,8 @@ note as N_supabase
     Writes only on labels / label_fraud_types (and alerts through <i>resolve_alert()</i>);
     notifications: analyst_id = auth.uid().
   • <b>Realtime</b> enabled on: transactions (is_labeled), labels, ai_alerts,
-    notifications. Connection status shown in the app.
+    notifications. REPLICA IDENTITY FULL on labels and ai_alerts.
+    Connection status shown in the app.
   • <b>Read views</b>: v_transactions_list (with alert score, label status,
     location and the customer's local time for the timeline and map),
     v_customer_label_progress, v_labeling_progress, v_fraud_stats (by type and
