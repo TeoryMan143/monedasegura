@@ -12,9 +12,10 @@ abstract final class Env {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-  /// Test mode of HU-16: the simulated realtime connection drops every minute for a few
-  /// seconds so the top bar shows «Reconectando…». Run with
-  /// `--dart-define=SIMULATE_RECONNECT=true`.
+  /// Test mode of HU-16 without a database (`USE_FAKE_DATA`): the simulated realtime
+  /// connection drops every minute for a few seconds so the top bar shows
+  /// «Reconectando…». With Supabase the status comes from the real channel: cut the
+  /// network to see it. Run with `--dart-define=SIMULATE_RECONNECT=true`.
   static const simulateReconnect = bool.fromEnvironment('SIMULATE_RECONNECT');
 
   /// Demo mode: the first read of each alert and statistic fails and the next works, to

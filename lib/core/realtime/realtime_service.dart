@@ -1,97 +1,57 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/env.dart';
+import '../supabase/supabase_client_provider.dart';
 import 'connection_status.dart';
+import 'fake_realtime_service.dart';
+import 'supabase_realtime_service.dart';
 
-/// Simulated realtime service of the prototype (HU-16).
+/// Realtime changes of the database (HU-16, ARCHITECTURAL_SPINE.md · Realtime).
 ///
-/// The prototype does not open Supabase Realtime channels. Instead, [start] schedules
-/// one «new alert» signal [newAlertDelay] after the analyst enters (about 30 s). The
-/// notifications feature reacts by taking a real pending alert from the database and
-/// announcing it. With [simulateReconnect] the connection drops every [reconnectEvery]
-/// for [reconnectFor], so the top bar can show «Reconectando…».
+/// One app-wide service opens the channels after sign in ([start]) and closes them on
+/// sign out ([stop]); `realtimeSessionProvider` (lib/app) does both. Features never open
+/// channels: they listen to these streams and invalidate their own providers.
 ///
-/// Features never create timers or channels themselves: they listen to [newAlerts] and
-/// [connectionStatus]. After the prototype a `SupabaseRealtimeService` with the same
-/// streams replaces this class.
-class FakeRealtimeService {
-  FakeRealtimeService({
-    this.newAlertDelay = const Duration(seconds: 30),
-    this.simulateReconnect = false,
-    this.reconnectEvery = const Duration(seconds: 60),
-    this.reconnectFor = const Duration(seconds: 6),
-  });
+/// Every stream groups a burst of changes (about 500 ms) into one event with the ids
+/// that changed, so labeling 100 transactions refetches once, not 100 times.
+abstract interface class RealtimeService {
+  /// Ids of the AI alerts inserted or updated (`ai_alerts`): inbox, detail, counters.
+  Stream<Set<String>> get alertsChanged;
 
-  final Duration newAlertDelay;
-  final bool simulateReconnect;
-  final Duration reconnectEvery;
-  final Duration reconnectFor;
+  /// Ids of the transactions whose label changed (`labels` insert / update and
+  /// `transactions.is_labeled`): lists, customer view, progress.
+  Stream<Set<int>> get labelsChanged;
 
-  final _newAlerts = StreamController<void>.broadcast();
-  final _status = StreamController<ConnectionStatus>.broadcast();
-  ConnectionStatus _current = ConnectionStatus.connected;
-  Timer? _alertTimer;
-  Timer? _dropTimer;
-  Timer? _restoreTimer;
+  /// Ids of the notifications inserted for the signed-in analyst (`notifications`):
+  /// the bell counter and the «Nueva alerta» toast.
+  Stream<Set<String>> get notificationsInserted;
 
-  /// Emits once per [start], when a new alert should be announced.
-  Stream<void> get newAlerts => _newAlerts.stream;
+  /// The current status first, then every change. The top bar shows it only when it
+  /// is not [ConnectionStatus.connected].
+  Stream<ConnectionStatus> connectionStatus();
 
-  /// The current status first, then every change.
-  Stream<ConnectionStatus> connectionStatus() async* {
-    yield _current;
-    yield* _status.stream;
-  }
+  /// Opens the channels for [analystId]. Calling it again closes the previous ones.
+  void start(String analystId);
 
-  /// Starts the simulation for the signed-in analyst. Calling it again restarts it.
-  void start() {
-    stop();
-    _alertTimer = Timer(newAlertDelay, () {
-      if (!_newAlerts.isClosed) _newAlerts.add(null);
-    });
-    if (simulateReconnect) {
-      _dropTimer = Timer.periodic(reconnectEvery, (_) {
-        _setStatus(ConnectionStatus.reconnecting);
-        _restoreTimer = Timer(
-          reconnectFor,
-          () => _setStatus(ConnectionStatus.connected),
-        );
-      });
-    }
-  }
+  /// Closes the channels (sign out). Changes that arrive later are ignored.
+  void stop();
 
-  /// Stops every timer, e.g. when the analyst signs out.
-  void stop() {
-    _alertTimer?.cancel();
-    _dropTimer?.cancel();
-    _restoreTimer?.cancel();
-    _setStatus(ConnectionStatus.connected);
-  }
-
-  void dispose() {
-    stop();
-    _newAlerts.close();
-    _status.close();
-  }
-
-  void _setStatus(ConnectionStatus status) {
-    if (status == _current || _status.isClosed) return;
-    _current = status;
-    _status.add(status);
-  }
+  void dispose();
 }
 
-/// The realtime service. Kept alive (app-wide); the notifications controller starts it
-/// when the shell appears and stops it when the analyst leaves.
-final realtimeServiceProvider = Provider<FakeRealtimeService>((ref) {
-  final service = FakeRealtimeService(simulateReconnect: Env.simulateReconnect);
+/// The realtime service: Supabase Realtime, or the simulated one when the app runs
+/// without a database (`USE_FAKE_DATA`). Kept alive (app-wide).
+final realtimeServiceProvider = Provider<RealtimeService>((ref) {
+  final RealtimeService service = Env.useFakeData
+      ? FakeRealtimeService(simulateReconnect: Env.simulateReconnect)
+      : SupabaseRealtimeService(
+          SupabaseRealtimeGateway(ref.watch(supabaseClientProvider)),
+        );
   ref.onDispose(service.dispose);
   return service;
 }, name: 'realtimeServiceProvider');
 
-/// Connection status for the top bar `ConnectionIndicator`.
+/// Connection status for the top bar `ConnectionIndicator`, from the real channel.
 final connectionStatusProvider = StreamProvider<ConnectionStatus>(
   (ref) => ref.watch(realtimeServiceProvider).connectionStatus(),
   name: 'connectionStatusProvider',

@@ -11,6 +11,7 @@ import 'package:monedasegura/app/router.dart';
 import 'package:monedasegura/core/catalogs/catalog_repository.dart';
 import 'package:monedasegura/core/catalogs/fake_catalog_repository.dart';
 import 'package:monedasegura/core/local_writes/local_writes_store.dart';
+import 'package:monedasegura/core/realtime/fake_realtime_service.dart';
 import 'package:monedasegura/core/realtime/realtime_service.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/core/ui/kit.dart';
@@ -70,9 +71,7 @@ void main() {
         FakeNotificationsRepository(),
       ),
       realtimeServiceProvider.overrideWith((ref) {
-        final service = FakeRealtimeService(
-          newAlertDelay: const Duration(hours: 1),
-        );
+        final service = FakeRealtimeService();
         ref.onDispose(service.dispose);
         return service;
       }),
