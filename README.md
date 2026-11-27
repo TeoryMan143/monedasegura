@@ -101,41 +101,47 @@ test/              mirrors lib/
 - [x] `Failure` type and Supabase error mapping
 - [x] Plus Jakarta Sans bundled
 - [x] Supabase CLI config (`supabase/config.toml`, seed paths, public sign-up off)
-- [ ] Logos (`assets/images/`) and line icons (`assets/icons/`) exported from Figma, `AppIcons`
-- [ ] Component kit in `core/ui` (`AppButton`, `StatusBadge`, `ScreenState`, `AppDataTable`…)
+- [x] Line icons (`assets/icons/`) exported from Figma, `AppIcon`
+- [ ] Logos in `assets/images/` (Moneda Segura, Icesi positive / negative)
+- [x] Component kit in `core/ui` (`AppButton`, `ScoreBadge`, `ScreenState`, `AppDataTable`…)
 - [x] Domain enums with labels, tones and icons (`core/domain`)
 - [x] Catalog repository and providers (`core/catalogs`)
 - [x] Money and date formatting (`core/formatting`)
-- [x] In-memory prototype writes (`core/local_writes`)
-- [ ] Realtime service and connection status (`core/realtime`)
+- [ ] Realtime service on Supabase Realtime channels (`core/realtime`; today a simulated service)
+- [ ] Remove the in-memory prototype writes (`core/local_writes`): labels and alert
+      resolutions saved through `label_transactions` / `resolve_alert`
 
 ### Database
 
-- [x] `exchange_rates` migration and seed rates
-- [ ] Migrations for the rest of the schema (already in the remote project but not tracked)
-- [ ] Triggers (audit, `is_labeled`, notifications)
-- [ ] RPCs: `save_label`, `label_transactions`, `resolve_alert`, `global_search`
-- [ ] Views: `v_transactions_list`, `v_customer_label_progress`, `v_labeling_progress`,
-      `v_fraud_stats`, `v_ai_performance`, `v_account_balance_history`
-- [ ] Realtime publication and indexes
-- [ ] Seed: catalogs and the generator (`supabase/seed/generator`)
-- [ ] pgTAP tests
+- [x] Baseline migrations of the whole schema, tracked in `supabase/migrations`
+- [x] Triggers (audit, `is_labeled`, label version, notifications)
+- [x] RPCs: `label_transactions`, `resolve_alert` (stable error keys), `global_search`,
+      `customer_range_totals`, statistics functions
+- [x] Views: `v_transactions_list`, `v_customer_label_progress`, `v_labeling_progress`,
+      `v_fraud_stats`, `v_ai_performance`, `v_stats_transactions`, `v_account_balance_history`
+- [x] Realtime publication (`REPLICA IDENTITY FULL` on `ai_alerts`, `labels`) and indexes
+- [x] Seed: catalogs and the deterministic generator (`supabase/seed/generator.sql`)
+- [x] pgTAP tests (`supabase test db`, see [`supabase/README.md`](supabase/README.md))
+- [ ] Alert generator for new alerts at runtime (F-10)
 
 ### User stories
 
-- [ ] HU-01 Sign in / out
-- [ ] HU-02 Transaction list
-- [ ] HU-03 Customer view
-- [ ] HU-04 Label one transaction
-- [ ] HU-05 Label many transactions
-- [ ] HU-06 Alert inbox
-- [ ] HU-07 Alert detail
-- [ ] HU-08 Resolve an alert
-- [ ] HU-09 Customer report: Resumen, Cuentas
-- [ ] HU-10 Customer timeline
-- [ ] HU-11 Transaction map
-- [ ] HU-12 Export report to PDF
-- [ ] HU-13 Statistics
-- [ ] HU-14 Global search
-- [ ] HU-15 Audit and label history
-- [ ] HU-16 Realtime and notifications
+Every story has its screens. The ones left open still save in memory or use the simulated
+realtime service.
+
+- [x] HU-01 Sign in / out
+- [x] HU-02 Transaction list
+- [x] HU-03 Customer view
+- [ ] HU-04 Label one transaction (saves in memory)
+- [ ] HU-05 Label many transactions (saves in memory)
+- [x] HU-06 Alert inbox
+- [x] HU-07 Alert detail
+- [ ] HU-08 Resolve an alert (saves in memory)
+- [x] HU-09 Customer report: Resumen, Cuentas
+- [x] HU-10 Customer timeline
+- [x] HU-11 Transaction map
+- [x] HU-12 Export report to PDF
+- [x] HU-13 Statistics
+- [x] HU-14 Global search
+- [x] HU-15 Audit and label history
+- [ ] HU-16 Realtime and notifications (simulated realtime)

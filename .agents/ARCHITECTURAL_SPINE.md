@@ -45,8 +45,7 @@ lib/
     catalogs/            CatalogRepository + keep-alive providers (fraud types, confidence and
                          severity levels, currencies, countries, channels)
     formatting/          money, dates, masked account (•••• 4417), relative time
-    local_writes/        LocalWritesStore: prototype writes in memory until the RPCs exist
-    realtime/            RealtimeService + connectionStatusProvider
+    realtime/            RealtimeService (Supabase Realtime channels) + connectionStatusProvider
     theme/               tokens (AppColors, AppText, AppSpace, AppRadius, AppShadows) + app_theme.dart
     ui/                  the component kit: AppButton, StatusBadge, ScoreBadge, AppDataTable,
                          FilterPanel, SidePanel, AppDialog, ScreenState, KpiCard… (see DESIGN.md)
@@ -106,9 +105,12 @@ Supabase (RLS, views, RPCs) → Repository (data) → provider / Notifier → Wi
    Widgets and controllers never build queries.
 2. **Read from views, write through the narrowest path** (names in DATABASE.md):
    - Lists read `v_transactions_list` and the other views. Do not stitch joins on the client.
-   - One label is an upsert on `labels` + `label_fraud_types` through an RPC (`save_label`).
-   - Bulk labels go through `label_transactions`, alerts through `resolve_alert`, search
-     through `global_search`.
+   - Labels go through the `label_transactions` RPC, which writes `labels` and
+     `label_fraud_types` atomically: with one id for the classification panel (HU-04), with
+     many for the bulk dialog (HU-05). There is no separate single-label RPC.
+   - Alerts go through `resolve_alert`, search through `global_search`.
+   - Every write goes to the database. Nothing is kept in memory waiting to be saved: after
+     a save the controller invalidates its providers and reads the result back.
    - The client never writes `audit_log`, `notifications.created_at`, `is_labeled` or alert
      status directly. Triggers do that.
 3. **The database is the authority.** RLS decides access. CHECKs, triggers and RPCs decide
@@ -164,8 +166,10 @@ Supabase (RLS, views, RPCs) → Repository (data) → provider / Notifier → Wi
 
 ## Realtime (HU-16)
 
-- One `RealtimeService` (keep-alive) opens the channels after sign in and closes them on sign
-  out:
+- One `RealtimeService` (keep-alive) opens the Supabase Realtime channels after sign in and
+  closes them on sign out. There is no simulated mode: new alerts come from rows inserted in
+  `ai_alerts` (by the alert generator, see DATABASE.md), and «Reconectando…» from the real
+  channel status. The channels:
   - `ai_alerts` insert / update: the inbox, the alert detail and the pending counters.
   - `labels` insert / update and `transactions.is_labeled`: lists, customer view and progress.
   - `notifications` insert for `analyst_id = auth.uid()`: the bell counter and the toast.
@@ -257,7 +261,8 @@ comments.
     - `ScreenState` variants
     - one list screen with a fake repository
 - Repositories are replaced with fakes via `ProviderScope(overrides: [...])`. Tests never hit
-  the network. Database behaviour is tested in `supabase/tests` (DATABASE.md).
+  the network. Database behaviour (RLS, CHECKs, triggers, RPCs) is tested with pgTAP in
+  `supabase/tests` (`supabase test db`, see DATABASE.md), not from Dart.
 - When a view or RPC changes shape, update the model's `fromJson` and its test in the same
   change.
 
