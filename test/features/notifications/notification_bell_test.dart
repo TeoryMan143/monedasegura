@@ -1,52 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:monedasegura/core/realtime/fake_realtime_service.dart';
 import 'package:monedasegura/core/theme/app_theme.dart';
 import 'package:monedasegura/features/notifications/domain/app_notification.dart';
 import 'package:monedasegura/features/notifications/presentation/widgets/notification_bell.dart';
 
 import '../../helpers/shell_overrides.dart';
 
-final _read = AppNotification(
-  id: 'n1',
-  alertId: 'a1',
-  title: 'Nueva alerta · score 61',
-  body: 'AL-1001 · Ana Ruiz',
-  createdAt: DateTime.now().subtract(const Duration(days: 1)),
-  read: true,
+AppNotification _notification(
+  String id, {
+  required bool read,
+  Duration age = const Duration(minutes: 5),
+  String? code,
+  int? score,
+}) => AppNotification(
+  id: id,
+  alertId: 'alert-$id',
+  alertCode: code,
+  score: score,
+  title: 'Nueva alerta ${code ?? id} · score ${score ?? 61}',
+  body: 'Resumen de $id',
+  createdAt: DateTime.now().subtract(age),
+  read: read,
 );
 
-final _unread = AppNotification(
-  id: 'n2',
-  alertId: 'a2',
-  title: 'Nueva alerta · score 88',
-  body: 'AL-1002 · Luis Mora',
-  createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-  read: false,
-);
+final _read = _notification('n1', read: true, age: const Duration(days: 1));
+final _unread = _notification('n2', read: false);
 
-final _live = AppNotification(
-  id: 'live-a3',
-  alertId: 'a3',
-  alertCode: 'AL-1042',
-  title: 'Nueva alerta · score 92',
-  body: 'AL-1042 · Juan Pérez · Robo de cuenta',
-  score: 92,
-  createdAt: DateTime.now(),
-  read: false,
-  live: true,
-);
+class _Bell {
+  _Bell(this.repository, this.realtime, this.opened);
 
-Future<List<String>> _pumpBell(WidgetTester tester) async {
+  final FakeNotificationsRepository repository;
+  final FakeRealtimeService realtime;
+  final List<String> opened;
+}
+
+Future<_Bell> _pumpBell(WidgetTester tester) async {
+  final repository = FakeNotificationsRepository(items: [_unread, _read]);
+  final realtime = FakeRealtimeService();
   final opened = <String>[];
   await tester.pumpWidget(
     ProviderScope(
       overrides: shellOverrides(
-        notifications: FakeNotificationsRepository(
-          items: [_unread, _read],
-          pending: _live,
-        ),
-        newAlertDelay: const Duration(seconds: 30),
+        notifications: repository,
+        realtime: realtime,
       ),
       child: MaterialApp(
         theme: AppTheme.light(),
@@ -60,7 +58,7 @@ Future<List<String>> _pumpBell(WidgetTester tester) async {
     ),
   );
   await tester.pumpAndSettle();
-  return opened;
+  return _Bell(repository, realtime, opened);
 }
 
 void main() {
@@ -70,27 +68,51 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 
-  testWidgets('the panel lists notifications and opens the alert', (
+  testWidgets('opening a notification writes read_at and opens the alert', (
     tester,
   ) async {
-    final opened = await _pumpBell(tester);
+    final bell = await _pumpBell(tester);
 
     await tester.tap(find.byTooltip('Notificaciones, 1 sin leer'));
     await tester.pumpAndSettle();
-    expect(find.text('Nueva alerta · score 88'), findsOneWidget);
-
-    await tester.tap(find.text('Nueva alerta · score 88'));
+    await tester.tap(find.text(_unread.title));
     await tester.pumpAndSettle();
-    expect(opened, ['a2']);
+
+    expect(bell.opened, ['alert-n2']);
+    expect(bell.repository.markedRead, ['n2']);
     expect(find.text('1'), findsNothing);
   });
 
-  testWidgets('a realtime alert shows a toast and raises the counter', (
+  testWidgets('«Marcar todas como leídas» writes every unread one', (
     tester,
   ) async {
-    await _pumpBell(tester);
+    final bell = await _pumpBell(tester);
+    bell.repository.insert(_notification('n3', read: false));
 
-    await tester.pump(const Duration(seconds: 30));
+    await tester.tap(find.byTooltip('Notificaciones, 1 sin leer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marcar todas como leídas'));
+    await tester.pumpAndSettle();
+
+    expect(bell.repository.markedRead, ['n3', 'n2']);
+    expect(find.byTooltip('Notificaciones'), findsOneWidget);
+  });
+
+  testWidgets('a realtime notification shows a toast and raises the counter', (
+    tester,
+  ) async {
+    final bell = await _pumpBell(tester);
+
+    bell.repository.insert(
+      _notification(
+        'n3',
+        read: false,
+        age: Duration.zero,
+        code: 'AL-1042',
+        score: 92,
+      ),
+    );
+    bell.realtime.simulateNotification('n3');
     await tester.pumpAndSettle();
 
     expect(find.text('Nueva alerta AL-1042'), findsOneWidget);

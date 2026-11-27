@@ -5,14 +5,16 @@ import '../../../../core/formatting/date_time.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/ui/kit.dart';
 import '../../domain/app_notification.dart';
+import '../../domain/notifications_feed.dart';
 import '../controllers/notifications_controller.dart';
 
 /// C-04 / C-06 · bell of the top bar with the unread counter and the notifications panel
 /// (HU-16).
 ///
-/// When the realtime service announces a new alert, a toast with its score and «Abrir»
-/// appears. Opening a notification marks it as read and calls [onOpenAlert]; the shell
-/// passes the navigation, so this feature does not depend on the router.
+/// The counter is the analyst's unread notifications in the database. When Realtime
+/// brings a new one, a toast with its score and «Abrir» appears. Opening a notification
+/// marks it as read and calls [onOpenAlert]; the shell passes the navigation, so this
+/// feature does not depend on the router.
 class NotificationBell extends ConsumerStatefulWidget {
   const NotificationBell({required this.onOpenAlert, super.key});
 
@@ -35,18 +37,18 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
     widget.onOpenAlert(notification.alertId);
   }
 
-  void _toastNewAlerts(
-    AsyncValue<List<AppNotification>>? previous,
-    AsyncValue<List<AppNotification>> next,
+  void _toastArrivals(
+    AsyncValue<NotificationsFeed>? previous,
+    AsyncValue<NotificationsFeed> next,
   ) {
-    final before = previous != null && previous.hasValue
-        ? previous.requireValue
-        : const <AppNotification>[];
     if (!next.hasValue) return;
-    for (final notification in next.requireValue) {
-      if (!notification.live || before.any((n) => n.id == notification.id)) {
-        continue;
-      }
+    final arrived = next.requireValue.arrived;
+    final before = previous != null && previous.hasValue
+        ? previous.requireValue.arrived
+        : const <AppNotification>[];
+    if (arrived.isEmpty || identical(arrived, before)) return;
+    for (final notification in arrived) {
+      if (before.any((n) => n.id == notification.id)) continue;
       showAppToast(
         context,
         type: AppToastType.aiAlert,
@@ -63,12 +65,11 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(notificationsProvider, _toastNewAlerts);
+    ref.listen(notificationsProvider, _toastArrivals);
     final notifications = ref.watch(notificationsProvider);
-    final items = notifications.hasValue
-        ? notifications.requireValue
-        : const <AppNotification>[];
-    final unread = items.where((item) => !item.read).length;
+    final unread = notifications.hasValue
+        ? notifications.requireValue.unread
+        : 0;
 
     return MenuAnchor(
       controller: _menu,
@@ -146,7 +147,7 @@ class _Panel extends StatelessWidget {
     required this.onRetry,
   });
 
-  final AsyncValue<List<AppNotification>> notifications;
+  final AsyncValue<NotificationsFeed> notifications;
   final int unread;
   final ValueChanged<AppNotification> onOpen;
   final VoidCallback onMarkAllRead;
@@ -194,13 +195,13 @@ class _Panel extends StatelessWidget {
             padding:
                 notifications.hasValue &&
                     !notifications.hasError &&
-                    notifications.requireValue.isNotEmpty
+                    notifications.requireValue.items.isNotEmpty
                 ? const EdgeInsets.all(AppSpace.sm)
                 : const EdgeInsets.symmetric(
                     horizontal: AppSpace.xxl,
                     vertical: AppSpace.xxl,
                   ),
-            child: ScreenState<List<AppNotification>>(
+            child: ScreenState<NotificationsFeed>(
               value: notifications,
               onRetry: onRetry,
               errorTitle: 'No pudimos cargar las notificaciones',
@@ -213,17 +214,17 @@ class _Panel extends StatelessWidget {
                   SkeletonBox(width: AppSizes.menuMinWidth),
                 ],
               ),
-              isEmpty: (items) => items.isEmpty,
+              isEmpty: (feed) => feed.items.isEmpty,
               empty: const EmptyState(
                 icon: AppIcons.bell,
                 title: 'Sin notificaciones',
                 message:
                     'Te avisaremos aquí cuando la IA genere alertas nuevas.',
               ),
-              builder: (context, items) => Column(
+              builder: (context, feed) => Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final item in items)
+                  for (final item in feed.items)
                     NotificationItem(
                       title: item.title,
                       subtitle: item.body,
