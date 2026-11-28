@@ -1,5 +1,5 @@
-/// A notification of the bell panel (HU-16, C-06). Every notification points to an
-/// AI alert.
+/// A notification of the bell panel (HU-16, C-06): one row of `notifications`. Every
+/// notification points to an AI alert.
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -10,24 +10,22 @@ class AppNotification {
     this.body,
     this.alertCode,
     this.score,
-    this.live = false,
   });
 
   final String id;
   final String alertId;
 
-  /// E.g. «Nueva alerta · score 92».
+  /// E.g. «Nueva alerta AL-1042 · score 92».
   final String title;
 
-  /// E.g. «AL-1042 · Juan Pérez · Robo de cuenta».
+  /// The alert summary.
   final String? body;
   final String? alertCode;
   final int? score;
   final DateTime createdAt;
-  final bool read;
 
-  /// Arrived during this session through the realtime service: it gets a toast.
-  final bool live;
+  /// `read_at` is set.
+  final bool read;
 
   AppNotification markRead() => AppNotification(
     id: id,
@@ -38,6 +36,5 @@ class AppNotification {
     score: score,
     createdAt: createdAt,
     read: true,
-    live: live,
   );
 }
