@@ -132,6 +132,7 @@ flutter test
 flutter run -d windows --dart-define-from-file=env.json   # env.json (git-ignored): SUPABASE_URL + SUPABASE_ANON_KEY
 flutter run -d windows --dart-define=USE_FAKE_DATA=true  # offline: fake repositories, no backend
 flutter run -d windows -t lib/main_kit.dart   # dev gallery of the core/ui kit
+dart run tool/ownership_report.dart     # build/ownership_report.html: owner + description of every file
 flutter run -d linux --dart-define=USE_FAKE_DATA=false \
   --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
   --dart-define=SUPABASE_ANON_KEY=<anon key from `supabase status`>   # -d windows / macos too
