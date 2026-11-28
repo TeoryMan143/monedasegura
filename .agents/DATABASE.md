@@ -84,8 +84,11 @@ Baseline migrations, one concern each:
 - `authenticated` can `SELECT` all banking data, catalogs, alerts, labels and audit. There is no
   per-customer restriction and no masking.
 - Writes allowed to `authenticated`:
-  - `labels` / `label_fraud_types`: through `save_label` and `label_transactions` (direct
-    `INSERT`/`UPDATE` policies may exist, but the app uses the RPCs).
+  - `labels` / `label_fraud_types`: the app writes them only through `label_transactions`
+    (manual labels) and `resolve_alert` (alert labels). The direct policies that remain only
+    let an analyst write a manual label as themselves (`analyst_id = auth.uid()`) and its
+    fraud types. Nobody may `DELETE` labels or `TRUNCATE` the labeling tables or
+    `notifications`.
   - `ai_alerts`: **only** through `resolve_alert` (`security definer`). No direct `UPDATE`.
   - `notifications`: `UPDATE (read_at)` where `analyst_id = auth.uid()`.
 - Views are created with `security_invoker = true` so the caller's RLS applies.
@@ -104,10 +107,11 @@ All RPCs:
 
 | Function | Does | Error keys |
 | --- | --- | --- |
-| `save_label(p_transaction_id, p_verdict, p_fraud_type_ids smallint[], p_confidence, p_severity, p_justification)` | Upserts the label and replaces its fraud types atomically (`source = 'manual'`). Returns the label with analyst and version. | `fraud_type_required`, `severity_required`, `severity_not_allowed`, `justification_required`, `transaction_not_found` |
-| `label_transactions(p_transaction_ids bigint[], p_verdict, p_confidence int, p_fraud_type_ids int[] = '{}', p_severity = null, p_justification = null)` | Applies one label to many transactions (HU-04, HU-05), `source = 'manual'`. Fraud needs types and a severity; fraud types sent with another verdict are ignored. Every id must exist. Returns how many already had a label (`int`). | `transaction_not_found`, `fraud_type_required`, `severity_required`, `severity_not_allowed`, `justification_required` |
+| `label_transactions(p_transaction_ids bigint[], p_verdict, p_confidence int, p_fraud_type_ids int[] = '{}', p_severity = null, p_justification = null)` | Applies one label to one or many transactions (HU-04 sends one id, HU-05 many), `source = 'manual'`, and replaces their fraud types. There is no `save_label`: a single label is this call with one id. Fraud needs types and a severity; fraud types sent with another verdict are ignored. Every id must exist. Returns how many already had a label (`int`). | `transaction_not_found`, `fraud_type_required`, `severity_required`, `severity_not_allowed`, `justification_required` |
 | `resolve_alert(p_alert_id uuid, p_action alert_status, p_confidence int, p_final_type_id int = null, p_severity = null, p_justification = null, p_excluded_transaction_ids bigint[] = '{}')` | Locks the alert (`SELECT … FOR UPDATE`) and fails if it is not `pending`, so the first analyst wins. Sets status, `resolved_by`, `resolved_at`, `final_type_id`, then creates or replaces the label of each involved transaction not excluded (`source = 'alert'`, the confidence sent, for every action): confirm → fraud + suggested type; reject → not_fraud, no severity; reclassify → fraud + `p_final_type_id`. For fraud, a null `p_severity` falls back to `severity_for_amount` per transaction. Excluded transactions keep their current label. Returns the alert row. | `alert_not_found`, `alert_already_resolved`, `invalid_action`, `fraud_type_required` (reclassify without type), `final_type_must_differ`, `severity_not_allowed`, `justification_required` |
-| `global_search(p_query text, p_limit int)` | Searches customers (`search_vector`, trigram on names, document number), accounts (`last4`) and transactions (`code`). Returns rows grouped by `kind` (customer, account, transaction). | — |
+| `global_search(q text, max_results int = 20)` | Searches customers (`search_vector`, trigram on names, document number), accounts (`last4`) and transactions (`code`). Returns `kind` (customer, account, transaction), `ref_id`, `title`, `subtitle`, `score`. | — |
+| `customer_range_totals(p_customer_id uuid, p_from timestamptz = null, p_to timestamptz = null, p_account_id uuid = null)` | A-02 header (HU-03): money in, out and net of the customer's accounts per currency, from `ledger_entries`. `p_from` inclusive, `p_to` exclusive, null leaves that end open. | — |
+| `customer_monthly_activity(p_customer_id uuid, p_from timestamptz = null, p_to timestamptz = null)` | Transactions and amount per calendar month (UTC) and currency. It fed the «Actividad por mes» chart, removed from the report; the app no longer calls it. | — |
 | `fraud_stats_kpis(p_from date, p_to date, p_country text)` | Statistics "Fraude" cards: `total_transactions`, `labeled`, `fraud` and `committed_amount_cop` (one total, converted with `exchange_rates`). A fraud counts once, whatever its types. | — |
 | `fraud_over_time(p_from, p_to, p_country)` | Frauds per week: `period_start` (Monday, UTC) and `fraud_count`. A week without frauds has no row; the app fills it with 0. | — |
 | `fraud_grouped(p_by text, p_from, p_to, p_country)` | Frauds per `'type'`, `'channel'` or `'country'` as `key` (the code) and `count`. By type, a fraud with two types counts once in each. | `invalid_group_by` |
@@ -131,7 +135,8 @@ The app reads lists and statistics from views, so it never joins on the client:
 | `v_account_balance_history` | Report "Cuentas" and the summary activity chart |
 
 `v_transfer_edges` (transfer graph) and precision by score range are **out of scope**. Do not
-build them. Statistics filters (date range, country) go through the parameters of the
+build on them: `v_transfer_edges` exists only because the baseline copied the hosted schema,
+and the app never reads it. Statistics filters (date range, country) go through the parameters of the
 statistics functions, which apply them in the `WHERE` on the server.
 
 ## Realtime
@@ -190,14 +195,43 @@ Add an index for every new filter or sort the UI offers, and check it with
 - **Exchange rates:** fixed `rate_to_cop` per currency in `catalogs.sql`, dated with
   `as_of`. It is simulated data, not a live feed.
 
+## Alert generator (HU-16)
+
+New alerts reach the app only as rows inserted in `ai_alerts`; there is no simulated
+realtime on the client. Whatever inserts them must respect the same contract as the seed:
+
+- one `ai_alerts` row (`status = 'pending'`, `score` 0–100, `suggested_type_id`,
+  `model_version`, `generated_at`), its `ai_alert_transactions` (one `is_primary`) and 2–5
+  `ai_alert_reasons` in Spanish;
+- it runs with a role that may write `ai_alerts` (never `authenticated`, which has no
+  privileges on it), so it is not part of the app;
+- the AFTER INSERT trigger then creates one `alert_new` notification per analyst, and the
+  `supabase_realtime` publication delivers the alert and the notification to the app.
+
+> **TODO (F-10):** the generator's function or script name, how to run it (local and hosted)
+> and how often. Fill in when the generator is merged.
+
 ## Tests (`supabase/tests`, pgTAP)
 
-Run them with `supabase test db`. They cover:
+Run them against the **local** stack only, never the hosted project:
 
-- `anon` sees nothing.
-- `authenticated` can read but not write catalogs, alerts or audit directly.
-- Every label CHECK and trigger rule, including at least one fraud type for `fraud`.
-- `resolve_alert`: each action, excluded transactions, and the second resolver getting
-  `alert_already_resolved`.
-- Audit rows are written and cannot be updated or deleted.
-- `is_labeled` and notifications triggers.
+```bash
+supabase start        # local stack (Docker)
+supabase db reset     # migrations + seed: the tests read the seed data
+supabase test db      # every file in supabase/tests, through pg_prove
+supabase test db supabase/tests/resolve_alert_test.sql   # one file
+```
+
+Each file runs inside `begin … rollback`, so a run leaves the database as the reset left it.
+The tests act as a seed analyst (`set role authenticated` + `request.jwt.claims`), so
+`auth.uid()`, RLS and grants behave as they do for the app. What each file covers is listed
+in [`supabase/README.md`](../supabase/README.md):
+
+| File | Covers |
+| --- | --- |
+| `resolve_alert_test.sql` | HU-08: each action, excluded transactions, the second resolver getting `alert_already_resolved`, every error key |
+| `label_transactions_test.sql` | HU-04, HU-05: every label rule and error key, the overwritten count, the CHECKs and the fraud-type trigger without the RPC |
+| `label_triggers_test.sql` | HU-15, HU-16: version, last write wins, `is_labeled`, audit rows, notifications for a new alert |
+| `rls_test.sql` | `anon` sees nothing; analysts cannot write `audit_log`, `ai_alerts` or catalogs, write labels as someone else, delete labels, or read other analysts' notifications |
+
+A new rule in a migration comes with its test in the same change.

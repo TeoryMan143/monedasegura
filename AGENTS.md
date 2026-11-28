@@ -138,7 +138,12 @@ flutter run -d linux --dart-define=USE_FAKE_DATA=false \
 
 supabase start                          # local stack (Docker)
 supabase db reset                       # re-apply migrations + seed
+supabase test db                        # pgTAP tests in supabase/tests (local stack only)
 ```
 
 Before handing work back: generated files are up to date, `dart format`, `flutter analyze` and
-`flutter test` are clean, and the screen was checked at 1280×720.
+`flutter test` are clean, and the screen was checked at 1280×720. A change in `supabase/`
+also passes `supabase db reset` and `supabase test db`.
+
+All data is read from and written to Supabase. `USE_FAKE_DATA=true` swaps the repositories for
+fakes to run without a backend; it is not a second way of saving.

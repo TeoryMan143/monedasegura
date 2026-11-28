@@ -507,7 +507,7 @@ package "Labeling" as labeling #FFF7FB {
     CHECK verdict<>'not_fraud' OR severity IS NULL
     CHECK verdict<>'fraud' OR severity IS NOT NULL
     CHECK (verdict<>'uncertain' AND confidence>1)
-      OR length(justification) > 0
+      OR length(btrim(justification)) > 0
   }
 
   entity label_fraud_types <<labeling>> {
@@ -712,10 +712,10 @@ note as N_rules
     lives in <i>audit_log</i> (entity = 'labels', transaction_id).
   • <b>Labeling status:</b> <i>transactions.is_labeled</i> is maintained by a trigger on
     labels, so the "Unlabeled / Labeled" filter and progress counters are cheap.
-  • <b>Single label:</b> RPC <i>save_label(transaction_id, ...)</i> upserts the label and its
-    fraud types atomically; analyst_id and updated_at are set by the database.
-  • <b>Bulk labeling:</b> RPC <i>label_transactions(ids[], ...)</i> applies one label to
-    many transactions in a single transaction and returns how many were overwritten.
+  • <b>Labeling:</b> RPC <i>label_transactions(ids[], ...)</i> upserts one label and its
+    fraud types on one transaction (single label) or many (bulk) in a single transaction
+    and returns how many were overwritten; analyst_id (default auth.uid()), version and
+    updated_at are set by the database. There is no save_label RPC.
   • <b>Shared alert inbox:</b> RPC <i>resolve_alert(alert_id, action, confidence,
     final_type_id, severity, justification, excluded_transaction_ids[])</i> locks the row
     (<i>SELECT ... FOR UPDATE</i>) and fails if status <> 'pending', so the first analyst
@@ -736,8 +736,10 @@ note as N_supabase
   <b>Supabase</b>
   • <b>RLS</b> on every table in <i>public</i>: any authenticated analyst can read all
     banking data, alerts and labels (no masking, no per-customer restriction).
-    Writes only on labels / label_fraud_types (and alerts through <i>resolve_alert()</i>);
-    notifications: analyst_id = auth.uid().
+    Writes only on labels / label_fraud_types (manual labels as yourself) and alerts
+    through <i>resolve_alert()</i>; notifications: read_at where analyst_id = auth.uid().
+    No DELETE on labels, no TRUNCATE on labeling tables or notifications, no direct
+    privileges on ai_alerts.
   • <b>Realtime</b> enabled on: transactions (is_labeled), labels, ai_alerts,
     notifications. REPLICA IDENTITY FULL on labels and ai_alerts.
     Connection status shown in the app.
@@ -747,12 +749,16 @@ note as N_supabase
     currency), v_ai_performance (suggested vs. final type), v_stats_transactions
     (date, channel, country and amount in COP per transaction),
     v_account_balance_history.
-    Out of scope: v_transfer_edges (graph), precision by score range.
+    Out of scope: v_transfer_edges (graph; left in the baseline, unused by the app),
+    precision by score range.
   • <b>Statistics</b>: RPCs <i>fraud_stats_kpis</i>, <i>fraud_over_time</i>,
     <i>fraud_grouped(by)</i> and <i>ai_performance</i>, all filtered by date range and
     country; the committed amount is converted to COP with exchange_rates.
-  • <b>Global search</b>: RPC <i>global_search(q)</i> over customers.search_vector,
-    accounts.last4 and transactions.code.
+  • <b>Global search</b>: RPC <i>global_search(q, max_results)</i> over
+    customers.search_vector, accounts.last4 and transactions.code.
+  • <b>Customer view</b>: RPC <i>customer_range_totals(customer, from, to, account)</i>
+    (in / out / net per currency from ledger_entries); <i>customer_monthly_activity</i>
+    remains but the app no longer calls it.
   • <b>PDF reports</b> are generated on the client and saved locally (no Storage).
   • <b>Key indexes</b>: transactions(source_account_id, occurred_at),
     transactions(destination_account_id, occurred_at), transactions(is_labeled, occurred_at),
