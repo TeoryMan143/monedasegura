@@ -1,0 +1,10 @@
+# One canonical identity per person, so git shortlog, git blame and
+# tool/ownership_report.dart count each contributor once.
+# Format: Canonical Name <canonical@email> [Commit Name] <commit@email>
+Andres Martinez <martinez.andres1301@gmail.com>
+Andres Martinez <martinez.andres1301@gmail.com> <112599876+Itshappysad@users.noreply.github.com>
+Borrero <juan.camilo.borrero.florez@gmail.com> <100320424+NPt214@users.noreply.github.com>
+Jonathan Cortés <jonathancortestm143@gmail.com>
+Juan Camilo Pelaez Marulanda <pelaezmarulandajuancamilo@gmail.com>
+Juan Camilo Pelaez Marulanda <pelaezmarulandajuancamilo@gmail.com> <160181133+Juanm3005@users.noreply.github.com>
+Juan Camilo Pelaez Marulanda <pelaezmarulandajuancamilo@gmail.com> <1108254445@u.icesi.edu.co>
